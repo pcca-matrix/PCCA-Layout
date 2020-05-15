@@ -5,6 +5,8 @@ This script is intended to work with Attract-Mode http://attractmode.org/ , it t
 
 Hypertheme can be used to build new theme or you can build your own with higher resolution than the hyperspin default 1024x768
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/tQFLZIega1M" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ## Restrictions
 you should set startup mode to "display menu" in AM config.
 
