@@ -1119,7 +1119,7 @@ function hs_tick( ttime )
             if( file_exist(fe.script_dir + "images/Bezels/" + curr_sys + ".png") ){
                 ArtObj.bezel.file_name = fe.script_dir + "images/Bezels/" + curr_sys + ".png";
             }else{
-                if( ( my_config["Background_Stretch"] == "Main Menu" && curr_sys != "Main Menu" ) )
+                if( ( my_config["Background_Stretch"] == "Main Menu" && curr_sys != "Main Menu" ) || my_config["Background_Stretch"] == "No" )
                     ArtObj.bezel.file_name = fe.script_dir + "images/Bezels/Bezel_Main.png";
             }
         }
