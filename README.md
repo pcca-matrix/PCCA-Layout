@@ -5,6 +5,9 @@ This script is intended to work with Attract-Mode http://attractmode.org/ , it t
 
 Hypertheme can be used to build new theme or you can build your own with higher resolution than the hyperspin default 1024x768
 
+## Video
+[![Theme PCCA](http://img.youtube.com/vi/tQFLZIega1M/0.jpg)](https://youtu.be/tQFLZIega1M "Theme PCCA")
+
 ## Restrictions
 you should set startup mode to "display menu" in AM config.
 
