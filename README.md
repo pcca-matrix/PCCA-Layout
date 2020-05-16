@@ -74,6 +74,16 @@ If you name a transition the same name as one of your genre category you will se
 ### Medias Path
 should point to your hyperspin media path or if empty, the media folder  must be in pcca layout directory.
 
+ex:
+
+if you use HyperSpin installation on c: ,media path should be
+ 
+`C:/Hyperspin/Media`
+
+if want to put hyperspin media in the pcca layout folder , leave medias path empty and theme will look for media at:
+
+`C:/attract-mode/layouts/pcca/Media`
+
 ## Medias
 
 
