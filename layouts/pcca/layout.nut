@@ -22,7 +22,6 @@ class UserConfig {
     </ label="Bezels On Top", help="Display bezel on top of background Yes, or below No", options="Yes, No", order=8 /> Top_Bezel="No"
     </ label="Background Stretch", help="Stretch all background or main menu only", options="Yes, No, Main Menu", order=9 /> Background_Stretch="Main Menu"
     </ label="Interface Language", help="User Language", options="Fr, En", order=10 /> user_lang="En"
-    </ label="List Name", help="MUST be the display menu prompt value (AM default is 'Displays Menu')", options="", order=11 /> list_name="Displays Menu"
     </ label="Infos Coord", help="game infos surface x,y coord, empty = left bottom", options="", order=12 /> infos_coord = ""
     //</ label="Animated Artworks", help="Animate artworks", options="Yes, No", order=6 /> animated_artworks="Yes"
 }
@@ -1001,7 +1000,7 @@ function hs_transition( ttype, var, ttime )
         case Transition.StartLayout: //0
             surf_ginfos.visible = false;
             if( !glob_time ){  // glob_time == 0 on first start layout
-                if( ttime <= 255 && fe.list.name == my_config["list_name"] ){ global_fade(ttime, 255, true); return true; } // fade when back to display menu or start layout
+                if( ttime <= 255 && fe.game_info (Info.Emulator) == "@" ){ global_fade(ttime, 255, true); return true; } // fade when back to display menu or start layout
                 //Sound -  cause we are back to main menu we use name to match the systeme we're leaving.
                 Sound_System_In_Out.file_name = get_random_file( medias_path + fe.game_info(Info.Name) + "/Sound/System Exit/" );
                 Sound_System_In_Out.playing = true;

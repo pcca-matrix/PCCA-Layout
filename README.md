@@ -9,11 +9,7 @@ Hypertheme can be used to build new theme or you can build your own with higher 
 [![Theme PCCA](http://img.youtube.com/vi/tQFLZIega1M/0.jpg)](https://youtu.be/tQFLZIega1M "Theme PCCA")
 
 ## Restrictions
-you MUST :
-
-in AM config set startup mode to "display menu" and "Allow Exit from 'Display Menu' to No.
-
-put in 'layout options' your display menu prompt value ( layout is set to default AM prompt "Displays Menu").
+you MUST in AM config set startup mode to "display menu" and "Allow Exit from 'Display Menu' to No.
 
 ## Theme.xml
 It's possible to add to your artwork xml tag , width and height for auto resizing artworks medias 
