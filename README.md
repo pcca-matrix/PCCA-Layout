@@ -1,6 +1,6 @@
 # PCCA Hyperspin theme conversion for Attract-Mode
 
-### Version 1.0 beta
+### Version 1.01 beta
 This script is intended to work with Attract-Mode http://attractmode.org/ , it try to reproduce the real hyperspin experience in HD as precise as possible using the same themes and folder structure then a real Hyperspin.
 
 Hypertheme can be used to build new theme or you can build your own with higher resolution than the hyperspin default 1024x768
@@ -9,10 +9,11 @@ Hypertheme can be used to build new theme or you can build your own with higher 
 [![Theme PCCA](http://img.youtube.com/vi/tQFLZIega1M/0.jpg)](https://youtu.be/tQFLZIega1M "Theme PCCA")
 
 ## Restrictions
-you should set startup mode to "display menu" in AM config.
+you MUST :
 
-you MUST put in layout option your display menu prompt value (default is "Select System").
+in AM config set startup mode to "display menu" and "Allow Exit from 'Display Menu' to No.
 
+put in 'layout options' your display menu prompt value ( layout is set to default AM prompt "Displays Menu").
 
 ## Theme.xml
 It's possible to add to your artwork xml tag , width and height for auto resizing artworks medias 
@@ -167,7 +168,7 @@ screensaver that random trough all your games when your are on main menu, displa
 
 
 
-#Donations
+# Donations
 * XMR: `44ZD1s12j8M6upWXGUS1R2YzXKiKpVmTzYKbrLYSp6pDWvW7C4ALfQ2VNyg6pt2tvA94Tu5kbcDLcLbTvjJBYk6zLFYmWM3`
 * BTC: `1F2UpGsQETpyCCnMEBLFc5whDFAhgXJVU1`
 

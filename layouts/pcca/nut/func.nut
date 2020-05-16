@@ -176,20 +176,20 @@ function font_pl( offset ){
 
 function ret_wheel( offset ){
     local m;
-    if(fe.game_info(Info.Emulator) == "@" || fe.game_info(Info.System) == ""){
+    if(fe.game_info(Info.Emulator) == "@"){
         m  = medias_path + "Main Menu/Images/Wheel/"+fe.game_info(Info.Name, offset)
     }else{
-        m = medias_path + fe.game_info(Info.System) + "/Images/Wheel/"+fe.game_info(Info.Name, offset);
+        m = medias_path + fe.list.name + "/Images/Wheel/" + fe.game_info(Info.Name, offset);
     }
     return m;
 }
 
 function ret_snap(){
     local m;
-    if(fe.game_info(Info.Emulator) == "@" || fe.game_info(Info.System) == ""){
-        m  = medias_path + "Main Menu/Video/"+fe.game_info(Info.Name) + ".mp4";
+    if(fe.game_info(Info.Emulator) == "@"){
+        m  = medias_path + "Main Menu/Video/" + fe.game_info(Info.Name) + ".mp4";
     }else{
-        m = medias_path + fe.game_info(Info.System) + "/Video/"+fe.game_info(Info.Name) + ".mp4";
+        m = medias_path + fe.list.name + "/Video/" + fe.game_info(Info.Name) + ".mp4";
     }
     return m;
 }
