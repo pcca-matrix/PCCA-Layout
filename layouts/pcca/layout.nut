@@ -488,8 +488,8 @@ function load_theme(name, theme_content, prev_def){
         }
     }
 
-    if(file_exist(medias_path + fe.game_info(Info.Emulator) + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3") ){ // backrgound music found in media folder
-        Background_Music.file_name = medias_path + fe.game_info(Info.Emulator) + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3";
+    if(file_exist(medias_path + fe.game_info(Info.System) + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3") ){ // backrgound music found in media folder
+        Background_Music.file_name = medias_path + fe.game_info(Info.System) + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3";
         Background_Music.playing = true;
         ArtObj.snap.video_flags = Vid.NoAudio;
     }
@@ -513,7 +513,7 @@ function load_theme(name, theme_content, prev_def){
     }
 
     if(!backg){ // when background is missing in theme zip, fade anim and check in media background folder if background is present , otherwise use alternate
-        backg = medias_path + fe.game_info(Info.Emulator) + "/Images/Backgrounds/" + fe.game_info(Info.Name) + ".png";
+        backg = medias_path + fe.game_info(Info.System) + "/Images/Backgrounds/" + fe.game_info(Info.Name) + ".png";
         if(!file_exist(backg)) backg = "images/Backgrounds/Alt_Background.png";
         if( my_config["animated_backgrounds"] == "Yes" )
             background_transitions(31 , backg, hd);
@@ -573,7 +573,7 @@ function load_theme(name, theme_content, prev_def){
                 ArtObj[Xtag].file_name = name + "|" + art;
             }else{
                 // get hs others medias artwork when they are not available in zip
-                ArtObj[Xtag].file_name =  medias_path + fe.game_info(Info.Emulator) + "/Images/" + Xtag + "/" + art + "/" + fe.game_info(Info.Name) + ".png";
+                ArtObj[Xtag].file_name =  medias_path + fe.game_info(Info.System) + "/Images/" + Xtag + "/" + art + "/" + fe.game_info(Info.Name) + ".png";
             }
 
             if( w > 0 || h > 0 ){ // theme resize if width and height available
@@ -770,10 +770,10 @@ function reset_art( bool = false ){ // true if default theme
 
     ArtObj.snap.video_flags = Vid.Default; // enable snap sound
 
-   if(fe.game_info(Info.Emulator) == "@")
+   if(curr_sys == "Main Menu")
        point.file_name = medias_path + "/Main Menu/Images/Other/Pointer.png";
     else
-       point.file_name = medias_path + fe.game_info(Info.Emulator) + "/Images/Other/Pointer.png";
+       point.file_name = medias_path + fe.game_info(Info.System) + "/Images/Other/Pointer.png";
 }
 
 
@@ -1010,7 +1010,7 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.ToNewList: //6
-            curr_sys = (fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.game_info(Info.Emulator) );
+            curr_sys = ( fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.game_info(Info.System) );
 
             if(curr_sys != "Main Menu"){ // conveyor don't fade on main menu
                 local count = conveyor.m_objs.len();
@@ -1127,8 +1127,8 @@ function hs_tick( ttime )
         overview(0); // start checking for games overview
         start_background.visible = false;
         letters.visible = false; // hide letter search if present
-        path = medias_path + fe.game_info(Info.Emulator) + "/Themes/";
-        if(fe.game_info(Info.Emulator) == "@") path = medias_path + "Main Menu/Themes/";
+        path = medias_path + fe.game_info(Info.System) + "/Themes/";
+        if(curr_sys == "Main Menu") path = medias_path + "Main Menu/Themes/";
         path+=fe.game_info(Info.Name) + ".zip";
         local theme_content = zip_get_dir( path );
 
@@ -1149,7 +1149,7 @@ function hs_tick( ttime )
 
         // if no theme is found assume it's system default theme.
         if( !theme_content.len() ) {
-            path = medias_path + fe.game_info(Info.Emulator) + "/Themes/Default.zip";
+            path = medias_path + fe.game_info(Info.System) + "/Themes/Default.zip";
             theme_content = zip_get_dir( path );
             if(curr_theme == "Default"){ //curr_theme = previous theme here
                 reset_art(true);
@@ -1184,7 +1184,7 @@ function hs_tick( ttime )
 
     if(trigger_letter == true){
         local firstl = fe.game_info(Info.Title);
-        letters.file_name = medias_path + fe.game_info(Info.Emulator) + "/Images/Letters/" + firstl.slice(0,1) + ".png";
+        letters.file_name = medias_path + fe.game_info(Info.System) + "/Images/Letters/" + firstl.slice(0,1) + ".png";
         FE_Sound_Letter_Click.playing = true;
         trigger_letter = false;
     }
@@ -1254,4 +1254,4 @@ function global_fade(ttime, target, direction){
         for (local i=0; i < conveyor.m_objs.len(); i++) conveyor.m_objs[i].alpha = 0;
    }
    return;
-}    
+}
