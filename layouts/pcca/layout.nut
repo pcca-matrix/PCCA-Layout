@@ -434,6 +434,7 @@ function load_theme(name, theme_content, prev_def){
         if(file_exist(medias_path + curr_sys + "/Video/" + fe.game_info(Info.Name) + ".mp4")){
             ArtObj.background.set_pos(0,0,flw, flh);
             reset_art();
+            flv_transitions.zorder = -6; // put override video on top of video snap
             background_transitions(null, medias_path + curr_sys + "/Video/" + fe.game_info(Info.Name) + ".mp4", true);
         }
         return false; // If there is no theme file, return (only video is present ! for unified theme)
@@ -744,6 +745,7 @@ function reset_art( bool = false ){ // true if default theme
     if(!bool){
         ArtObj.artwork1.zorder=-9;   //set zorder back to normal for hyperspin zorders switching
         ArtObj.snap.zorder=-7;
+        flv_transitions.zorder = -10; // reset back to normal for override videos
 
         // reset frame shaders
         anim_video_shader._param = null;
