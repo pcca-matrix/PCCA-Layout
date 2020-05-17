@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v1.01 beta
+// PCCA v1.02 beta
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -72,6 +72,7 @@ availables <- { artwork1 = false, artwork2 = false, artwork3 = false, artwork4 =
 local path = "";
 local curr_theme = "";
 local curr_sys = "";
+local prev_path = "";
 local glob_delay = 400;
 local glob_time = 0;
 local rtime = 0;
@@ -1014,6 +1015,7 @@ function hs_transition( ttype, var, ttime )
             curr_sys = ( fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.list.name );
 
             if(curr_sys != "Main Menu"){ // conveyor don't fade on main menu
+                hide_art(); // hide artwork when you change list
                 local count = conveyor.m_objs.len();
                 for (local i=0; i < count; i++) conveyor.m_objs[i].alpha=0;
                 conveyor_bool = true;
@@ -1091,7 +1093,7 @@ function hs_transition( ttype, var, ttime )
         break;
     }
 
-    if( prev_tr!=ttype )prev_tr = ttype;
+    if( prev_tr != ttype ) prev_tr = ttype;
 }
 
 
@@ -1124,7 +1126,7 @@ function hs_tick( ttime )
                     ArtObj.bezel.file_name = fe.script_dir + "images/Bezels/Bezel_Main.png";
             }
         }
-
+        prev_path = path;
         overview(0); // start checking for games overview
         start_background.visible = false;
         letters.visible = false; // hide letter search if present
@@ -1152,7 +1154,8 @@ function hs_tick( ttime )
         if( !theme_content.len() ) {
             path = medias_path + fe.list.name + "/Themes/Default.zip";
             theme_content = zip_get_dir( path );
-            if(curr_theme == "Default"){ //curr_theme = previous theme here
+
+            if( prev_path == path ){
                 reset_art(true);
                 load_theme(path, theme_content, true);
                foreach(a,b in ["artwork1", "artwork2", "artwork3", "artwork4"] ) if( availables[b] == false ) anims[a].restart();
