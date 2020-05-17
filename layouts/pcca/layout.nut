@@ -12,17 +12,18 @@
 
 class UserConfig {
     </ label="Wheel transition time", help="Time in milliseconds for wheel spin.", order=1 /> transition_ms="30"
-    </ label="Select rounded or vertical wheel", help="Switch between a rounded and vertical wheel", options="Wheel,Vertical Wheel", order=2 /> wheel_type="Wheel"
-    </ label="Medias Path", help="Path of HyperSpin medias, if empty, medias is inside layout folder", options="", order=3 /> medias_path=""
-    </ label="Override Transitions", help="Use FLV Override Videos Transitions", options="Yes, No", order=4 /> override_transitions="Yes"
-    </ label="Themes Wait For Override", help="Themes load after override transition has played", options="Yes, No", order=4 /> wait_override="Yes"
-    </ label="Animated Backgrounds", help="Use backgrounds transitions", options="Yes, No", order=5 /> animated_backgrounds="Yes"
-    </ label="Aspect", help="Theme aspect", options="Stretch, Center", order=6 /> Aspect="Center"
-    </ label="Bezels", help="If display is centered , use bezels to replace black borders", options="Yes, No", order=7 /> Bezels="Yes"
-    </ label="Bezels On Top", help="Display bezel on top of background Yes, or below No", options="Yes, No", order=8 /> Top_Bezel="No"
-    </ label="Background Stretch", help="Stretch all background or main menu only", options="Yes, No, Main Menu", order=9 /> Background_Stretch="Main Menu"
-    </ label="Interface Language", help="User Language", options="Fr, En", order=10 /> user_lang="En"
-    </ label="Infos Coord", help="game infos surface x,y coord, empty = left bottom", options="", order=12 /> infos_coord = ""
+    </ label="Wheel fade time", help="Time in milliseconds for wheel fade out, (-1 disable fading)", order=2 /> wheel_fade_time="2500"
+    </ label="Select rounded or vertical wheel", help="Switch between a rounded and vertical wheel", options="Wheel,Vertical Wheel", order=3 /> wheel_type="Wheel"
+    </ label="Medias Path", help="Path of HyperSpin medias, if empty, medias is inside layout folder", options="", order=4 /> medias_path=""
+    </ label="Override Transitions", help="Use FLV Override Videos Transitions", options="Yes, No", order=5 /> override_transitions="Yes"
+    </ label="Themes Wait For Override", help="Themes load after override transition has played", options="Yes, No", order=6 /> wait_override="Yes"
+    </ label="Animated Backgrounds", help="Use backgrounds transitions", options="Yes, No", order=7 /> animated_backgrounds="Yes"
+    </ label="Aspect", help="Theme aspect", options="Stretch, Center", order=8 /> Aspect="Center"
+    </ label="Bezels", help="If display is centered , use bezels to replace black borders", options="Yes, No", order=9 /> Bezels="Yes"
+    </ label="Bezels On Top", help="Display bezel on top of background Yes, or below No", options="Yes, No", order=10 /> Top_Bezel="No"
+    </ label="Background Stretch", help="Stretch all background or main menu only", options="Yes, No, Main Menu", order=11 /> Background_Stretch="Main Menu"
+    </ label="Interface Language", help="User Language", options="Fr, En", order=12 /> user_lang="En"
+    </ label="Infos Coord", help="game infos surface x,y coord, empty = left bottom", options="", order=13 /> infos_coord = ""
     //</ label="Animated Artworks", help="Animate artworks", options="Yes, No", order=6 /> animated_artworks="Yes"
 }
 
@@ -867,14 +868,15 @@ conveyor.m_objs[6].visible = false; // hide totally center wheel (repaced by cen
 function conveyor_tick( ttime )
 {
     local alpha;
-    local delay = 1100; local fade_time = 1000;
+    local delay = 1100; local fade_time = my_config["wheel_fade_time"].tofloat();
     local from = 255; local to = 0;
     local elapsed = glob_time - rtime;
-    if ( !conveyor_bool && elapsed > delay && curr_sys != "Main Menu") {
+    if ( !conveyor_bool && elapsed > delay && curr_sys != "Main Menu" && fade_time > 0 ) {
         alpha = (from * (fade_time - elapsed + delay)) / fade_time;
+        alpha = (alpha < 0 ? 0 : alpha);
         local count = conveyor.m_objs.len();
         for (local i=0; i < count; i++) conveyor.m_objs[i].alpha=alpha;
-        if(alpha <= to) conveyor_bool = true;
+        if(alpha == to) conveyor_bool = true;
     }
 }
 fe.add_ticks_callback( "conveyor_tick" );
