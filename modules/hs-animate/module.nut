@@ -193,10 +193,10 @@ class Animation {
     }
 
     function key_interpolator( key, interpolator ) { key_interpolator[key] <- interpolator; return this }
+    function loops_delay( delay ) { opts.loops_delay = delay; return this; }
 
     //NOT VERIFIED/WORKING YET!
     function delay_from( bool ) { opts.delay_from = bool; return this; }
-    function loops_delay( delay ) { opts.loops_delay = delay; return this; }
     function loops_delay_from( bool ) { opts.loops_delay_from = bool; return this; }
     function trigger_restart( restart ) { opts.trigger_restart = restart; return this; }
 
@@ -243,11 +243,6 @@ class Animation {
 
     //start the animation
     function start() {
-        //convert alias and time unit values
-        opts.speed = opts.speed;
-        opts.duration = opts.duration;
-        opts.delay = opts.delay;
-        opts.loops_delay = opts.loops_delay;
         _from = ( "from" in states ) ? states["from"] : opts.from;
         _to = ( "to" in states ) ? states["to"] : opts.to;
 
@@ -308,6 +303,12 @@ class Animation {
     //stop animation (depending on options)
     function stop() {
         if ( opts.yoyo ) {
+
+            if( opts.loops_delay && (elapsed - opts.delay - opts.duration - tick ) < opts.loops_delay ){
+                elapsed += tick;
+                update();
+                return;
+            }
             //flip yoyoing, reverse animation
             yoyoing = !yoyoing;
             opts.reverse = !opts.reverse;
