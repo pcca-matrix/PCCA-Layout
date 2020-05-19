@@ -236,6 +236,29 @@ local Sound_Wheel = fe.add_sound( get_random_file( medias_path + "Sound/Wheel So
 local Background_Music = fe.add_sound( get_random_file( medias_path + "Sound/Background Music") );
 local Game_In_Out = fe.add_sound("");
 
+// dialog
+local dialog = fe.add_surface(flw*0.180, flh*0.08);
+dialog.set_pos(-flw, flh*0.025);
+local dialog_text = dialog.add_text("", 0, 0, flw*0.180, flh*0.05);
+dialog_text.charsize = flh*0.022;
+dialog_text.set_bg_rgb(91,91,91);
+dialog_text.bg_alpha = 35;
+local dialog_anim = PresetAnimation(dialog)
+.auto(true)
+.from({x=-flw * 0.180})
+.to({x=0})
+.yoyo(true)
+.loops_delay(1500)
+.duration(700)
+
+function dialog_datas(type){
+    switch (type){
+        case "favo":
+            if(fe.game_info(Info.Favourite) == "") dialog_text.msg = LnG.ret_fav; else dialog_text.msg = LnG.add_fav;
+        break;
+    }
+    dialog_anim.play();
+}
 // Game Infos
 local surf_ginfos = fe.add_surface(flw, flh*0.22);
 surf_ginfos.alpha = 200;
@@ -290,7 +313,7 @@ favo.align = Align.Left;
 favo.set_rgb( 255, 170, 0 );
 
 // add tags
-surf_ginfos.add_image("[!get_media_tag]", flw*0.030, 0, flw*0.063, flh*0.036)
+surf_ginfos.add_image("[!get_media_tag]", flw*0.006, 0, flw*0.063, flh*0.036)
 
 // Synopsis
 syno <- ScrollingText.add( "", flw*0.125, flh*0.976, fe.layout.width - (offset_x * 2) , flh*0.022, ScrollType.HORIZONTAL_LEFT );
@@ -975,6 +998,10 @@ function hs_transition( ttype, var, ttime )
             }
         break;
 
+        case Transition.ChangedTag: // 11
+            dialog_datas("favo"); // tag not working , only for favourites ?!?
+        break;
+
         case Transition.NewSelOverlay: // 10
             FE_Sound_Screen_Click.playing = true;
         break;
@@ -1038,9 +1065,9 @@ function hs_transition( ttype, var, ttime )
         break;
 
         /* Custom Overlays */
-        case Transition.ShowOverlay: // var = Custom, Exit(22), Displays, Filters(15), Tags(31), Favorites(28)
+        case Transition.ShowOverlay: // 8 var = Custom, Exit(22), Displays, Filters(15), Tags(31), Favorites(28)
             FE_Sound_Screen_In.playing = true;
-
+            dialog_anim.cancel(); // cancel dialog animation if in progress
             switch(var) {
 
                 case Overlay.Filters: // = 15 Filters
