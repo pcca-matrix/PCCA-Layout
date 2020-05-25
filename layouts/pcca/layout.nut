@@ -1273,13 +1273,14 @@ function on_signal(str) {
 // Apply a global fade on objs and shaders
 function global_fade(ttime, target, direction){
    ttime = ttime.tofloat();
-   local objlist = [center_wheel, surf_ginfos, point, syno.surface]; // objects list to fade (flv_transitions ?)
+   local objlist = [center_wheel, surf_ginfos, point, syno.surface, flv_transitions]; // objects list to fade
    if(direction){ // show
         foreach(obj in objlist) obj.alpha = ttime * (255.0 / target);
         video_shader.set_param("alpha", (ttime / target) );
         foreach(k, obj in ["artwork1", "artwork2", "artwork3", "artwork4"] ) artwork_shader[k].set_param("alpha", (ttime / target) );
         Trans_shader.set_param("alpha", ttime / 500);
    }else{ // hide
+        flv_transitions.video_playing = false; // stop playing ovveride video during fade
         foreach(obj in objlist) obj.alpha = 255.0 - ttime * (255.0 / target);
         video_shader.set_param("alpha", 1.0 - (ttime / target) );
         foreach(k, obj in ["artwork1", "artwork2", "artwork3", "artwork4"] ) artwork_shader[k].set_param("alpha", 1.0 - (ttime / target) );
