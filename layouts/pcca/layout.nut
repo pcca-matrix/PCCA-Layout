@@ -11,19 +11,19 @@
 ////////////////////////////////////////////////////////////////////
 
 class UserConfig {
-    </ label="Wheel transition time", help="Time in milliseconds for wheel spin.", order=1 /> transition_ms="30"
-    </ label="Wheel fade time", help="Time in milliseconds for wheel fade out, (-1 disable fading)", order=2 /> wheel_fade_time="2500"
-    </ label="Select rounded or vertical wheel", help="Switch between a rounded and vertical wheel", options="Wheel,Vertical Wheel", order=3 /> wheel_type="Wheel"
-    </ label="Medias Path", help="Path of HyperSpin medias, if empty, medias is inside layout folder", options="", order=4 /> medias_path=""
-    </ label="Override Transitions", help="Use FLV Override Videos Transitions", options="Yes, No", order=5 /> override_transitions="Yes"
+    </ label="Wheel transition time", help="Time in milliseconds for wheel spin", order=1 /> transition_ms="30"
+    </ label="Wheel fade time", help="Time in milliseconds for wheel fade out (-1 disable fading)", order=2 /> wheel_fade_time="2500"
+    </ label="Select round or vertical wheel", help="Switch between a round and vertical wheel", options="Wheel,Vertical Wheel", order=3 /> wheel_type="Wheel"
+    </ label="Media Path", help="Path of HyperSpin media, if empty, media is considered inside layout folder", options="", order=4 /> medias_path=""
+    </ label="Override Transitions", help="Use FLV Override Video Transitions", options="Yes, No", order=5 /> override_transitions="Yes"
     </ label="Themes Wait For Override", help="Themes load after override transition has played", options="Yes, No", order=6 /> wait_override="Yes"
-    </ label="Animated Backgrounds", help="Use backgrounds transitions", options="Yes, No", order=7 /> animated_backgrounds="Yes"
+    </ label="Animated Backgrounds", help="Use background transitions", options="Yes, No", order=7 /> animated_backgrounds="Yes"
     </ label="Aspect", help="Theme aspect", options="Stretch, Center", order=8 /> Aspect="Center"
-    </ label="Bezels", help="If display is centered , use bezels to replace black borders", options="Yes, No", order=9 /> Bezels="Yes"
-    </ label="Bezels On Top", help="Display bezel on top of background Yes, or below No", options="Yes, No", order=10 /> Top_Bezel="No"
+    </ label="Bezels", help="If display is centered, use bezels to replace black borders", options="Yes, No", order=9 /> Bezels="Yes"
+    </ label="Bezels On Top", help="'Yes' = Display bezels on top of background, 'No' = below background ", options="Yes, No", order=10 /> Top_Bezel="No"
     </ label="Background Stretch", help="Stretch all background or main menu only", options="Yes, No, Main Menu", order=11 /> Background_Stretch="Main Menu"
-    </ label="Interface Language", help="User Language", options="Fr, En", order=12 /> user_lang="En"
-    </ label="Infos Coord", help="game infos surface x,y coord, empty = left bottom", options="", order=13 /> infos_coord = ""
+    </ label="Interface Language", help="Preferred User Language", options="Fr, En", order=12 /> user_lang="En"
+    </ label="Game Info Coordinates", help="x,y coordinates for the game info surface. If empty = left bottom", options="", order=13 /> infos_coord = ""
     //</ label="Animated Artworks", help="Animate artworks", options="Yes, No", order=6 /> animated_artworks="Yes"
 }
 
