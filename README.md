@@ -9,7 +9,8 @@ Hypertheme can be used to build new themes or you can build your own with a high
 [![Theme PCCA](http://img.youtube.com/vi/tQFLZIega1M/0.jpg)](https://youtu.be/tQFLZIega1M "Theme PCCA")
 
 ## Restrictions
-It is MANDATORY to set in Attract-Mode options: General->Startup Mode to 'Show Display Menu' and 'Allow Exit' from 'Display Menu' to No.
+It is MANDATORY to set in Attract-Mode options: General->Startup Mode to 'Show Display Menu' and Displays->'Display Menu Options->'Allow Exit from 'Display Menu' to 'No'.
+
 
 ## Theme.xml
 It's possible to add to your artwork xml tags: width and height for auto resizing media artwork.
@@ -122,12 +123,10 @@ Sound_Wheel_Jump = when you use prev_page or next_page
 
 Background Music is played if an mp3 file is found anywhere in theme.zip, no matter how it is named or in the media folder Sound/Background Music/ named as the rom name of the game you want music.
 
-If Background Music if found in theme and folder, the theme Background Music is used.
-When background music is played, video snap sound is automaticly muted.
+if Background Music if found in the theme.zip file or the Sound/Background Music folder ("C:\Hyperspin\Media\Atari 2600\Sound\Background Music\Vanguard.mp3" for example), the theme Background Music is used and video snap sound is automaticly muted.
 
 ### Tags
-2 tags as predefined with picture, completed and fail,  but you can add your own png named as your tag name in pcca/images/tags , (must be .png)
-
+2 tags are available: 'completed' and 'fail'. These tage are displayed in the on-screen game info area (bottom left corner by default). You can add your own png file named as your tag name in pcca/images/tags (must be in .png format).
 
 ## Known Issues:
 - axis rotation for video snap (AM does not have z-axis property for axis rotation ).
