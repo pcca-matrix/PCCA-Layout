@@ -42,7 +42,7 @@ my_config <- fe.get_config();
 medias_path <- ( my_config["medias_path"] != "" ? my_config["medias_path"] : fe.script_dir + "Media" );
 if ( medias_path.len()-1 != '/' ) medias_path += "/";
 
-local LnG = _LL[ my_config["user_lang"] ];
+LnG <- _LL[ my_config["user_lang"] ];
 local tr_directory_cache  = get_dir_lists( medias_path + "Frontend/Video/Transitions" );
 local prev_back = {}; // previous background table infos ( transitions )
 
@@ -264,9 +264,11 @@ local surf_ginfos = fe.add_surface(flw, flh*0.22);
 surf_ginfos.alpha = 200;
 local g_coord = [ 0, flh*0.805 ];
 
-if(my_config["infos_coord"] != ""){
-   local g_c = split( my_config["infos_coord"], ",");
-   if( g_c.len() == 2 ) g_coord = [ g_c[0].tofloat(), g_c[1].tofloat() ];
+if(my_config["infos_coord"] != "") {
+    local g_c = split( my_config["infos_coord"], ",");
+    if( g_c.len() == 2 ) {
+      if( g_c[0].tofloat() >= 0 && g_c[0].tofloat() < flw && g_c[1].tofloat() >= 0 && g_c[1].tofloat() < flh ) g_coord = [ g_c[0].tofloat(), g_c[1].tofloat() ];
+    }
 }
 
 surf_ginfos.set_pos( g_coord[0], g_coord[1] );
