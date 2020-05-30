@@ -127,7 +127,7 @@ PresetAnimation(point)
 PresetAnimation(center_wheel)
 .auto(true)
 .triggers([Transition.ToNewSelection])
-.preset("zoom", 1.20)
+.preset("zoom", 1.16)
 .yoyo()
 .loops(-1)
 .duration(1800)
@@ -330,6 +330,7 @@ function overview( offset ) {
         syno.text.msg = input;
         return;
    }
+   syno.text.msg = "";
    syno.set_bg_rgb(20,0,0,0);
    return;
 }
@@ -1013,6 +1014,8 @@ function hs_transition( ttype, var, ttime )
             Background_Music.playing = false;
             Background_Music.file_name = "";
             ArtObj.snap.file_name = "";
+            syno.set_bg_rgb(20,0,0,0);
+            syno.text.msg = "";
 
             if(glob_time - rtime > 150){
                 hide_art(); // 150ms between re-pooling hide_art when navigating fast in wheel (change !!)
@@ -1051,6 +1054,8 @@ function hs_transition( ttype, var, ttime )
                 for (local i=0; i < count; i++) conveyor.m_objs[i].alpha=0;
                 conveyor_bool = true;
                 center_Wheel_fade.play();
+                syno.set_bg_rgb(20,0,0,0);
+                syno.text.msg = ""; // Hide Overview
             }
 
             if( glob_time ){  // when glob_time > 0 not startlayout
@@ -1059,7 +1064,7 @@ function hs_transition( ttype, var, ttime )
                     Sound_System_In_Out.file_name = es;
                     Sound_System_In_Out.playing = true;
                 }
-                FE_Sound_Wheel_In.playing = true; // when glob_time > 0
+                FE_Sound_Wheel_In.playing = true;
             }
 
             rtime = glob_time
