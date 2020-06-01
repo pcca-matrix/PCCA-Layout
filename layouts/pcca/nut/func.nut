@@ -1,4 +1,100 @@
-//get media tags
+function refresh_stats(system = "") {
+    fe.overlay.splash_message (LnG.RefreshTxt + " ...")
+    local datas = {}; local sys = "";local cnt;
+    local g_cnt = 0; local g_time = 0; local g_played = 0; local dirs = {};
+
+    if(system != ""){ // Get games count for single system
+        dirs.results <- [];
+        dirs.results.push( system + ".txt");
+    }else{ // Get games count for each system
+        print("ALL SYSY")
+        dirs = DirectoryListing( FeConfigDirectory + "romlists", false );
+    }
+
+    foreach(file in dirs.results){
+        cnt=0;
+        if ( ext(file) == "txt" ){
+            sys = strip_ext(file);
+            local text = txt.loadFile( FeConfigDirectory + "romlists\\" + file );
+            foreach( line in text.lines ) if( line != "" ) cnt++;
+            datas[sys] <- {"cnt":cnt-1, "pl":0, "time":0};
+            g_cnt+=cnt-1;
+        }
+    }
+
+    // Get Stats for each System
+    dirs = DirectoryListing( FeConfigDirectory + "stats", false );
+    foreach(subdir in dirs.results){
+        local files = DirectoryListing( FeConfigDirectory + "stats\\" + subdir, false );
+        if( !datas.rawin(subdir) ) datas[subdir] <- {"cnt":0, "pl":0, "time":0};
+        foreach(file in files.results){
+            if ( ext(file) == "stat" ){
+                local f_stat = ReadTextFile(FeConfigDirectory + "stats\\" + subdir + "\\" + file);
+                local i = 0;
+                while ( !f_stat.eos() ) {
+                    local num = f_stat.read_line().tointeger();
+                    if(i){
+                        datas[subdir].time+=num;
+                        g_time+=num;
+                    }else{
+                        datas[subdir].pl+=num;
+                        g_played+=num;
+                    }
+                    i++;
+                }
+            }
+        }
+    }
+
+    datas["Main Menu"] <-{"cnt":g_cnt, "pl":g_played, "time":g_time};
+    SaveStats(datas); // Save stats to file
+}
+
+function LoadStats(){
+    local tabl = {};
+    local f = ReadTextFile( fe.script_dir, "pcca.stats" );
+    if( f._f.len() < 10 ) refresh_stats(); // if file is empty or too small to be complete (10 must be ok)
+    while ( !f.eos() ) {
+        local l = split( f.read_line(), ";");
+        if( l.len() ) tabl[ l[0] ] <- {"cnt":l[1].tointeger(), "pl":l[2].tointeger(), "time":l[3].tointeger()}
+    }
+    return tabl;
+}
+
+function SaveStats(tbl){ // update global systems stats
+    local f2 = file( fe.script_dir + "pcca.stats", "w" );
+    foreach(k,d in tbl){
+        local line = k + ";" + d.cnt + ";" + d.pl + ";" + d.time + "\n";
+        local b = blob( line.len() );
+        for (local i=0; i<line.len(); i++) b.writen( line[i], 'b' );
+        f2.writeblob(b);
+    }
+}
+
+function secondsToDhms(seconds) {
+    seconds = seconds.tointeger();
+    local d = floor(seconds / (3600*24));
+    local h = floor(seconds % (3600*24) / 3600);
+    local m = floor(seconds % 3600 / 60);
+    local s = floor(seconds % 60);
+
+    local dDisplay = d > 0 ? d + LnG.Sday +" " : "";
+    local hDisplay = h > 0 ? h + " H " : "";
+    local mDisplay = m > 0 ? m + " Min. ":"";
+    local sDisplay = s > 0 ? s + " Sec." : "";
+
+    if( seconds <= 0 ){
+        return LnG.Never;
+    }else if( seconds < 60 ){
+        return sDisplay;
+    }else if( d >= 1 ){
+        return dDisplay + hDisplay;
+    }
+
+    return hDisplay + mDisplay;
+}
+
+// get media tags
 function get_media_tag(offset){
     local tags = fe.game_info(Info.Tags, offset).tolower();
 	local taglist = split (tags,";")
@@ -133,7 +229,7 @@ function copyright( index_offset ) {
     local d = "";
     local year =  fe.game_info( Info.Year);
     local manu = fe.game_info( Info.Manufacturer, index_offset );
-    if( year ) d = "Â© " + year;
+    if( year ) d = "© " + year;
     if( manu ) d += (year != "" ? ", " : " ") + manu;
     return d;
 }

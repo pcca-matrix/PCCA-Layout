@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v1.02 beta
+// PCCA v1.03 beta
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -24,6 +24,7 @@ class UserConfig {
     </ label="Background Stretch", help="Stretch all background or main menu only", options="Yes, No, Main Menu", order=11 /> Background_Stretch="Main Menu"
     </ label="Interface Language", help="Preferred User Language", options="Fr, En", order=12 /> user_lang="En"
     </ label="Game Info Coordinates", help="x,y coordinates for the game info surface. If empty = left bottom", options="", order=13 /> infos_coord = ""
+    </ label="Global Stats", help="Enable or disable the main menu stats system", options="Yes, No", order=14 /> stats_main = "Yes"
     //</ label="Animated Artworks", help="Animate artworks", options="Yes, No", order=6 /> animated_artworks="Yes"
 }
 
@@ -259,6 +260,7 @@ function dialog_datas(type){
     }
     dialog_anim.play();
 }
+
 // Game Infos
 local surf_ginfos = fe.add_surface(flw, flh*0.22);
 surf_ginfos.alpha = 200;
@@ -313,6 +315,36 @@ local favo = surf_ginfos.add_text( "[Favourite]", flw*0.071, flh*0.004, flw*0.05
 favo.font = "fontello.ttf";
 favo.align = Align.Left;
 favo.set_rgb( 255, 170, 0 );
+
+// Main Menu Infos
+main_infos <- {};
+game_elapse <- 0;
+
+local m_infos = fe.add_text("",flw*0.878, flh*0.537, flw*0.11, flh*0.046);
+if ( my_config["wheel_type"] != "Vertical Wheel"){
+    m_infos.set_pos( flw*0.816, flh*0.538 );
+    m_infos.rotation = -6;
+}
+
+
+if( my_config["stats_main"] == "Yes" ){
+    m_infos.align = Align.Left;
+    //m_infos.font = ttfont;
+    m_infos.word_wrap = true;
+    m_infos.charsize = flh*0.014;
+    m_infos.set_rgb(205, 205, 195);
+    if( !file_exist(fe.script_dir + "pcca.stats") ) refresh_stats();
+    main_infos <- LoadStats();
+}
+
+function stats_text_update( sys ){
+    if( main_infos.rawin( sys ) ){
+        m_infos.msg = main_infos[sys].cnt + " " + LnG.Games;
+        if(main_infos[sys].time > 0)  m_infos.msg += "\n" + LnG.playedtime + " " + secondsToDhms( main_infos[sys].time );
+    }else{
+        m_infos.msg = "";
+    }
+}
 
 // add tags
 surf_ginfos.add_image("[!get_media_tag]", flw*0.006, 0, flw*0.063, flh*0.036)
@@ -991,6 +1023,19 @@ function hs_transition( ttype, var, ttime )
             if ( ttime < 500  ) {
                 global_fade(ttime, 500, true)
                 return true;
+            }else{
+                // update stats for this system
+                game_elapse = fe.game_info(Info.PlayedTime).tointeger() - game_elapse;
+                if(main_infos.rawin(fe.list.name)){
+                    main_infos[fe.list.name].time += game_elapse;
+                    main_infos[fe.list.name].pl++;
+                    if( main_infos.rawin("Main Menu") ){
+                        main_infos["Main Menu"].pl++;
+                        main_infos["Main Menu"].time += game_elapse;
+                    }
+
+                    SaveStats(main_infos);
+                }
             }
         break;
 
@@ -998,6 +1043,8 @@ function hs_transition( ttype, var, ttime )
             if ( ttime < 1500  ) {
                 global_fade(ttime, 1500, false)
                 return true;
+            }else{
+                game_elapse = fe.game_info(Info.PlayedTime).tointeger();
             }
         break;
 
@@ -1007,6 +1054,10 @@ function hs_transition( ttype, var, ttime )
 
         case Transition.NewSelOverlay: // 10
             FE_Sound_Screen_Click.playing = true;
+        break;
+
+        case Transition.FromOldSelection: //3
+            if(curr_sys == "Main Menu") stats_text_update( fe.game_info(Info.Title) );
         break;
 
         case Transition.ToNewSelection: //2
@@ -1024,6 +1075,7 @@ function hs_transition( ttype, var, ttime )
             conveyor_bool = false; // reset conveyor fade
             flv_transitions.visible = false;
             flv_transitions.file_name = "";
+            if(curr_sys == "Main Menu") stats_text_update( fe.game_info(Info.Title, 1) );
         break;
 
         case Transition.EndNavigation: //7
@@ -1042,6 +1094,7 @@ function hs_transition( ttype, var, ttime )
                 Sound_System_In_Out.file_name = get_random_file( medias_path + fe.game_info(Info.Name) + "/Sound/System Exit/" );
                 Sound_System_In_Out.playing = true;
                 FE_Sound_Wheel_Out.playing = true;
+                stats_text_update( fe.game_info(Info.Title) );
             }
         break;
 
@@ -1056,6 +1109,20 @@ function hs_transition( ttype, var, ttime )
                 center_Wheel_fade.play();
                 syno.set_bg_rgb(20,0,0,0);
                 syno.text.msg = ""; // Hide Overview
+                m_infos.msg = ""; // Hide global stats
+
+                // Update stats if list size change
+                if( my_config["stats_main"] == "Yes" && glob_time){
+                    if( main_infos.rawin(curr_sys) ){
+                        if(fe.list.size != main_infos[curr_sys].cnt){
+                            main_infos[curr_sys].cnt = fe.list.size;
+                            SaveStats(main_infos);
+                        }
+                    }else{ // new systeme added , create new entry
+                        refresh_stats(curr_sys);
+                        //main_infos[curr_sys].cnt = fe.list.size;
+                    }
+                }
             }
 
             if( glob_time ){  // when glob_time > 0 not startlayout
