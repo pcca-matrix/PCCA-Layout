@@ -1,3 +1,5 @@
+#version 130
+
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -12,6 +14,7 @@ uniform vec4 datas; //preset number, reverse 0:1 , fromIsSWF, toIsSWF
 uniform vec4 back_res; // bw, bh, offset_x, offset_y
 uniform vec4 prev_res; // previous bw, bh, offset_x, offset_y
 
+float S_progress;
 const float PI = 3.14159265358;
 
 float rand (vec2 co) {
@@ -46,7 +49,7 @@ vec4 getFromColor(vec2 uv){ // source
     vec2 Muv = uv;
     vec4 color;
 
-    if(datas.z == true) Muv = vec2(uv.x, 1.0 - uv.y);  // swf reverse fix
+    if( bool(datas.z) == true) Muv = vec2(uv.x, 1.0 - uv.y);  // swf reverse fix
 
     Muv = get_coord_prev(Muv);
     float ox = prev_res.z * (1.0 / screen_res.x);
@@ -54,7 +57,7 @@ vec4 getFromColor(vec2 uv){ // source
     if(datas.y == 1){ // reverse
         color = texture2D(back1, Muv);
 
-        if(screen_res.z){ // bezel on top
+        if( bool(screen_res.z) ){ // bezel on top
             if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = vec4(0.0);
             return mix(color, texture2D(bezel, uv), texture2D(bezel, uv).a) * 0.3; // look better width 0.3 than a real fade
         }else{
@@ -65,7 +68,7 @@ vec4 getFromColor(vec2 uv){ // source
     }else{
         color = texture2D(back2, Muv);
 
-        if(screen_res.z){ // bezel on top
+        if( bool(screen_res.z) ){ // bezel on top
             if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = vec4(0.0);
             return mix(color, texture2D(bezel, uv), texture2D(bezel, uv).a) * 0.3; // look better width 0.3 than a real fade
         }else{
@@ -81,7 +84,7 @@ vec4 getToColor(vec2 uv){ // destination
     vec2 Muv = uv;
     vec4 color;
 
-    if(datas.w == true) Muv = vec2(uv.x, 1.0 - uv.y); // swf reverse fix
+    if( bool(datas.w) == true) Muv = vec2(uv.x, 1.0 - uv.y); // swf reverse fix
 
     Muv = get_coord(Muv);
     float ox = back_res.z * (1.0 / screen_res.x);
@@ -89,23 +92,23 @@ vec4 getToColor(vec2 uv){ // destination
     if(datas.y == 1){ // reverse
         color = texture2D(back2, Muv);
 
-        if(screen_res.z){ // bezel on top
+        if( bool(screen_res.z) ){ // bezel on top
             if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = vec4(0.0);
-            return mix(color, texture2D(bezel, uv), texture2D(bezel, uv).a) * progress;
+            return mix(color, texture2D(bezel, uv), texture2D(bezel, uv).a) * S_progress;
         }else{
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = texture2D(bezel, uv) * progress;
+            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = texture2D(bezel, uv) * S_progress;
             return color;
         }
 
     }else{
         color = texture2D(back1, Muv);
 
-        if(screen_res.z){ // bezel on top
+        if( bool(screen_res.z) ){ // bezel on top
             if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = vec4(0.0);
-            return mix(color, texture2D(bezel, uv), texture2D(bezel, uv).a) * progress;
+            return mix(color, texture2D(bezel, uv), texture2D(bezel, uv).a) * S_progress;
         }else{
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = texture2D(bezel, uv) * progress;
-            return color * progress;
+            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = texture2D(bezel, uv) * S_progress;
+            return color * S_progress;
         }
     }
 }
@@ -124,12 +127,12 @@ vec4 displacement(vec2 uv){ // displacement
     // License: MIT
     float strength = 0.5; // = 0.5
     float displacement = texture2D(back1, uv).r * strength;
-    vec2 uvFrom = vec2(uv.x + progress * displacement, uv.y);
-    vec2 uvTo = vec2(uv.x - (1.0 - progress) * displacement, uv.y);
+    vec2 uvFrom = vec2(uv.x + S_progress * displacement, uv.y);
+    vec2 uvTo = vec2(uv.x - (1.0 - S_progress) * displacement, uv.y);
     return mix(
         getFromColor(uvFrom),
         getToColor(uvTo),
-        progress
+        S_progress
     );
 }
 
@@ -137,7 +140,7 @@ vec4 directional(vec2 uv){ // curtain vertical (Directional)
     // Author: Gaëtan Renaudeau
     // License: MIT
     vec2 direction = vec2(0.0, 1.0);
-    vec2 p = uv + progress * sign(direction);
+    vec2 p = uv + S_progress * sign(direction);
     vec2 f = fract(p);
     return mix(
         getToColor(f),
@@ -157,9 +160,9 @@ vec4 simplezoom(vec2 uv){
     float zoom_quickness = 0.8; // = 0.8
     float nQuick = clamp(zoom_quickness,0.2,1.0);
     return mix(
-        getFromColor( zoom(uv, smoothstep(0.0, nQuick, progress)) ),
+        getFromColor( zoom(uv, smoothstep(0.0, nQuick, S_progress)) ),
         getToColor(uv),
-       smoothstep(nQuick-0.2, 1.0, progress)
+       smoothstep(nQuick-0.2, 1.0, S_progress)
     );
 }
 
@@ -168,7 +171,7 @@ vec4 windowslice(vec2 uv){
   // License: MIT
   float count = 10.0;
   float smoothness = 0.5;
-  float pr = smoothstep(-smoothness, 0.0, uv.x - progress * (1.0 + smoothness));
+  float pr = smoothstep(-smoothness, 0.0, uv.x - S_progress * (1.0 + smoothness));
   float s = step(pr, fract(count * uv.x));
   return mix(getFromColor(uv), getToColor(uv), s);
 }
@@ -182,7 +185,7 @@ vec4 linearblur(vec2 uv){
     vec4 c1 = vec4(0.0);
     vec4 c2 = vec4(0.0);
 
-    float disp = intensity*(0.5-distance(0.5, progress));
+    float disp = intensity*(0.5-distance(0.5, S_progress));
     for (int xi=0; xi<passes; xi++)
     {
         float x = float(xi) / float(passes) - 0.5;
@@ -197,7 +200,7 @@ vec4 linearblur(vec2 uv){
     }
     c1 /= float(passes*passes);
     c2 /= float(passes*passes);
-    return  mix(c1, c2, progress);
+    return  mix(c1, c2, S_progress);
 
 }
 
@@ -208,11 +211,11 @@ vec4 waterdrop(vec2 uv){
     float speed = 30.0; // = 30
     vec2 dir = uv - vec2(0.5);
     float dist = length(dir);
-    if (dist > progress) {
-        return mix(getFromColor(uv), getToColor(uv), progress);
+    if (dist > S_progress) {
+        return mix(getFromColor(uv), getToColor(uv), S_progress);
     } else {
-        vec2 offset = dir * sin(dist * amplitude - progress * speed);
-        return mix(getFromColor( uv + offset), getToColor(uv), progress);
+        vec2 offset = dir * sin(dist * amplitude - S_progress * speed);
+        return mix(getFromColor( uv + offset), getToColor(uv), S_progress);
     }
 
 }
@@ -222,13 +225,13 @@ vec4 glitchmemories(vec2 uv){
     // license: MIT
     vec2 block = floor(uv.xy / vec2(16));
     vec2 uv_noise = block / vec2(64);
-    uv_noise += floor(vec2(progress) * vec2(1200.0, 3500.0)) / vec2(64);
-    vec2 dist = progress > 0.0 ? (fract(uv_noise) - 0.5) * 0.3 *(1.0 -progress) : vec2(0.0);
+    uv_noise += floor(vec2(S_progress) * vec2(1200.0, 3500.0)) / vec2(64);
+    vec2 dist = S_progress > 0.0 ? (fract(uv_noise) - 0.5) * 0.3 *(1.0 -S_progress) : vec2(0.0);
     vec2 red = uv + dist * 0.2;
     vec2 green = uv + dist * 0.3;
     vec2 blue = uv + dist * 0.5;
-    return vec4(mix(getFromColor(red), getToColor(red), progress).r, mix(getFromColor(green), getToColor(green), progress).g,mix(getFromColor(blue), getToColor(blue), progress).b, 1.0);
-    //return vec4(mix(getFromColor(red), getToColor(red), progress).r, mix(getFromColor(green), getToColor(green), progress).g,mix(getFromColor(blue), getToColor(blue), progress).b,1.0);
+    return vec4(mix(getFromColor(red), getToColor(red), S_progress).r, mix(getFromColor(green), getToColor(green), S_progress).g,mix(getFromColor(blue), getToColor(blue), S_progress).b, 1.0);
+    //return vec4(mix(getFromColor(red), getToColor(red), S_progress).r, mix(getFromColor(green), getToColor(green), S_progress).g,mix(getFromColor(blue), getToColor(blue), S_progress).b,1.0);
 }
 
 vec4 PolkaDotsCurtain(vec2 uv){
@@ -237,7 +240,7 @@ vec4 PolkaDotsCurtain(vec2 uv){
     const float SQRT_2 = 1.414213562373;
     float dots = 20.0;// = 20.0;
     vec2 center = vec2(0,0);// = vec2(0, 0);
-    bool nextImage = distance(fract(uv * dots), vec2(0.5, 0.5)) < ( progress / distance(uv, center));
+    bool nextImage = distance(fract(uv * dots), vec2(0.5, 0.5)) < ( S_progress / distance(uv, center));
     return nextImage ? getToColor(uv) : getFromColor(uv);
 }
 
@@ -252,7 +255,7 @@ vec4 directionalwarp(vec2 uv){
     vec2 v = normalize(direction);
     v /= abs(v.x) + abs(v.y);
     float d = v.x * center.x + v.y * center.y;
-    float m = 1.0 - smoothstep(-smoothness, 0.0, v.x * uv.x + v.y * uv.y - (d - 0.5 + progress * (1.0 + smoothness)));
+    float m = 1.0 - smoothstep(-smoothness, 0.0, v.x * uv.x + v.y * uv.y - (d - 0.5 + S_progress * (1.0 + smoothness)));
     return mix(getFromColor((uv - 0.5) * (1.0 - m) + 0.5), getToColor((uv - 0.5) * m + 0.5), m);
 }
 
@@ -262,7 +265,7 @@ vec4 bounce(vec2 uv){
     vec4 shadow_colour = vec4(0.0,0.0,0.0,0.6); // = vec4(0.,0.,0.,.6)
     float shadow_height = 0.01; // = 0.075
     float bounces = 2.5; // = 3.0
-    float time = progress;
+    float time = S_progress;
     float stime = sin(time * PI / 2.);
     float phase = time * PI * bounces;
     float y = (abs(cos(phase))) * (1.0 - stime);
@@ -274,7 +277,7 @@ vec4 bounce(vec2 uv){
       step(d, shadow_height) * (1. - mix(
         ((d / shadow_height) * shadow_colour.a) + (1.0 - shadow_colour.a),
         1.0,
-        smoothstep(0.95, 1., progress) // fade-out the shadow at the end
+        smoothstep(0.95, 1., S_progress) // fade-out the shadow at the end
       ))
     ),
     getFromColor(vec2(uv.x, uv.y + (1.0 - y))),
@@ -288,7 +291,7 @@ vec4 wiperight(vec2 uv){
   vec2 p=uv.xy/vec2(1.0).xy;
   vec4 a=getFromColor(p);
   vec4 b=getToColor(p);
-  return mix(a, b, step(0.0+p.x,progress));
+  return mix(a, b, step(0.0+p.x,S_progress));
 }
 
 vec4 wipedown(vec2 uv){
@@ -297,7 +300,7 @@ vec4 wipedown(vec2 uv){
   vec2 p=uv.xy/vec2(1.0).xy;
   vec4 a=getFromColor(p);
   vec4 b=getToColor(p);
-  return mix(a, b, step(1.0-p.y,progress));
+  return mix(a, b, step(1.0-p.y,S_progress));
 }
 
 vec4 morph(vec2 uv){
@@ -309,9 +312,9 @@ vec4 morph(vec2 uv){
     vec2 oa = (((ca.rg+ca.b)*0.5)*2.0-1.0);
     vec2 ob = (((cb.rg+cb.b)*0.5)*2.0-1.0);
     vec2 oc = mix(oa,ob,0.5)*strength;
-    float w0 = progress;
+    float w0 = S_progress;
     float w1 = 1.0-w0;
-    return mix(getFromColor(uv+oc*w0), getToColor(uv-oc*w1), progress);
+    return mix(getFromColor(uv+oc*w0), getToColor(uv-oc*w1), S_progress);
 
 }
 
@@ -321,11 +324,11 @@ vec4 colourdistance(vec2 uv){
   float power = 5.0; // = 5.0
   vec4 fTex = getFromColor(uv);
   vec4 tTex = getToColor(uv);
-  float m = step(distance(fTex, tTex), progress);
+  float m = step(distance(fTex, tTex), S_progress);
   return mix(
     mix(fTex, tTex, m),
     tTex,
-    pow(progress, power)
+    pow(S_progress, power)
   );
 }
 
@@ -334,11 +337,11 @@ vec4 circlecrop(vec2 uv){
     // Author: fkuteken
     vec4 bgcolor = vec4(0.0, 0.0, 0.0, 1.0); // = vec4(0.0, 0.0, 0.0, 1.0)
     //vec2 ratio2 = vec2(1.0, 1.0 / ratio);
-    float s = pow(2.0 * abs(progress - 0.5), 3.0);
+    float s = pow(2.0 * abs(S_progress - 0.5), 3.0);
     //float dist = length((vec2(uv) - 0.5));
     float dist = length((vec2(uv) - 0.5) * 0.2);
     return mix(
-        progress < 0.5 ? getFromColor(uv) : getToColor(uv), // branching is ok here as we statically depend on progress uniform (branching won't change over pixels)
+        S_progress < 0.5 ? getFromColor(uv) : getToColor(uv), // branching is ok here as we statically depend on S_progress uniform (branching won't change over pixels)
         bgcolor,
         step(s, dist)
     );
@@ -347,36 +350,36 @@ vec4 circlecrop(vec2 uv){
 vec4 swirl(vec2 UV){
     // License: MIT
     // Author: Sergey Kosarevsky
-	float Radius = 1.0;
-	float T = progress;
-	UV -= vec2( 0.5, 0.5 );
-	float Dist = length(UV);
-	if ( Dist < Radius )
-	{
-		float Percent = (Radius - Dist) / Radius;
-		float A = ( T <= 0.5 ) ? mix( 0.0, 1.0, T/0.5 ) : mix( 1.0, 0.0, (T-0.5)/0.5 );
-		float Theta = Percent * Percent * A * 8.0 * 3.14159;
-		float S = sin( Theta );
-		float C = cos( Theta );
-		UV = vec2( dot(UV, vec2(C, -S)), dot(UV, vec2(S, C)) );
-	}
-	UV += vec2( 0.5, 0.5 );
-	vec4 C0 = getFromColor(UV);
-	vec4 C1 = getToColor(UV);
+    float Radius = 1.0;
+    float T = S_progress;
+    UV -= vec2( 0.5, 0.5 );
+    float Dist = length(UV);
+    if ( Dist < Radius )
+    {
+        float Percent = (Radius - Dist) / Radius;
+        float A = ( T <= 0.5 ) ? mix( 0.0, 1.0, T/0.5 ) : mix( 1.0, 0.0, (T-0.5)/0.5 );
+        float Theta = Percent * Percent * A * 8.0 * 3.14159;
+        float S = sin( Theta );
+        float C = cos( Theta );
+        UV = vec2( dot(UV, vec2(C, -S)), dot(UV, vec2(S, C)) );
+    }
+    UV += vec2( 0.5, 0.5 );
+    vec4 C0 = getFromColor(UV);
+    vec4 C1 = getToColor(UV);
 
-	return mix( C0, C1, T );
+    return mix( C0, C1, T );
 }
 
 
 //----- Dreamy - Flag effect
-vec2 offset(float progress, float x, float theta) {
-  float phase = progress*progress + progress + theta;
-  float shifty = 0.03*progress*cos(10.0*(progress+x));
+vec2 offset(float S_progress, float x, float theta) {
+  float phase = S_progress*S_progress + S_progress + theta;
+  float shifty = 0.03*S_progress*cos(10.0*(S_progress+x));
   return vec2(0, shifty);
 }
 
 vec4 dreamy(vec2 uv){
-    return mix(getFromColor(uv + offset(progress, uv.x, 0.0)), getToColor(uv + offset(1.0-progress, uv.x, PI)), progress);
+    return mix(getFromColor(uv + offset(S_progress, uv.x, 0.0)), getToColor(uv + offset(1.0-S_progress, uv.x, PI)), S_progress);
 }
 
 
@@ -407,19 +410,19 @@ vec4 gridflip(vec2 uv){
     float pause = 0.1; // = 0.1
     vec4 bgcolor = vec4(0.0, 0.0, 0.0, 1.0) ; // = vec4(0.0, 0.0, 0.0, 1.0)
     float randomness = 0.1; // = 0.1
-    if(progress < pause) {
-    float currentProg = progress / pause;
+    if(S_progress < pause) {
+    float currentProg = S_progress / pause;
     float a = 1.0;
     if(getDelta(uv) < getDividerSize()) {
       a = 1.0 - currentProg;
     }
     return mix(bgcolor, getFromColor(uv), a);
     }
-    else if(progress < 1.0 - pause){
+    else if(S_progress < 1.0 - pause){
         if(getDelta(uv) < getDividerSize()) {
           return  bgcolor;
         } else {
-          float currentProg = (progress - pause) / (1.0 - pause * 2.0);
+          float currentProg = (S_progress - pause) / (1.0 - pause * 2.0);
           vec2 q = uv;
           vec2 rectanglePos = floor(vec2(size) * q);
 
@@ -439,7 +442,7 @@ vec4 gridflip(vec2 uv){
         }
     }
     else {
-        float currentProg = (progress - 1.0 + pause) / pause;
+        float currentProg = (S_progress - 1.0 + pause) / pause;
         float a = 1.0;
         if(getDelta(uv) < getDividerSize()) {
           a = currentProg;
@@ -457,7 +460,7 @@ vec4 radial(vec2 uv){
     return mix(
         getToColor(uv),
         getFromColor(uv),
-        smoothstep(0., smoothness, atan(rp.y,rp.x) - (progress-.5) * PI * 2.5)
+        smoothstep(0., smoothness, atan(rp.y,rp.x) - (S_progress-.5) * PI * 2.5)
     );
 }
 
@@ -490,7 +493,7 @@ float getWave(vec2 p){
   vec2 domain = vec2(0.0, 360.0);
   float ratio = (PI * 30.0) / 360.0;
   degs = degs * ratio;
-  float x = progress;
+  float x = S_progress;
   float magnitude = mix(0.02, 0.09, smoothstep(0.0, 1.0, x));
   float offset = mix(40.0, 30.0, smoothstep(0.0, 1.0, x));
   float ease_degs = quadraticInOut(sin(degs));
@@ -516,8 +519,8 @@ vec4 crosshatch(vec2 uv){
     float threshold = 3.0; // = 3.0
     float fadeEdge = 0.1; // = 0.1
     float dist = distance(center, uv) / threshold;
-    float r = progress - min(rand(vec2(uv.y, 0.0)), rand(vec2(0.0, uv.x)));
-    return mix(getFromColor(uv), getToColor(uv), mix(0.0, mix(step(dist, r), 1.0, smoothstep(1.0-fadeEdge, 1.0, progress)), smoothstep(0.0, fadeEdge, progress)));
+    float r = S_progress - min(rand(vec2(uv.y, 0.0)), rand(vec2(0.0, uv.x)));
+    return mix(getFromColor(uv), getToColor(uv), mix(0.0, mix(step(dist, r), 1.0, smoothstep(1.0-fadeEdge, 1.0, S_progress)), smoothstep(0.0, fadeEdge, S_progress)));
 
 }
 
@@ -531,10 +534,10 @@ vec4 crazyparametricfun(vec2 uv){
     vec2 p = uv.xy / vec2(1.0).xy;
     vec2 dir = p - vec2(.5);
     float dist = length(dir);
-    float x = (a - b) * cos(progress) + b * cos(progress * ((a / b) - 1.) );
-    float y = (a - b) * sin(progress) - b * sin(progress * ((a / b) - 1.));
-    vec2 offset = dir * vec2(sin(progress  * dist * amplitude * x), sin(progress * dist * amplitude * y)) / smoothness;
-    return mix(getFromColor(p + offset), getToColor(p), smoothstep(0.2, 1.0, progress));
+    float x = (a - b) * cos(S_progress) + b * cos(S_progress * ((a / b) - 1.) );
+    float y = (a - b) * sin(S_progress) - b * sin(S_progress * ((a / b) - 1.));
+    vec2 offset = dir * vec2(sin(S_progress  * dist * amplitude * x), sin(S_progress * dist * amplitude * y)) / smoothness;
+    return mix(getFromColor(p + offset), getToColor(p), smoothstep(0.2, 1.0, S_progress));
 }
 
 vec4 kaleidoscope(vec2 uv){
@@ -545,7 +548,7 @@ vec4 kaleidoscope(vec2 uv){
     float power = 1.5; // = 1.5;
     vec2 p = uv.xy / vec2(1.0).xy;
     vec2 q = p;
-    float t = pow(progress, power)*speed;
+    float t = pow(S_progress, power)*speed;
     p = p -0.5;
     for (int i = 0; i < 7; i++) {
     p = vec2(sin(t)*p.x + cos(t)*p.y, sin(t)*p.y - cos(t)*p.x);
@@ -554,8 +557,8 @@ vec4 kaleidoscope(vec2 uv){
     }
     abs(mod(p, 1.0));
     return mix(
-    mix(getFromColor(q), getToColor(q), progress),
-    mix(getFromColor(p), getToColor(p), progress), 1.0 - 2.0*abs(progress - 0.5));
+    mix(getFromColor(q), getToColor(q), S_progress),
+    mix(getFromColor(p), getToColor(p), S_progress), 1.0 - 2.0*abs(S_progress - 0.5));
 
 }
 
@@ -563,13 +566,13 @@ vec4 kaleidoscope(vec2 uv){
 vec4 windowblinds(vec2 uv){
     // Author: Fabien Benetou
     // License: MIT
-  float t = progress;
-  if (mod(floor(uv.y*100.*progress),2.)==0.)
+  float t = S_progress;
+  if (mod(floor(uv.y*100.*S_progress),2.)==0.)
     t*=2.-.5;
     return mix(
     getFromColor(uv),
     getToColor(uv),
-    mix(t, progress, smoothstep(0.8, 1.0, progress))
+    mix(t, S_progress, smoothstep(0.8, 1.0, S_progress))
   );
 }
 
@@ -579,9 +582,9 @@ vec4 pinwheel(vec2 uv){
     // License: MIT
     float speed = 2.0; // = 2.0;
     vec2 p = uv.xy / vec2(1.0).xy;
-    float circPos = atan(p.y - 0.5, p.x - 0.5) + progress * speed;
+    float circPos = atan(p.y - 0.5, p.x - 0.5) + S_progress * speed;
     float modPos = mod(circPos, 3.1415 / 4.);
-    float signed = sign(progress - modPos);
+    float signed = sign(S_progress - modPos);
     return mix(getToColor(p), getFromColor(p), step(signed, 0.5));
 }
 
@@ -597,7 +600,7 @@ vec4 angular(vec2 uv){
    return mix(
         getFromColor(uv),
         getToColor(uv),
-        step(normalizedAngle, progress)
+        step(normalizedAngle, S_progress)
     );
 }
 
@@ -607,9 +610,9 @@ vec4 burn(vec2 uv){
     // License: MIT
     vec3 color = vec3(0.9, 0.4, 0.2); /* = vec3(0.9, 0.4, 0.2) */
     return mix(
-        getFromColor(uv) + vec4(progress*color, 1.0),
-        getToColor(uv) + vec4((1.0-progress)*color, 1.0),
-        progress
+        getFromColor(uv) + vec4(S_progress*color, 1.0),
+        getToColor(uv) + vec4((1.0-S_progress)*color, 1.0),
+        S_progress
     );
 }
 
@@ -621,7 +624,7 @@ vec4 circleopen(vec2 uv){
     bool opening = true; // = true
     const vec2 center = vec2(0.5, 0.5);
     const float SQRT_2 = 1.414213562373;
-    float x = opening ? progress : 1.-progress;
+    float x = opening ? S_progress : 1.-S_progress;
     float m = smoothstep(-smoothness, 0.0, SQRT_2*distance(center, uv) - x*(1.+smoothness));
     return mix(getFromColor(uv), getToColor(uv), opening ? 1.-m : m);
 }
@@ -635,14 +638,14 @@ vec4 colorphase(vec2 uv){
     vec4 toStep = vec4(0.6, 0.8, 1.0, 1.0); // = vec4(0.6, 0.8, 1.0, 1.0)
     vec4 a = getFromColor(uv);
     vec4 b = getToColor(uv);
-    return mix(a, b, smoothstep(fromStep, toStep, vec4(progress)));
+    return mix(a, b, smoothstep(fromStep, toStep, vec4(S_progress)));
 }
 
 
 vec4 crosswarp(vec2 uv){
     // Author: Eke Péter <peterekepeter@gmail.com>
     // License: MIT
-    float x = progress;
+    float x = S_progress;
     x=smoothstep(.0,1.0,(x*2.0+uv.x-1.0));
     return mix(getFromColor((uv-.5)*(1.-x)+.5), getToColor((uv-.5)*x+.5), x);
 }
@@ -657,8 +660,8 @@ vec4 directionalwipe(vec2 uv){
     v /= abs(v.x)+abs(v.y);
     float d = v.x * center.x + v.y * center.y;
     float m =
-    (1.0-step(progress, 0.0)) * // there is something wrong with our formula that makes m not equals 0.0 with progress is 0.0
-    (1.0 - smoothstep(-smoothness, 0.0, v.x * uv.x + v.y * uv.y - (d-0.5+progress*(1.+smoothness))));
+    (1.0-step(S_progress, 0.0)) * // there is something wrong with our formula that makes m not equals 0.0 with S_progress is 0.0
+    (1.0 - smoothstep(-smoothness, 0.0, v.x * uv.x + v.y * uv.y - (d-0.5+S_progress*(1.+smoothness))));
     return mix(getFromColor(uv), getToColor(uv), m);
 
 }
@@ -667,7 +670,7 @@ vec4 fade(vec2 uv){
   return mix(
     getFromColor(uv),
     getToColor(uv),
-    progress
+    S_progress
   );
 }
 
@@ -678,15 +681,15 @@ vec4 flyeye(vec2 uv){
     float size = 0.04; // = 0.04
     float zoom = 50.0; // = 50.0
     float colorSeparation = 0.3; // = 0.3
-    float inv = 1. - progress;
+    float inv = 1. - S_progress;
     vec2 disp = size*vec2(cos(zoom*uv.x), sin(zoom*uv.y));
     vec4 texTo = getToColor(uv + inv*disp);
     vec4 texFrom = vec4(
-    getFromColor(uv + progress*disp*(1.0 - colorSeparation)).r,
-    getFromColor(uv + progress*disp).g,
-    getFromColor(uv + progress*disp*(1.0 + colorSeparation)).b,
+    getFromColor(uv + S_progress*disp*(1.0 - colorSeparation)).r,
+    getFromColor(uv + S_progress*disp).g,
+    getFromColor(uv + S_progress*disp*(1.0 + colorSeparation)).b,
     1.0);
-    return texTo*progress + texFrom*inv;
+    return texTo*S_progress + texFrom*inv;
 }
 
 
@@ -700,7 +703,7 @@ vec4 polar(vec2 uv){
     float radius = (cos(float(segments) * angle) + 4.0) / 4.0;
     float difference = length(uv - vec2(0.5, 0.5));
 
-    if (difference > radius * progress)
+    if (difference > radius * S_progress)
         return getFromColor(uv);
     else
         return getToColor(uv);
@@ -712,7 +715,7 @@ vec4 randomsquare(vec2 uv){
     ivec2 size = ivec2(10, 10); // = ivec2(10, 10)
     float smoothness = 0.5; // = 0.5
     float r = rand(floor(vec2(size) * uv));
-    float m = smoothstep(0.0, -smoothness, r - (progress * (1.0 + smoothness)));
+    float m = smoothstep(0.0, -smoothness, r - (S_progress * (1.0 + smoothness)));
     return mix(getFromColor(uv), getToColor(uv), m);
 }
 
@@ -727,12 +730,12 @@ vec4 rotate_scale_fade(vec2 uv){
     vec2 dir = normalize(difference);
     float dist = length(difference);
 
-    float angle = 2.0 * PI * rotations * progress;
+    float angle = 2.0 * PI * rotations * S_progress;
 
     float c = cos(angle);
     float s = sin(angle);
 
-    float currentScale = mix(scale, 1.0, 2.0 * abs(progress - 0.5));
+    float currentScale = mix(scale, 1.0, 2.0 * abs(S_progress - 0.5));
 
     vec2 rotatedDir = vec2(dir.x  * c - dir.y * s, dir.x * s + dir.y * c);
     vec2 rotatedUv = center + rotatedDir * dist / currentScale;
@@ -741,7 +744,7 @@ vec4 rotate_scale_fade(vec2 uv){
       rotatedUv.y < 0.0 || rotatedUv.y > 1.0)
             return backColor;
     else
-            return mix(getFromColor(rotatedUv), getToColor(rotatedUv), progress);
+            return mix(getFromColor(rotatedUv), getToColor(rotatedUv), S_progress);
 }
 
 vec4 squarewire(vec2 uv){
@@ -755,11 +758,11 @@ vec4 squarewire(vec2 uv){
     v /= abs(v.x)+abs(v.y);
     float d = v.x * center.x + v.y * center.y;
     float offset = smoothness;
-    float pr = smoothstep(-offset, 0.0, v.x * uv.x + v.y * uv.y - (d-0.5+progress*(1.+offset)));
+    float pr = smoothstep(-offset, 0.0, v.x * uv.x + v.y * uv.y - (d-0.5+S_progress*(1.+offset)));
     vec2 squarep = fract(uv*vec2(squares));
     vec2 squaremin = vec2(pr/2.0);
     vec2 squaremax = vec2(1.0 - pr/2.0);
-    float a = (1.0 - step(progress, 0.0)) * step(squaremin.x, squarep.x) * step(squaremin.y, squarep.y) * step(squarep.x, squaremax.x) * step(squarep.y, squaremax.y);
+    float a = (1.0 - step(S_progress, 0.0)) * step(squaremin.x, squarep.x) * step(squaremin.y, squarep.y) * step(squarep.x, squaremax.x) * step(squarep.y, squaremax.y);
     return mix(getFromColor(uv), getToColor(uv), a);
 }
 
@@ -769,7 +772,7 @@ vec4 wind(vec2 uv){
     // License: MIT
     float size = 0.2; // = 0.2
     float r = rand(vec2(0, uv.y));
-    float m = smoothstep(0.0, -size, uv.x*(1.0-size) + size*r - (progress * (1.0 + size)));
+    float m = smoothstep(0.0, -size, uv.x*(1.0-size) + size*r - (S_progress * (1.0 + size)));
     return mix(
         getFromColor(uv),
         getToColor(uv),
@@ -782,13 +785,13 @@ vec4 squeeze(vec2 uv){
     // Author: gre
     // License: MIT
     float colorSeparation = 0.04; // = 0.04
-    float y = 0.5 + (uv.y-0.5) / (1.0-progress);
+    float y = 0.5 + (uv.y-0.5) / (1.0-S_progress);
     if (y < 0.0 || y > 1.0) {
         return getToColor(uv);
     }
     else {
         vec2 fp = vec2(uv.x, y);
-        vec2 off = progress * vec2(0.0, colorSeparation);
+        vec2 off = S_progress * vec2(0.0, colorSeparation);
         vec4 c = getFromColor(fp);
         vec4 cn = getFromColor(fp - off);
         vec4 cp = getFromColor(fp + off);
@@ -816,9 +819,9 @@ vec4 doomscreentransition(vec2 uv) {
     float noise = 0.1; // = 0.1 // Further variations in speed. 0 = no noise, 1 = super noisy (ignore frequency)
     float dripScale = 0.5; // = 0.5 // How much the bars seem to "run" from the middle of the screen first (sticking to the sides). 0 = no drip, 1 = curved drip
     int bar = int(uv.x * (float(bars)));
-    float scale = 1.0 + ( (noise == 0.0 ? wave(bar, bars) : mix(wave(bar, bars), rand(bar), noise)) + (dripScale == 0.0 ? 0.0 : drip(bar, bars)  * dripScale ) ) * amplitude;
+    float scale = 1.0 + ( (noise == 0.0 ? wave(bar, bars) : mix(wave(bar, bars), rand( vec2(0.0, bar) ), noise)) + (dripScale == 0.0 ? 0.0 : drip(bar, bars)  * dripScale ) ) * amplitude;
     //float scale = 1.0 + pos(bar) * amplitude;
-    float phase = progress * scale;
+    float phase = S_progress * scale;
     float posY = uv.y / vec2(1.0).y;
     vec2 p;
     vec4 c;
@@ -867,15 +870,15 @@ vec4 swap(vec2 uv) {
     float perspective = 0.2; // = 0.2
     float depth = 3.0; // = 3.0
     vec2 pfr, pto = vec2(-1.);
-    float size = mix(1.0, depth, progress);
-    float persp = perspective * progress;
-    pfr = (uv + vec2(-0.0, -0.5)) * vec2(size/(1.0-perspective*progress), size/(1.0-size*persp*uv.x)) + vec2(0.0, 0.5);
+    float size = mix(1.0, depth, S_progress);
+    float persp = perspective * S_progress;
+    pfr = (uv + vec2(-0.0, -0.5)) * vec2(size/(1.0-perspective*S_progress), size/(1.0-size*persp*uv.x)) + vec2(0.0, 0.5);
 
-    size = mix(1.0, depth, 1.-progress);
-    persp = perspective * (1.-progress);
-    pto = (uv + vec2(-1.0, -0.5)) * vec2(size/(1.0-perspective*(1.0-progress)), size/(1.0-size*persp*(0.5-uv.x))) + vec2(1.0, 0.5);
+    size = mix(1.0, depth, 1.-S_progress);
+    persp = perspective * (1.-S_progress);
+    pto = (uv + vec2(-1.0, -0.5)) * vec2(size/(1.0-perspective*(1.0-S_progress)), size/(1.0-size*persp*(0.5-uv.x))) + vec2(1.0, 0.5);
 
-    if (progress < 0.5) {
+    if (S_progress < 0.5) {
     if (inBounds(pfr)) {
       return getFromColor(pfr);
     }else
@@ -901,7 +904,7 @@ float noise(vec2 co)
     float a = 12.9898;
     float b = 78.233;
     float c = 43758.5453;
-    float dt= dot(co.xy * progress, vec2(a, b));
+    float dt= dot(co.xy * S_progress, vec2(a, b));
     float sn= mod(dt,3.14);
     return fract(sin(sn) * c);
 }
@@ -910,9 +913,9 @@ vec4 tvstatic(vec2 uv){
     // author: Brandon Anzaldi
     // license: MIT
     float offset = 0.05; // = 0.05
-    if (progress < offset) {
+    if (S_progress < offset) {
         return getFromColor(uv);
-    } else if (progress > (1.0 - offset)) {
+    } else if (S_progress > (1.0 - offset)) {
         return getToColor(uv);
     } else {
         return vec4(vec3(noise(uv)), 1.0);
@@ -920,7 +923,7 @@ vec4 tvstatic(vec2 uv){
 }
 
 /* HP PAGE Corner */
-float amount = progress * (1.5 - -0.16) + -0.16;
+float amount = S_progress * (1.5 - -0.16) + -0.16;
 float cylinderCenter = amount;
 float cylinderAngle = 2.0 * PI * amount; // 360 degrees * amount
 const float cylinderRadius = 1.0 / PI / 2.0;
@@ -1102,12 +1105,10 @@ void FragOut(vec4 color) {
 
 void main() {
     vec2 uv = vec2(gl_TexCoord[0]);
+    S_progress = progress;
+    if(datas.y == 1) S_progress = 1.0 - progress;
 
-    if(datas.y == 1) progress = 1.0 - progress;
-
-    if(datas.x == 41 && datas.y == 1) datas.x = 40; // hp corner can only be used right to left so select 40 insteda if in reverse
-
-    switch (datas.x) {
+    switch ( int(datas.x) ) {
         case 0:
             FragOut(displacement(uv));
         break;
@@ -1274,7 +1275,10 @@ void main() {
         break;
 
         case 41:
-            FragOut(main_hpcorner(uv));
+            if( datas.y == 1 )// hp corner can only be used right to left so select 40 (swap) instead if it's reverse
+                FragOut(swap(uv));
+            else
+                FragOut(main_hpcorner(uv));
         break;
 
         /*case 42:

@@ -1,3 +1,5 @@
+#version 130
+
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -21,7 +23,7 @@ float rand(vec2 co){
   return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-vec4 tv(vec4 color, vec2 pos){
+vec4 tv(vec3 color, vec2 pos){
       pos *= sin(progress);
       float r = rand(pos);
       vec3 noise = vec3(r);
@@ -45,12 +47,14 @@ vec4 frame_border(vec2 uv){
     vec2 scale = vec2(snap_res / full_size);
     vec2 snap_uv = (uv - 0.5) / scale + 0.5; // scaled and centered video snap
     vec4 color = texture2D(tex_s, snap_uv);
-    vec3 Brd1Col = vec3( htmtcolor(border1[0]) );
-    vec3 Brd2Col = vec3( htmtcolor(border2[0]) );
-    vec3 Brd3Col = vec3( htmtcolor(border3[0]) );
-    bool rounded = ( border1[2] || border2[2] || border3[2] ? true : false );
+
+	vec3 Brd1Col = ( border1[0] > 0 ? vec3( htmtcolor( int(border1[0]) ) ) : vec3(0,0,0) );
+	vec3 Brd2Col = ( border2[0] > 0 ? vec3( htmtcolor( int(border2[0]) ) ) : vec3(0,0,0) );
+	vec3 Brd3Col = ( border3[0] > 0 ? vec3( htmtcolor( int(border3[0]) ) ) : vec3(0,0,0) );
+	bool rounded = false ;
+	if(border1[2] + border2[2] + border3[2] > 0.0 ) rounded = true;
     float b = 1.0;
-    if(progress != 1.0) color = tv(color, uv);
+    if(progress != 1.0) color = tv(color.xyz, uv);
     vec2 bn1 = (1.0 / snap_res) * (border1[1] * 0.5); // border 1
     vec2 bn2 = (1.0 / snap_res) * (border2[1]); // border2
     vec2 bn3 = (1.0 / snap_res) * (border3[1]); // border3
@@ -104,7 +108,7 @@ vec4 frame_border(vec2 uv){
 
 vec4 frame(vec2 uv){
     vec4 color;
-    if(datas[0]){ // if frame overlay
+    if( bool(datas[0]) ){ // if frame overlay
 
         vec2 OverlaySize = textureSize(tex_f, 0);
         vec2 FrameSize = OverlaySize;
@@ -121,8 +125,8 @@ vec4 frame(vec2 uv){
         scale_frame = vec2(OverlaySize / FrameSize);
         uv_frame = (uv - 0.5) / scale_frame + 0.5; // center frame
 
-        scale_snap.x = vec2(snap_coord.z / FrameSize.x);
-        scale_snap.y = vec2(snap_coord.w / FrameSize.y);
+        scale_snap.x = snap_coord.z / FrameSize.x;
+        scale_snap.y = snap_coord.w / FrameSize.y;
         float ox = snap_coord.x * (1.0 / FrameSize.x);
         float oy = snap_coord.y * (1.0 / FrameSize.y);
         uv_snap.x = (uv.x - (0.50 - ox) ) / scale_snap.x + 0.50; // center snap with offset
@@ -136,7 +140,7 @@ vec4 frame(vec2 uv){
 
         if(frame.a < 1.00 && frame.a > 0.001) snap.a = frame.a + snap.a;
 
-        if(datas[1]){
+        if( bool(datas[1]) ){
             color = mix(frame, snap, snap.a);
         }else{
             color = mix(snap, frame, frame.a);

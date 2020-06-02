@@ -1,3 +1,5 @@
+#version 130
+
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -89,7 +91,7 @@ void main(){
          FragOut( texture2D(texture, uv) );
         return;
     }
-    switch (datas.x) {
+    switch ( int(datas.x) ) {
         case 0:
             FragOut( texture2D(texture, uv) );
         break;
