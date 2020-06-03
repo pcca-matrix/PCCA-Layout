@@ -1119,8 +1119,7 @@ function hs_transition( ttype, var, ttime )
                             SaveStats(main_infos);
                         }
                     }else{ // new systeme added , create new entry
-                        refresh_stats(curr_sys);
-                        //main_infos[curr_sys].cnt = fe.list.size;
+                        main_infos <- refresh_stats(curr_sys);
                     }
                 }
             }

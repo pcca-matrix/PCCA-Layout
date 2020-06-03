@@ -1,13 +1,12 @@
 function refresh_stats(system = "") {
     fe.overlay.splash_message (LnG.RefreshTxt + " ...")
-    local datas = {}; local sys = "";local cnt;
+    local datas = main_infos; local sys = "";local cnt;
     local g_cnt = 0; local g_time = 0; local g_played = 0; local dirs = {};
 
     if(system != ""){ // Get games count for single system
         dirs.results <- [];
         dirs.results.push( system + ".txt");
     }else{ // Get games count for each system
-        print("ALL SYSY")
         dirs = DirectoryListing( FeConfigDirectory + "romlists", false );
     }
 
@@ -48,6 +47,7 @@ function refresh_stats(system = "") {
 
     datas["Main Menu"] <-{"cnt":g_cnt, "pl":g_played, "time":g_time};
     SaveStats(datas); // Save stats to file
+    return datas;
 }
 
 function LoadStats(){
