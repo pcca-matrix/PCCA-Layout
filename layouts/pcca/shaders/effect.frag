@@ -14,8 +14,10 @@ uniform vec4 datas; //preset number, reverse 0:1 , fromIsSWF, toIsSWF
 uniform vec4 back_res; // bw, bh, offset_x, offset_y
 uniform vec4 prev_res; // previous bw, bh, offset_x, offset_y
 
-float S_progress;
+float S_progress = progress;
 const float PI = 3.14159265358;
+
+vec4 Bez;
 
 float rand (vec2 co) {
   return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -48,7 +50,7 @@ vec2 get_coord_prev(vec2 Muv){
 vec4 getFromColor(vec2 uv){ // source
     vec2 Muv = uv;
     vec4 color;
-
+    Bez = texture2D(bezel, uv);
     if( bool(datas.z) == true) Muv = vec2(uv.x, 1.0 - uv.y);  // swf reverse fix
 
     Muv = get_coord_prev(Muv);
@@ -59,9 +61,9 @@ vec4 getFromColor(vec2 uv){ // source
 
         if( bool(screen_res.z) ){ // bezel on top
             if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = vec4(0.0);
-            return mix(color, texture2D(bezel, uv), texture2D(bezel, uv).a) * 0.3; // look better width 0.3 than a real fade
+            return mix(color, Bez, Bez.a) * 0.3; // look better width 0.3 than a real fade
         }else{
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = texture2D(bezel, uv) * 0.3; // look better width 0.3 than a real fade
+            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = Bez * 0.3; // look better width 0.3 than a real fade
             return color;
         }
 
@@ -70,9 +72,9 @@ vec4 getFromColor(vec2 uv){ // source
 
         if( bool(screen_res.z) ){ // bezel on top
             if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = vec4(0.0);
-            return mix(color, texture2D(bezel, uv), texture2D(bezel, uv).a) * 0.3; // look better width 0.3 than a real fade
+            return mix(color, Bez, Bez.a) * 0.3; // look better width 0.3 than a real fade
         }else{
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = texture2D(bezel, uv) * 0.3; // look better width 0.3 than a real fade
+            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = Bez * 0.3; // look better width 0.3 than a real fade
             return color;
         }
 
@@ -83,6 +85,7 @@ vec4 getFromColor(vec2 uv){ // source
 vec4 getToColor(vec2 uv){ // destination
     vec2 Muv = uv;
     vec4 color;
+    Bez = texture2D(bezel, uv);
 
     if( bool(datas.w) == true) Muv = vec2(uv.x, 1.0 - uv.y); // swf reverse fix
 
@@ -94,9 +97,9 @@ vec4 getToColor(vec2 uv){ // destination
 
         if( bool(screen_res.z) ){ // bezel on top
             if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = vec4(0.0);
-            return mix(color, texture2D(bezel, uv), texture2D(bezel, uv).a) * S_progress;
+            return mix(color, Bez, Bez.a) * S_progress;
         }else{
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = texture2D(bezel, uv) * S_progress;
+            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = Bez * S_progress;
             return color;
         }
 
@@ -105,9 +108,9 @@ vec4 getToColor(vec2 uv){ // destination
 
         if( bool(screen_res.z) ){ // bezel on top
             if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = vec4(0.0);
-            return mix(color, texture2D(bezel, uv), texture2D(bezel, uv).a) * S_progress;
+            return mix(color, Bez, Bez.a) * S_progress;
         }else{
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = texture2D(bezel, uv) * S_progress;
+            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = Bez * S_progress;
             return color * S_progress;
         }
     }
@@ -1105,7 +1108,7 @@ void FragOut(vec4 color) {
 
 void main() {
     vec2 uv = vec2(gl_TexCoord[0]);
-    S_progress = progress;
+
     if(datas.y == 1) S_progress = 1.0 - progress;
 
     switch ( int(datas.x) ) {
@@ -1292,8 +1295,3 @@ void main() {
 
     }
 }
-
-
-
-
-
