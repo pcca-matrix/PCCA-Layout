@@ -1020,10 +1020,11 @@ function hs_transition( ttype, var, ttime )
     {
         case Transition.FromGame:
             conveyor_bool = true; // do not restore alpha on conveyor
-            if ( ttime < 500  ) {
-                global_fade(ttime, 500, true)
+            if ( ttime <= 500  ) {
+                global_fade( ttime, 500, true);
                 return true;
             }else{
+                global_fade( 500, 500, true);
                 // update stats for this system
                 game_elapse = fe.game_info(Info.PlayedTime).tointeger() - game_elapse;
                 if(main_infos.rawin(fe.list.name)){
@@ -1040,10 +1041,11 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.ToGame:
-            if ( ttime < 1500  ) {
+            if ( ttime <= 1500  ) {
                 global_fade(ttime, 1500, false)
                 return true;
             }else{
+                global_fade(1500, 1500, false)
                 game_elapse = fe.game_info(Info.PlayedTime).tointeger();
             }
         break;
@@ -1089,7 +1091,12 @@ function hs_transition( ttype, var, ttime )
         case Transition.StartLayout: //0
             surf_ginfos.visible = false;
             if( !glob_time ){  // glob_time == 0 on first start layout
-                if( ttime <= 255 && fe.game_info (Info.Emulator) == "@" ){ global_fade(ttime, 255, true); return true; } // fade when back to display menu or start layout
+                if( ttime <= 255  && fe.game_info (Info.Emulator) == "@" ){ // fade when back to display menu or start layout
+                    global_fade(ttime, 255, true);
+                    return true;
+                }else{
+                    global_fade(255, 255, true);
+                }
                 //Sound -  cause we are back to main menu we use name to match the systeme we're leaving.
                 Sound_System_In_Out.file_name = get_random_file( medias_path + fe.game_info(Info.Name) + "/Sound/System Exit/" );
                 Sound_System_In_Out.playing = true;
@@ -1351,7 +1358,7 @@ function global_fade(ttime, target, direction){
         foreach(obj in objlist) obj.alpha = ttime * (255.0 / target);
         video_shader.set_param("alpha", (ttime / target) );
         foreach(k, obj in ["artwork1", "artwork2", "artwork3", "artwork4"] ) artwork_shader[k].set_param("alpha", (ttime / target) );
-        Trans_shader.set_param("alpha", ttime / 500);
+        Trans_shader.set_param("alpha", ttime / target);
    }else{ // hide
         flv_transitions.video_playing = false; // stop playing ovveride video during fade
         foreach(obj in objlist) obj.alpha = 255.0 - ttime * (255.0 / target);
