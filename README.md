@@ -132,7 +132,9 @@ Identical to Hyperspin.
 pcca layout use special artworks placed in folder -> \Media\{SYSTEME NAME}\Images\Special
 
 Special artwork medias should be named :
+
 SpecialA1 , SpecialA2, ...
+
 SpecialB1 , SpecialB2, ...
 
 Special artwork settings is defined in pcca/Settings/{SYSTEME NAME}.ini , and for main menu,  pcca/Settings/Main Menu.ini
@@ -143,44 +145,78 @@ ini section
 -----------
 `
 [Special Art A] // the name of the special artwork collection (A or B)
+
 default=false    -> When in system use default artworks from main menu
+
 active=true      -> enabled (true) or disabled (false)
+
 x=512            -> x alignement ( if width and height are specified , then it's real coord , if not, it's hyperspin default 1024x768 scaled for your screen resolution)
+
 y=720            -> y alignement ( if width and height are specified , then it's real coord , if not, it's hyperspin default 1024x768 scaled for your screen resolution)
+
 in=0.4           -> Time it takes the artworks to animate in  position (in seconds).
+
 out=0.4          -> Time it takes the artworks to animate out  position (in seconds).
+
 length=3         -> The length of time the artwork stays in position before animating out (in seconds).
+
 delay=0          -> The amount of time to wait between animations (in seconds).
+
 type=normal      -> The style of animation you want to use (normal = linear, fade, bounce)
+
 start=bottom     -> The side of the screen from which animations enter. (bottom, top , left , right)
+
+
 /* Added for Attract-mode (not mandatory) */
+
 w=500            -> width of your special artwork
+
 h=100            -> height of your special artwork
+
 ext=png          -> extension of your special artwork (you can use any media extension (video, swf, or any image supported by Attract-mode)
+
 `
 if no .ini file is found but you have special artwork inside your images/Special folder , the default settings will be applied.
 
 the special artworks defaults settings is:
 `
 Special A
+
 ---------
+
 active=true 
+
 in=0.5
+
 out=0.5
+
 length=3
+
 delay=0
+
 type=normal
+
 start=bottom
 
+
 Special B
+
 ---------
+
 active=true 
+
 in=0.5
+
 out=0.5
+
 length=3
+
 delay=0
+
 type=fade
+
 start=none
+
 `
 default media extension is swf, as in hyperspin.
 default alignement is bottom center.
