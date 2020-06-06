@@ -141,7 +141,7 @@ Real Hyperspin Settings ini can be used as is by copying it to the pcca layout S
 
 ini section
 -----------
-
+`
 [Special Art A] // the name of the special artwork collection (A or B)
 default=false    -> When in system use default artworks from main menu
 active=true      -> enabled (true) or disabled (false)
@@ -157,11 +157,11 @@ start=bottom     -> The side of the screen from which animations enter. (bottom,
 w=500            -> width of your special artwork
 h=100            -> height of your special artwork
 ext=png          -> extension of your special artwork (you can use any media extension (video, swf, or any image supported by Attract-mode)
-
+`
 if no .ini file is found but you have special artwork inside your images/Special folder , the default settings will be applied.
 
 the special artworks defaults settings is:
-
+`
 Special A
 ---------
 active=true 
@@ -181,7 +181,7 @@ length=3
 delay=0
 type=fade
 start=none
-
+`
 default media extension is swf, as in hyperspin.
 default alignement is bottom center.
 
