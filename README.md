@@ -1,6 +1,6 @@
 # PCCA Hyperspin theme conversion for Attract-Mode
 
-### Version 1.02 beta
+### Version 1.04 beta
 This script is intended to work with Attract-Mode http://attractmode.org/ , it intends to reproduce the real hyperspin experience in HD as precise as possible using the same themes and folder structure as a real Hyperspin setup.
 
 Hypertheme can be used to build new themes or you can build your own with a higher resolution than hyperspin's default 1024x768.
@@ -125,6 +125,66 @@ Background Music is played if an mp3 file is found anywhere in theme.zip, no mat
 
 if Background Music if found in the theme.zip file or the Sound/Background Music folder ("C:\Hyperspin\Media\Atari 2600\Sound\Background Music\Vanguard.mp3" for example), the theme Background Music is used and video snap sound is automaticly muted.
 
+
+### Specials Artwork
+
+Identical to Hyperspin.
+pcca layout use special artworks placed in folder -> \Media\{SYSTEME NAME}\Images\Special
+
+Special artwork medias should be named :
+SpecialA1 , SpecialA2, ...
+SpecialB1 , SpecialB2, ...
+
+Special artwork settings is defined in pcca/Settings/{SYSTEME NAME}.ini , and for main menu,  pcca/Settings/Main Menu.ini
+
+Real Hyperspin Settings ini can be used as is by copying it to the pcca layout Settings folder.
+
+ini section
+-----------
+
+[Special Art A] // the name of the special artwork collection (A or B)
+default=false    -> When in system use default artworks from main menu
+active=true      -> enabled (true) or disabled (false)
+x=512            -> x alignement ( if width and height are specified , then it's real coord , if not, it's hyperspin default 1024x768 scaled for your screen resolution)
+y=720            -> y alignement ( if width and height are specified , then it's real coord , if not, it's hyperspin default 1024x768 scaled for your screen resolution)
+in=0.4           -> Time it takes the artworks to animate in  position (in seconds).
+out=0.4          -> Time it takes the artworks to animate out  position (in seconds).
+length=3         -> The length of time the artwork stays in position before animating out (in seconds).
+delay=0          -> The amount of time to wait between animations (in seconds).
+type=normal      -> The style of animation you want to use (normal = linear, fade, bounce)
+start=bottom     -> The side of the screen from which animations enter. (bottom, top , left , right)
+/* Added for Attract-mode (not mandatory) */
+w=500            -> width of your special artwork
+h=100            -> height of your special artwork
+ext=png          -> extension of your special artwork (you can use any media extension (video, swf, or any image supported by Attract-mode)
+
+if no .ini file is found but you have special artwork inside your images/Special folder , the default settings will be applied.
+
+the special artworks defaults settings is:
+
+Special A
+---------
+active=true 
+in=0.5
+out=0.5
+length=3
+delay=0
+type=normal
+start=bottom
+
+Special B
+---------
+active=true 
+in=0.5
+out=0.5
+length=3
+delay=0
+type=fade
+start=none
+
+default media extension is swf, as in hyperspin.
+default alignement is bottom center.
+
 ### Tags
 2 tags are available: 'completed' and 'fail'. These tage are displayed in the on-screen game info area (bottom left corner by default). You can add your own png file named as your tag name in pcca/images/tags (must be in .png format).
 
@@ -134,8 +194,6 @@ if Background Music if found in the theme.zip file or the Sound/Background Music
 - particles animation is missing
 
 - crash sometime occurs with some swf backgrounds, it's due to a buggy swf implementation in Attract-Mode, not the pcca script itself.
-
-- special artworks is missing
 
 
 ## TODO:
@@ -154,8 +212,6 @@ glyph for category
 particles animations
 
 rain float animation
-
-special artworks ( must first understand how hyperspin manages the alignment of swf )
 
 screensaver that random trough all your games when your are on main menu, displaying systeme and game wheel logo.
 

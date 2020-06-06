@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v1.03 beta
+// PCCA v1.04 beta
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -25,6 +25,7 @@ class UserConfig {
     </ label="Interface Language", help="Preferred User Language", options="Fr, En", order=12 /> user_lang="En"
     </ label="Game Info Coordinates", help="x,y coordinates for the game info surface. If empty = left bottom", options="", order=13 /> infos_coord = ""
     </ label="Global Stats", help="Enable or disable the main menu stats system", options="Yes, No", order=14 /> stats_main = "Yes"
+    </ label="Special Atworks", help="Enable or disable the special artwoks", options="Yes, No", order=15 /> special_artworks = "Yes"
     //</ label="Animated Artworks", help="Animate artworks", options="Yes, No", order=6 /> animated_artworks="Yes"
 }
 
@@ -83,6 +84,7 @@ local visi = false;
 local trigger_letter = false;
 local letters = fe.add_image("", flw * 0.5 - (flw*0.140 * 0.5), flh * 0.5 - (flh*0.280 * 0.5), flw*0.140, flh*0.280);
 conveyor_bool <- false; // fading conveyor
+Ini_settings <- {};
 
 // Background / Bezel
 ArtObj.background <- fe.add_image("", 0, 0, flw, flh);
@@ -218,6 +220,118 @@ bck_anim.auto(true)
 bck_anim.param("progress")
 bck_anim.duration(glob_delay * 1.40)
 bck_anim.delay(0)
+
+// Special Artworks
+ArtObj.SpecialA <- fe.add_image(medias_path + "Main Menu"+ "/Images/Special/SpecialA1.swf", -1000, -1000, 0, 0);
+ArtObj.SpecialB <- fe.add_image(medias_path + "Main Menu"+ "/Images/Special/SpecialB1.swf", -1000, -1000, 0, 0);
+ArtObj.SpecialC <- fe.add_surface(flw, flh*0.10);
+
+ArtObj.SpecialA.shader = fe.add_shader( Shader.Fragment, "shaders/special.frag") ;
+ArtObj.SpecialB.shader = fe.add_shader( Shader.Fragment, "shaders/special.frag") ;
+
+anim_special <- [];
+anim_special.push( PresetAnimation(ArtObj.SpecialA).auto(true) );
+anim_special.push( PresetAnimation(ArtObj.SpecialB).auto(true) );
+function load_special(){
+    local syst = curr_sys;
+    foreach( i,n in ["A","B"] ){
+        local S_Art = special_settings( n );
+        if(S_Art.def) syst = "Main Menu"; // if default is true in ini , use main menu special artwor
+
+        if( !S_Art.active ){ // disable special if active = false in ini
+            anim_special[i].reset();
+            ArtObj["Special" + n].visible = false;
+           continue;
+        }
+
+        ArtObj["Special" + n].visible = true;
+        ArtObj["Special" + n].file_name = medias_path + syst + "/Images/Special/Special" + n + "1." + S_Art.ext;
+        if( !ArtObj["Special"+n].file_name) continue; // continue if special does not exist
+        S_Art.nbr = n;
+        if(S_Art){
+
+            if(S_Art.w > 0 && S_Art.h > 0){ // if width and height defined , it's hd Special
+                ArtObj["Special" + n].width = S_Art.w;
+                ArtObj["Special" + n].height = S_Art.h;
+            }else{ // else assume it's Hyperspin scaled special
+                ArtObj["Special" + n].width = ArtObj["Special" + n].texture_width * mul;
+                ArtObj["Special" + n].height = ArtObj["Special" + n].texture_height * mul_h;
+            }
+
+            if(S_Art.x != ""){ // if coord defined , use them
+                ArtObj["Special" + n].set_pos( S_Art.x.tofloat() , S_Art.y.tofloat() );
+            }else{ // else use default centered bottom coord
+                local offsetY = 10;
+                if(n == "B") offsetY -= flh*0.018;
+                ArtObj["Special" + n].x = flw * 0.5 - ( (ArtObj["Special" + n].texture_width * mul ) * 0.5);
+                ArtObj["Special" + n].y = flh - ( (ArtObj["Special" + n].texture_height - offsetY) * mul_h);
+            }
+
+            anim_special[i].name("Special" + n)
+            anim_special[i].preset(S_Art.type)
+            anim_special[i].starting(S_Art.start)
+            anim_special[i].duration(S_Art.S_in)
+            anim_special[i].delay(S_Art.delay)
+            anim_special[i].loops_delay(S_Art.length)
+            anim_special[i].on("yoyo",function(anim){
+                if(S_Art.type == "bounce" ) anim.opts.interpolator = PennerInterpolator("linear");
+                anim.opts.duration = S_Art.S_out; // out
+            })
+            anim_special[i].on("stop",function(anim){
+                S_Art.cnt++;
+                if(file_exist(medias_path + syst + "/Images/Special/Special" + S_Art.nbr + S_Art.cnt + "." + S_Art.ext)){
+                    ArtObj["Special" + S_Art.nbr].file_name = medias_path + syst + "/Images/Special/Special" + S_Art.nbr + S_Art.cnt + "." + S_Art.ext;
+                }else{
+                    ArtObj["Special" + S_Art.nbr].file_name = medias_path + syst + "/Images/Special/Special" + S_Art.nbr + "1." + S_Art.ext;
+                    S_Art.cnt = 0;
+                }
+
+                anim.opts.duration = S_Art.S_in; // in
+                if(S_Art.type == "bounce" ) anim.opts.interpolator = PennerInterpolator("ease-out-bounce");
+                anim.play();
+            })
+            anim_special[i].yoyo(true)
+            anim_special[i].play();
+        }
+    }
+}
+
+function special_settings(n){
+    local inidatas = {
+        "nbr":"", "cnt": 1, "S_in": 500, "S_out": 500, "length": 3000, "delay": 100, "type": "linear", "start": "bottom", "active" : true,
+        "def" : false, "w": 0, "h": 0,
+        "x": "" , "y": "", "ext" : "swf"
+    }
+    if( n == "B" ){
+        inidatas.type = "fade";
+        inidatas.start = "none";
+    }
+    if(  !Ini_settings.rawin("special art " + n.tolower() ) ) return inidatas; // if no ini settings found for this special, return default
+
+    local S_ini = Ini_settings[ "special art " + n.tolower() ]
+    if( S_ini["type"] == "normal" ) inidatas.type  = "linear"; else inidatas.type = S_ini["type"];
+
+    if(S_ini.rawin("ext")) inidatas.ext = S_ini["ext"];
+
+    if(S_ini.rawin("w") && S_ini.rawin("h")){
+        inidatas.w = S_ini["w"].tofloat();
+        inidatas.h = S_ini["h"].tofloat();
+        inidatas.x = S_ini["x"].tofloat() - ( S_ini.w  * 0.5 );
+        inidatas.y = S_ini["y"].tofloat() - ( S_ini.h  * 0.5 );
+    }else{
+        inidatas.x = S_ini["x"];
+        inidatas.y = S_ini["y"];
+    }
+
+    inidatas.start = S_ini["start"];
+    inidatas.active = ( S_ini["active"] == "false" ? false : true );
+    inidatas.def = ( S_ini["default"] == "true" ? true : false );
+    inidatas.S_in = S_ini["in"].tofloat() * 1000;
+    inidatas.S_out = S_ini["out"].tofloat() * 1000;
+    inidatas.length = S_ini["length"].tofloat()  * 1000;
+    inidatas.delay = ( S_ini["delay"].tofloat() * 1000 < 100 ? 100 : S_ini["delay"].tofloat() * 1000 );
+    return inidatas;
+}
 
 // Sounds
 
@@ -1139,6 +1253,8 @@ function hs_transition( ttype, var, ttime )
                 }
                 FE_Sound_Wheel_In.playing = true;
             }
+            Ini_settings = get_ini_values(curr_sys); // get settings ini value
+            if(my_config["special_artworks"] == "Yes") load_special(); // Load special artworks
 
             rtime = glob_time
             trigger_load_theme = true;
@@ -1359,12 +1475,16 @@ function global_fade(ttime, target, direction){
         video_shader.set_param("alpha", (ttime / target) );
         foreach(k, obj in ["artwork1", "artwork2", "artwork3", "artwork4"] ) artwork_shader[k].set_param("alpha", (ttime / target) );
         Trans_shader.set_param("alpha", ttime / target);
+        ArtObj.SpecialA.shader.set_param("alpha", ttime / target);
+        ArtObj.SpecialB.shader.set_param("alpha", ttime / target);
    }else{ // hide
         flv_transitions.video_playing = false; // stop playing ovveride video during fade
         foreach(obj in objlist) obj.alpha = 255.0 - ttime * (255.0 / target);
         video_shader.set_param("alpha", 1.0 - (ttime / target) );
         foreach(k, obj in ["artwork1", "artwork2", "artwork3", "artwork4"] ) artwork_shader[k].set_param("alpha", 1.0 - (ttime / target) );
         Trans_shader.set_param("alpha",1.0 - (ttime / target) );
+        ArtObj.SpecialA.shader.set_param("alpha",1.0 - (ttime / target) );
+        ArtObj.SpecialB.shader.set_param("alpha",1.0 - (ttime / target) );
         for (local i=0; i < conveyor.m_objs.len(); i++) conveyor.m_objs[i].alpha = 0;
    }
    return;

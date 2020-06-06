@@ -1,3 +1,28 @@
+function get_ini_values(name){
+    local f = ReadTextFile( fe.script_dir + "Settings/" + name + ".ini" );
+    local entity = null;
+    local map = {};
+    while ( !f.eos() )
+    {
+        local line = strip( f.read_line() );
+        if (( line.len() > 0 ) && ( line[0] == '[' ))
+        {
+            entity = line.slice( 1, line.len()-1 ).tolower();
+            map[ entity ] <- {};
+        }
+        else
+        {
+            if(!line.find("=")) continue;
+            local temp = split( line, "=" );
+            local v = ( temp.len() > 1 ) ? strip( temp[1] ) : "";
+
+            if ( entity ) map[entity][ strip(temp[0]) ] <- v;
+            else map[ strip(temp[0]) ] <- v;
+        }
+    }
+    return map;
+}
+
 function refresh_stats(system = "") {
     fe.overlay.splash_message (LnG.RefreshTxt + " ...")
     local datas = main_infos; local sys = "";local cnt;
