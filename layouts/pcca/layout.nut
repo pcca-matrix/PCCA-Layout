@@ -11,8 +11,8 @@
 ////////////////////////////////////////////////////////////////////
 
 class UserConfig {
-    </ label="Wheel transition time", help="Time in milliseconds for wheel spin", order=1 /> transition_ms="30"
-    </ label="Wheel fade time", help="Time in milliseconds for wheel fade out (-1 disable fading)", order=2 /> wheel_fade_time="2500"
+    </ label="Wheel transition time", help="Time in milliseconds for wheel spin", options="1,25,50,75,100,125,150,175,200,400", order=1 /> transition_ms="25"
+    </ label="Wheel fade time", help="Time in milliseconds for wheel fade out (-1 disable fading)", options="-1,0,500,1000,1500,2000,2500,3500", order=2 /> wheel_fade_time="2500"
     </ label="Select round or vertical wheel", help="Switch between a round and vertical wheel", options="Wheel,Vertical Wheel", order=3 /> wheel_type="Wheel"
     </ label="Media Path", help="Path of HyperSpin media, if empty, media is considered inside layout folder", options="", order=4 /> medias_path=""
     </ label="Override Transitions", help="Use FLV Override Video Transitions", options="Yes, No", order=5 /> override_transitions="Yes"
@@ -109,40 +109,16 @@ local flv_transitions = fe.add_image("",0,0,flw,flh);
 flv_transitions.video_flags = Vid.NoLoop;
 
 local start_background = fe.add_image("images/Backgrounds/Background.jpg",0,0,flw,flh);
-local point = fe.add_image("", flw*0.90, flh*0.394, flw*0.10, flh*0.20);
-local center_wheel = fe.add_image( "[!ret_wheel]", flw*0.82, flh*0.465, flw*0.12, flh*0.075);
+local point = fe.add_image("", flw*0.99, flh*0.394, flw*0.10, flh*0.20);
 
-if ( my_config["wheel_type"] == "Vertical Wheel") { // Vertical wheel
-    center_wheel.set_pos(flw*0.88, flh*0.471, flw*0.11, flh*0.070);
-    point.set_pos(flw*0.99, flh*0.390, flw*0.10, flh*0.23);
-}
-
+if ( my_config["wheel_type"] == "Vertical Wheel") point.set_pos(flw*0.99, flh*0.390, flw*0.10, flh*0.23);
 point.alpha = 200;
 
-PresetAnimation(point)
+local point_animation = PresetAnimation(point)
 .auto(true)
-.triggers([Transition.ToNewSelection])
 .key("x").from(flw*0.99).to(flw*0.90)
 .duration(180)
 .yoyo()
-.play();
-
-PresetAnimation(center_wheel)
-.auto(true)
-.triggers([Transition.ToNewSelection])
-.preset("zoom", 1.16)
-.yoyo()
-.loops(-1)
-.duration(1800)
-.easing("ease-in-cubic")
-.play();
-
-local center_Wheel_fade = PresetAnimation(center_wheel)
-.auto(true)
-.from({alpha=0})
-.to({alpha=255})
-.delay(500)
-.duration(800)
 
 // Z-orders
 ArtObj.artwork4.zorder = -2
@@ -436,8 +412,8 @@ game_elapse <- 0;
 
 local m_infos = fe.add_text("",flw*0.878, flh*0.537, flw*0.11, flh*0.046);
 if ( my_config["wheel_type"] != "Vertical Wheel"){
-    m_infos.set_pos( flw*0.816, flh*0.538 );
-    m_infos.rotation = -6;
+    m_infos.set_pos( flw*0.785, flh*0.546 );
+    m_infos.rotation = -5.2;
 }
 
 
@@ -976,20 +952,22 @@ function hide_art(){
 
 // Wheels
 local wheel_count = 12;
+local ww = flw*0.15;
+local wh = flh*0.10;
 local wheel_x = [ flw*0.94, flw*0.935, flw*0.896, flw*0.865, flw*0.84, flw*0.82, flw*0.78, flw*0.82, flw*0.84, flw*0.865, flw*0.896, flw*0.90, ];
 local wheel_y = [ -flh*0.22, -flh*0.105, flh*0.0, flh*0.105, flh*0.215, flh*0.325, flh*0.436, flh*0.61, flh*0.72 flh*0.83, flh*0.935, flh*0.99, ];
-local wheel_w = [ flw*0.15, flw*0.15, flw*0.15, flw*0.15, flw*0.15, flw*0.15, flw*0.22, flw*0.15, flw*0.15, flw*0.15, flw*0.15, flw*0.15, ];
-local wheel_h = [  flh*0.10,  flh*0.10,  flh*0.10,  flh*0.10,  flh*0.10,  flh*0.10, flh*0.14,  flh*0.10,  flh*0.10,  flh*0.10,  flh*0.10,  flh*0.10, ];
+local wheel_h = [ wh, wh, wh, wh, wh, wh, flh*0.11, wh, wh, wh, wh, wh, ];
+local wheel_w = [ ww, ww, ww, ww, ww, ww, flw*0.17, ww, ww, ww, ww, ww, ];
 local wheel_r = [  30,  25,  20,  15,  10,   5,   0, -10, -15, -20, -25, -30, ];
 local wheel_a = [  255,  255,  255,  255,  255,  255,  255  ,  255,  255,  255,  255,  255, ];
 
-if ( my_config["wheel_type"] == "Vertical Wheel") // Vertical wheel
+if ( my_config["wheel_type"] == "Vertical Wheel" ) // Vertical wheel
 {
-    local wx = flw*0.88;
-    local ww = flw*0.12;
-    local wh = flh*0.075;
+    local wx = flw*0.874;
+    ww = flw*0.12;
+    wh = flh*0.075;
     wheel_x = [ wx, wx, wx, wx, wx, wx, wx, wx, wx, wx, wx, wx, ];
-    wheel_y = [ -flh*0.22, -flh*0.105, flh*0.0, flh*0.105, flh*0.215, flh*0.325, flh*0.436, flh*0.61, flh*0.72 flh*0.83, flh*0.935, flh*0.99, ];
+    wheel_y = [ -flh*0.22, -flh*0.105, flh*0.0, flh*0.105, flh*0.215, flh*0.325, flh*0.466, flh*0.61, flh*0.72 flh*0.83, flh*0.935, flh*0.99, ];
     wheel_w = [ ww, ww, ww, ww, ww, ww, ww, ww, ww, ww, ww, ww, ];
     wheel_h = [ wh, wh, wh, wh, wh, wh, wh, wh, wh, wh, wh, wh, ];
     wheel_r = [  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ];
@@ -1037,8 +1015,24 @@ for ( local i=0; i<remaining; i++ )
 local conveyor = Conveyor();
 conveyor.set_slots( wheel_entries );
 conveyor.transition_ms = 50;
+
 try { conveyor.transition_ms = my_config["transition_ms"].tointeger(); } catch ( e ) { }
-conveyor.m_objs[6].visible = false; // hide totally center wheel (repaced by center_wheel obj)
+
+local center_animation = PresetAnimation(conveyor.m_objs[6].m_obj)
+.auto(true)
+.preset("zoom", 1.16)
+.yoyo()
+.loops(-1)
+.duration(1800)
+.delay(550)
+.easing("ease-in-cubic")
+
+local center_Wheel_fade = PresetAnimation(conveyor.m_objs[6])
+.auto(true)
+.from({alpha=0})
+.to({alpha=255})
+.delay(500)
+.duration(800)
 
 function conveyor_tick( ttime )
 {
@@ -1050,7 +1044,7 @@ function conveyor_tick( ttime )
         alpha = (from * (fade_time - elapsed + delay)) / fade_time;
         alpha = (alpha < 0 ? 0 : alpha);
         local count = conveyor.m_objs.len();
-        for (local i=0; i < count; i++) conveyor.m_objs[i].alpha=alpha;
+        for (local i=0; i < count; i++) if (i != count / 2) conveyor.m_objs[i].alpha=alpha; // do not hide center wheel !
         if(alpha == to) conveyor_bool = true;
     }
 }
@@ -1177,6 +1171,8 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.ToNewSelection: //2
+            if(my_config["transition_ms"].tointeger() < 125) point_animation.play(); // disable pointer animation on slow wheel transition
+            center_animation.cancel();
             ArtObj.snap.video_flags = Vid.NoAudio;
             Background_Music.playing = false;
             Background_Music.file_name = "";
@@ -1195,6 +1191,7 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.EndNavigation: //7
+            center_animation.play();
             trigger_load_theme = true;
             // check if systeme have custom wheel sounds , if not, use main menu wheel sounds like in HS !
             local wsound = get_random_file( medias_path + curr_sys + "/Sound/Wheel Sounds");
@@ -1469,7 +1466,7 @@ function on_signal(str) {
 // Apply a global fade on objs and shaders
 function global_fade(ttime, target, direction){
    ttime = ttime.tofloat();
-   local objlist = [center_wheel, surf_ginfos, point, syno.surface, flv_transitions]; // objects list to fade
+   local objlist = [surf_ginfos, point, syno.surface, flv_transitions]; // objects list to fade
    if(direction){ // show
         foreach(obj in objlist) obj.alpha = ttime * (255.0 / target);
         video_shader.set_param("alpha", (ttime / target) );
