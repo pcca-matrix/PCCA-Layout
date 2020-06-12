@@ -33,10 +33,7 @@ vec2 get_coord_prev(vec2 uv){
 vec4 getFromColor(vec2 uv){
     vec2 Muv = uv;
 
-    // swf reverse fix !!!
-    int test = int(datas.z);
-    float a[2] = float[]( uv.y, 1.0 - uv.y );
-    Muv.y = a[test];
+    Muv.y = abs(int(datas.z) - uv.y); // swf reverse fix !!!
 
     vec4 color;
     Muv = get_coord_prev(Muv);
@@ -54,10 +51,7 @@ vec4 getFromColor(vec2 uv){
 vec4 getToColor(vec2 uv){
     vec2 Muv = uv;
 
-    // swf reverse fix !!!
-    int test = int(datas.w);
-    float a[2] = float[]( uv.y, 1.0 - uv.y );
-    Muv.y = a[test];
+    Muv.y = abs(int(datas.w) - uv.y); // swf reverse fix !!!
 
     vec4 color;
     Muv = get_coord(Muv);
