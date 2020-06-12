@@ -1,15 +1,10 @@
 #version 130
 
-#ifdef GL_ES
-precision mediump float;
-#endif
-
 uniform sampler2D back1;
 uniform sampler2D back2;
 uniform sampler2D bezel;
 uniform float progress;
 uniform float alpha;
-uniform vec3 screen_res; // flw , flh, true/false bezel on top
 uniform vec4 datas; //preset number, reverse 0:1 , fromIsSWF, toIsSWF
 uniform vec4 back_res; // bw, bh, offset_x, offset_y
 uniform vec4 prev_res; // previous bw, bh, offset_x, offset_y
@@ -23,104 +18,63 @@ float rand (vec2 co) {
   return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-vec2 get_coord(vec2 Muv){
-    //"back_res", bw * mul, bh * mul , offset_x, offset_y);
-    vec2 uv;
-    float ox = back_res.z * (1.0 / screen_res.x);
-    float oy = back_res.w * (1.0 / screen_res.y);
-
-    uv.x = (Muv.x - ox ) / (back_res.x / screen_res.x);
-    uv.y = (Muv.y + oy) / (back_res.y / screen_res.y);
-
+vec2 get_coord(vec2 uv){
+    uv.x = (uv.x - back_res.x ) / back_res.z;
+    uv.y = (uv.y + back_res.y) / back_res.w;
     return uv;
 }
 
-vec2 get_coord_prev(vec2 Muv){
-    //prev_res = { bw = flw, bh = flh, ox = offset_x, oy = offset_y};
-    vec2 uv;
-    float ox = prev_res.z * (1.0 / screen_res.x);
-    float oy = prev_res.w * (1.0 / screen_res.y);
-
-    uv.x = (Muv.x - ox ) / (prev_res.x / screen_res.x);
-    uv.y = (Muv.y + oy) / (prev_res.y / screen_res.y);
-
+vec2 get_coord_prev(vec2 uv){
+    uv.x = (uv.x - prev_res.x ) / prev_res.z;
+    uv.y = (uv.y + prev_res.y ) / prev_res.w;
     return uv;
 }
 
-vec4 getFromColor(vec2 uv){ // source
+vec4 getFromColor(vec2 uv){
     vec2 Muv = uv;
-    vec4 color;
-    Bez = texture2D(bezel, uv);
-    if( bool(datas.z) == true) Muv = vec2(uv.x, 1.0 - uv.y);  // swf reverse fix
 
+
+    /*int test = int(datas.z);
+    float a[2] = float[]( uv.y, 1.0 - uv.y );
+    Muv.y = a[test];
+    */
+    Muv.y = abs(int(datas.z) - uv.y); // swf reverse fix !!!
+
+    vec4 color;
     Muv = get_coord_prev(Muv);
-    float ox = prev_res.z * (1.0 / screen_res.x);
+    Bez = texture(bezel, uv) * step(0.001, prev_res.x); // hide bezel if offset_x = 0
 
-    if(datas.y == 1){ // reverse
-        color = texture2D(back1, Muv);
+    vec4 b1 = texture(back1, Muv);
+    vec4 b2 = texture(back2, Muv);
 
-        if( bool(screen_res.z) ){ // bezel on top
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = vec4(0.0);
-            return mix(color, Bez, Bez.a) * 0.3; // look better width 0.3 than a real fade
-        }else{
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = Bez * 0.3; // look better width 0.3 than a real fade
-            return color;
-        }
+    color = mix(b2 , b1  , datas.y);
 
-    }else{
-        color = texture2D(back2, Muv);
-
-        if( bool(screen_res.z) ){ // bezel on top
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = vec4(0.0);
-            return mix(color, Bez, Bez.a) * 0.3; // look better width 0.3 than a real fade
-        }else{
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = Bez * 0.3; // look better width 0.3 than a real fade
-            return color;
-        }
-
-    }
+    return mix(  color , Bez, Bez.a);
 
 }
 
-vec4 getToColor(vec2 uv){ // destination
+vec4 getToColor(vec2 uv){
     vec2 Muv = uv;
+
+    // swf reverse fix !!!
+    /*int test = int(datas.w);
+    float a[2] = float[]( uv.y, 1.0 - uv.y );
+    Muv.y = a[test];
+    */
+
+    Muv.y = abs(int(datas.w) - uv.y); // swf reverse fix !!!
+
     vec4 color;
-    Bez = texture2D(bezel, uv);
-
-    if( bool(datas.w) == true) Muv = vec2(uv.x, 1.0 - uv.y); // swf reverse fix
-
     Muv = get_coord(Muv);
-    float ox = back_res.z * (1.0 / screen_res.x);
+    Bez = texture(bezel, uv) * step(0.001, back_res.x); // hide bezel if offset_x = 0
 
-    if(datas.y == 1){ // reverse
-        color = texture2D(back2, Muv);
+    vec4 b1 = texture(back1, Muv);
+    vec4 b2 = texture(back2, Muv);
 
-        if( bool(screen_res.z) ){ // bezel on top
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = vec4(0.0);
-            return mix(color, Bez, Bez.a) * S_progress;
-        }else{
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = Bez * S_progress;
-            return color;
-        }
+    color = mix(b1, b2, datas.y);
 
-    }else{
-        color = texture2D(back1, Muv);
-
-        if( bool(screen_res.z) ){ // bezel on top
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = vec4(0.0);
-            return mix(color, Bez, Bez.a) * S_progress;
-        }else{
-            if(Muv.x < 0.0 || uv.x > 1.0 - ox) color = Bez * S_progress;
-            return color * S_progress;
-        }
-    }
+    return mix( color , Bez, Bez.a);
 }
-
-
-
-
-
-
 
 
 
@@ -184,7 +138,7 @@ vec4 linearblur(vec2 uv){
     // author: gre
     // license: MIT
     float intensity = 0.1; // = 0.1
-    const int passes = 6;
+    const int passes = 4; //6
     vec4 c1 = vec4(0.0);
     vec4 c2 = vec4(0.0);
 
@@ -912,19 +866,6 @@ float noise(vec2 co)
     return fract(sin(sn) * c);
 }
 
-vec4 tvstatic(vec2 uv){
-    // author: Brandon Anzaldi
-    // license: MIT
-    float offset = 0.05; // = 0.05
-    if (S_progress < offset) {
-        return getFromColor(uv);
-    } else if (S_progress > (1.0 - offset)) {
-        return getToColor(uv);
-    } else {
-        return vec4(vec3(noise(uv)), 1.0);
-    }
-}
-
 /* HP PAGE Corner */
 float amount = S_progress * (1.5 - -0.16) + -0.16;
 float cylinderCenter = amount;
@@ -1097,9 +1038,17 @@ vec4 main_hpcorner(vec2 p) {
         return antiAlias(color, cl, dist);
 }
 
+vec4 canaleaf (vec2 uv) {
+  //if(S_progress == 0.0) return getFromColor(uv);
+  vec2 leaf_uv = (uv - vec2(0.5))/10./pow(S_progress,3.5);
+  leaf_uv.y -= 0.35;
+  float r = 0.18;
+  float o = -atan(leaf_uv.y , leaf_uv.x);
+  return mix(getFromColor(uv), getToColor(uv),
+  1.0-step(1. - length(leaf_uv)+r*(1.+sin(o))*(1.+0.9 * cos(8.*o))*(1.+0.1*cos(24.*o))*(0.9+0.05*cos(200.*o)), 1.));
+}
 
-
-//--- Miss : Unzoom , corner out
+// Miss : Unzoom , corner out
 
 void FragOut(vec4 color) {
     gl_FragColor = color * alpha;
@@ -1278,16 +1227,12 @@ void main() {
         break;
 
         case 41:
-            if( datas.y == 1 )// hp corner can only be used right to left so select 40 (swap) instead if it's reverse
-                FragOut(swap(uv));
-            else
-                FragOut(main_hpcorner(uv));
+            FragOut(main_hpcorner(uv)); // hp corner can only be used right to left
         break;
 
-        /*case 42:
-            FragOut(tvstatic(uv));
+        case 42:
+            FragOut(canaleaf(uv));
         break;
-        */
 
         case 99: // no transition
             gl_FragColor = getToColor(uv);

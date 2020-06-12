@@ -1,9 +1,5 @@
 #version 130
 
-#ifdef GL_ES
-precision mediump float;
-#endif
-
 uniform float progress;
 uniform float alpha;
 uniform vec2 datas;
@@ -159,9 +155,7 @@ vec4 frame(vec2 uv){
 void main(){
     vec2 uv = vec2(gl_TexCoord[0]);
     vec4 color = frame(uv);
-    if(progress == 0.0){
-        gl_FragColor = vec4(0.0);
-    }else{
-        gl_FragColor = color * alpha;
-    }
+    // must hide video if progress = 0 and no animation or an anmimatin delay is set (ex mame:buck rogers)
+    gl_FragColor = color * alpha * sign(float(progress));
+    //gl_FragColor = ( progress == 0.0 ? vec4(0.0) : color * alpha );
 }

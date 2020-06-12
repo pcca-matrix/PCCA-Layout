@@ -1,10 +1,6 @@
 #version 130
 
-#ifdef GL_ES
-precision mediump float;
-#endif
-
-uniform sampler2D texture;
+uniform sampler2D Tex0;
 uniform float progress;
 uniform float alpha;
 
@@ -15,5 +11,5 @@ void FragOut(vec4 col){
 /* Main */
 void main(){
     vec2 uv = vec2(gl_TexCoord[0]);
-    FragOut( texture2D(texture, uv) );
+    FragOut( texture(Tex0, uv) );
 }

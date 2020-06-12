@@ -1,10 +1,6 @@
 #version 130
 
-#ifdef GL_ES
-precision mediump float;
-#endif
-
-uniform sampler2D texture;
+uniform sampler2D Tex0;
 uniform float progress;
 uniform float alpha;
 uniform vec4 datas;
@@ -21,7 +17,7 @@ void pixelate(vec2 uv)
     float dx = normalize * (1./512);
     float dy = normalize * (1./400);
     vec2 coord = vec2(dx*floor(uv.x/dx), dy*floor(uv.y/dy));
-    FragOut( texture2D(texture, coord) );
+    FragOut( texture(Tex0, coord) );
 }
 
 //-- Flag
@@ -33,9 +29,9 @@ vec2 offset(float progress, float x, float theta) {
 
 void flag(vec2 uv){
     if (progress == 0.0){
-      FragOut( texture2D(texture, uv) );
+      FragOut( texture(Tex0, uv) );
     }else{
-      FragOut( texture2D(texture, uv + offset(1.0-progress, uv.x, 0.0)) );
+      FragOut( texture(Tex0, uv + offset(1.0-progress, uv.x, 0.0)) );
     }
 }
 
@@ -46,7 +42,7 @@ void stripes(vec2 uv){
   float smoothness = 0.5; // = 0.5
   float pr = smoothstep(-smoothness, 0.0, uv.x - progress * (1.0 + smoothness));
   float s = step(pr, fract(count * uv.x));
-  FragOut( mix(vec4(0.0), texture2D(texture, uv), s) );
+  FragOut( mix(vec4(0.0), texture(Tex0, uv), s) );
 }
 
 //-- Stripes 2
@@ -55,7 +51,7 @@ void stripes2(vec2 uv){
   float smoothness = 0.5; // = 0.5
   float pr = smoothstep(-smoothness, 0.1, uv.x - progress * (1.0 + smoothness));
   float s = step(pr, fract(count * uv.x * PI));
-  FragOut( mix(vec4(0.0), texture2D(texture, uv), s) );
+  FragOut( mix(vec4(0.0), texture(Tex0, uv), s) );
 }
 
 //-- Blur
@@ -72,7 +68,7 @@ void blur(vec2 uv){
             float y = float(yi) / float(passes) - 0.5;
             vec2 v = vec2(x,y);
             float d = disp;
-            c1 += texture2D(texture, uv + d*v);
+            c1 += texture(Tex0, uv + d*v);
         }
     }
     c1 /= float(passes*passes);
@@ -88,12 +84,13 @@ void rainfloat(vec2 uv){
 void main(){
     vec2 uv = vec2(gl_TexCoord[0]);
     if(progress == 1.0){
-         FragOut( texture2D(texture, uv) );
+         FragOut( texture(Tex0, uv) );
         return;
     }
+
     switch ( int(datas.x) ) {
         case 0:
-            FragOut( texture2D(texture, uv) );
+            FragOut( texture(Tex0, uv) );
         break;
 
         case 1:
@@ -116,8 +113,9 @@ void main(){
             blur(uv);
         break;
 
-        case 6:
+        /*case 6:
             rainfloat(uv);
         break;
+        */
     }
 }
