@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v1.04 beta
+// PCCA v1.05 beta
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -19,8 +19,8 @@ class UserConfig {
     </ label="Themes Wait For Override", help="Themes load after override transition has played", options="Yes, No", order=6 /> wait_override="Yes"
     </ label="Animated Backgrounds", help="Use background transitions", options="Yes, No", order=7 /> animated_backgrounds="Yes"
     </ label="Aspect", help="Theme aspect", options="Stretch, Center", order=8 /> Aspect="Center"
-    </ label="Bezels", help="If display is centered, use bezels to replace black borders", options="Yes, No", order=9 /> Bezels="Yes"
-    </ label="Bezels On Top", help="'Yes' = Display bezels on top of background, 'No' = below background ", options="Yes, No", order=10 /> Top_Bezel="No"
+    </ label="Bezels", help="If display is centered, use bezels to replace pixel stretched border", options="Yes, No", order=9 /> Bezels="Yes"
+    </ label="Low GPU", help="'Yes' = Low GPU (Intel HD,.. less backgrounds transition), 'No' = Recent GPU", options="Yes, No", order=10 /> Low_GPU="No"
     </ label="Background Stretch", help="Stretch all background or main menu only", options="Yes, No, Main Menu", order=11 /> Background_Stretch="Main Menu"
     </ label="Interface Language", help="Preferred User Language", options="Fr, En", order=12 /> user_lang="En"
     </ label="Game Info Coordinates", help="x,y coordinates for the game info surface. If empty = left bottom", options="", order=13 /> infos_coord = ""
@@ -148,7 +148,7 @@ ArtObj.artwork2.shader = artwork_shader[1];
 ArtObj.artwork3.shader = artwork_shader[2];
 ArtObj.artwork4.shader = artwork_shader[3];
 foreach(k,v in artwork_shader){
-    v.set_texture_param("texture");
+    v.set_texture_param("Tex0");
     v.set_param("datas",0,0,0,0);
 }
 
@@ -184,7 +184,8 @@ anim_video <- PresetAnimation(ArtObj.snap);
 anim_video.name("video");
 anim_video.auto(true);
 
-Trans_shader <- fe.add_shader( Shader.Fragment, "shaders/effect.frag" );
+if( my_config["Low_GPU"] == "Yes" ) Trans_shader <- fe.add_shader( Shader.Fragment, "shaders/effect_low_gpu.frag" ); else Trans_shader <- fe.add_shader( Shader.Fragment, "shaders/effect.frag" );
+
 ArtObj.background.shader = Trans_shader;
 
 Trans_shader.set_texture_param("back1", ArtObj.background1);
@@ -487,63 +488,79 @@ ScrollingText.transition_callback = function( ttype, var, ttime ) {
     }
 }
 
-function background_transitions(anim, File, hd=false){
+function background_transitions(anim, File, hd = false){
     if(File == ArtObj.background1.file_name && reverse) return;
     if(File == ArtObj.background2.file_name && !reverse) return;
-
     local fromIsSWF = false;
     local toIsSWF = false;
     local bw,bh;
+    local back_mul = mul;
+    local back_mul_h = mul_h;
+    local back_offset_x = offset_x;
+    local back_offset_y = offset_y;
+
+    if( ext(File).tolower() == "swf" )toIsSWF = true;
 
     if(reverse){
-         // fix flipped-y background with swf (why ???)
-        if( ext(File).tolower() == "swf" ){
-            toIsSWF = true;
-        }
+        ArtObj.background2.file_name = File;
+        // fix flipped-y background with swf (why ??? AM Bug)
         if( ext(ArtObj.background1.file_name).tolower() == "swf" ){
             ArtObj.background1.video_playing = false;
             fromIsSWF = true;
         }
-        ArtObj.background2.file_name = File;
+
         bw = ArtObj.background2.texture_width;
         bh = ArtObj.background2.texture_height;
     }else{
-        // fix flipped-y background with swf (why ???)
-        if( ext(File).tolower() == "swf" ){
-            toIsSWF = true;
-        }
+        ArtObj.background1.file_name = File;
+        // fix flipped-y background with swf (why ??? AM Bug)
         if( ext(ArtObj.background2.file_name).tolower() == "swf" ){
             ArtObj.background2.video_playing = false;
             fromIsSWF = true;
         }
-        ArtObj.background1.file_name = File;
 
         bw = ArtObj.background1.texture_width;
         bh = ArtObj.background1.texture_height;
     }
 
-    if( my_config["Background_Stretch"] == "Yes" || ( my_config["Background_Stretch"] == "Main Menu" && curr_sys == "Main Menu" ) || hd )
+    if( my_config["Background_Stretch"] == "Yes" || ( my_config["Background_Stretch"] == "Main Menu" && curr_sys == "Main Menu" ) || hd ) // no scaled backgrounds
     {
-        Trans_shader.set_param("back_res", flw, flh, 0, 0);
-
-        if(prev_back.len() > 0 ){
-            Trans_shader.set_param("prev_res", prev_back.bw, prev_back.bh, prev_back.ox, prev_back.oy );
+        if( toIsSWF ){ // hyperspin seems to stretch any swf backgrounds !
+            back_mul = flw / 1024;
+            back_mul_h = flh / 768;
+            back_offset_x = 0;
+            back_offset_y = 0;
+            Trans_shader.set_param("back_res", 0.0, 0.0, (1024 * back_mul) / flw, (768 * back_mul_h) / flh ); // actual background infos stretched
         }else{
-            Trans_shader.set_param("prev_res", bw * mul, bh * mul_h, offset_x, offset_y);
-        }
-        prev_back = { bw = flw, bh = flh, ox = 0, oy = 0};
-
-    }else{
-
-        Trans_shader.set_param("back_res", bw * mul, bh * mul , offset_x, offset_y);
-
-        if(prev_back.len() > 0 ) {
-            Trans_shader.set_param("prev_res", prev_back.bw, prev_back.bh, prev_back.ox, prev_back.oy );
-        }else{
-            Trans_shader.set_param("prev_res", bw * mul, bh * mul_h, offset_x, offset_y);
+            Trans_shader.set_param("back_res", 0.0, 0.0, 1.0, 1.0 ); // actual background infos
         }
 
-        prev_back = { bw = bw * mul, bh = bh * mul, ox = offset_x, oy = offset_y };
+        if(prev_back.len() > 0 ){ // previous background infos
+            Trans_shader.set_param("prev_res", prev_back.ox * (1.0 / flw) , prev_back.oy * (1.0 / flh),
+            prev_back.bw * (1.0 / flw), prev_back.bh * (1.0 / flh)); // actual background infos
+        }else{
+            Trans_shader.set_param("prev_res",
+            back_offset_x * (1.0 / flw) , back_offset_y * (1.0 / flh),
+            (bw * back_mul) / flw, (bh * back_mul_h) / flh );
+        }
+        prev_back = { ox = 0, oy = 0, bw = flw, bh = flh };
+
+    }else{ // scaled (HyperSpin) Background
+
+        if( toIsSWF ){ // hyperspin seems to stretch any swf backgrounds !
+            Trans_shader.set_param("back_res", back_offset_x * (1.0 / flw), back_offset_y * (1.0 / flh), (1024 * back_mul) / flw, (768 * back_mul_h) / flh); // actual background infos stretched
+        }else{
+            Trans_shader.set_param("back_res", back_offset_x * (1.0 / flw), back_offset_y * (1.0 / flh), (bw * back_mul) / flw, (bh * back_mul_h) / flh); // actual background infos
+        }
+
+        if(prev_back.len() > 0 ) { // previous background infos
+            Trans_shader.set_param("prev_res", prev_back.ox * (1.0 / flw) , prev_back.oy * (1.0 / flh),
+            prev_back.bw / flw, prev_back.bh / flh);
+        }else{
+            Trans_shader.set_param("prev_res", back_offset_x * (1.0 / flw), back_offset_y * (1.0 / flh),
+            (bw * back_mul) / flw, (bh * back_mul_h) / flh);
+        }
+        prev_back = { ox = back_offset_x, oy = back_offset_y, bw = bw * back_mul, bh = bh * back_mul_h };
     }
 
     Trans_shader.set_texture_param("back2", ArtObj.background2);
@@ -551,16 +568,15 @@ function background_transitions(anim, File, hd=false){
     Trans_shader.set_texture_param("bezel", ArtObj.bezel);
 
     if(!anim){
-        local rndanim = rndint(42);
+        local rndanim = rndint(43);
+        if(reverse && rndanim == 41)rndanim = 42; // hp corner can only be used right to left so select 42 (canna) instead if it's reverse
         Trans_shader.set_param("datas", rndanim, reverse, fromIsSWF, toIsSWF);// datas = preset number, reverse 0:1 , fromIsSWF, toIsSWF
     }else{
         Trans_shader.set_param("datas", anim, reverse, fromIsSWF ,toIsSWF);
     }
 
-    Trans_shader.set_param("screen_res", flw, flh, ( ( my_config["Top_Bezel"] == "Yes" && !hd ) ? true : false) ); // if hd do not put bezel on top even top_bezel is true
     Trans_shader.set_param("alpha", 1.0);
-
-    local to = (reverse == 0 ? 1.0 : 0.0)
+    local to = (reverse == 0.0 ? 1.0 : 0.0)
     bck_anim.from([reverse])
     bck_anim.to([to])
     bck_anim.on("stop", function(anim){
@@ -1347,7 +1363,10 @@ function hs_tick( ttime )
                 if( ( my_config["Background_Stretch"] == "Main Menu" && curr_sys != "Main Menu" ) || my_config["Background_Stretch"] == "No" )
                     ArtObj.bezel.file_name = fe.script_dir + "images/Bezels/Bezel_Main.png";
             }
+        }else{
+            ArtObj.bezel.file_name = fe.script_dir + "images/Bezels/Bezel_trans.png";
         }
+
         prev_path = path;
         overview(0); // start checking for games overview
         start_background.visible = false;
