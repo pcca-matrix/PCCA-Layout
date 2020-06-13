@@ -9,23 +9,26 @@
 // PCCA-Matrix 2020
 //
 ////////////////////////////////////////////////////////////////////
-
+local M_order = 0;
 class UserConfig {
-    </ label="Wheel transition time", help="Time in milliseconds for wheel spin", options="1,25,50,75,100,125,150,175,200,400", order=1 /> transition_ms="25"
-    </ label="Wheel fade time", help="Time in milliseconds for wheel fade out (-1 disable fading)", options="-1,0,500,1000,1500,2000,2500,3500", order=2 /> wheel_fade_time="2500"
-    </ label="Select round or vertical wheel", help="Switch between a round and vertical wheel", options="Wheel,Vertical Wheel", order=3 /> wheel_type="Wheel"
-    </ label="Media Path", help="Path of HyperSpin media, if empty, media is considered inside layout folder", options="", order=4 /> medias_path=""
-    </ label="Override Transitions", help="Use FLV Override Video Transitions", options="Yes, No", order=5 /> override_transitions="Yes"
-    </ label="Themes Wait For Override", help="Themes load after override transition has played", options="Yes, No", order=6 /> wait_override="Yes"
-    </ label="Animated Backgrounds", help="Use background transitions", options="Yes, No", order=7 /> animated_backgrounds="Yes"
-    </ label="Aspect", help="Theme aspect", options="Stretch, Center", order=8 /> Aspect="Center"
-    </ label="Bezels", help="If display is centered, use bezels to replace pixel stretched border", options="Yes, No", order=9 /> Bezels="Yes"
-    </ label="Low GPU", help="'Yes' = Low GPU (Intel HD,.. less backgrounds transition), 'No' = Recent GPU", options="Yes, No", order=10 /> Low_GPU="No"
-    </ label="Background Stretch", help="Stretch all background or main menu only", options="Yes, No, Main Menu", order=11 /> Background_Stretch="Main Menu"
-    </ label="Interface Language", help="Preferred User Language", options="Fr, En", order=12 /> user_lang="En"
-    </ label="Game Info Coordinates", help="x,y coordinates for the game info surface. If empty = left bottom", options="", order=13 /> infos_coord = ""
-    </ label="Global Stats", help="Enable or disable the main menu stats system", options="Yes, No", order=14 /> stats_main = "Yes"
-    </ label="Special Atworks", help="Enable or disable the special artwoks", options="Yes, No", order=15 /> special_artworks = "Yes"
+    </ label="Wheel transition time", help="Time in milliseconds for wheel spin", options="1,25,50,75,100,125,150,175,200,400", order=M_order++ /> transition_ms="25"
+    </ label="Wheel fade time", help="Time in milliseconds for wheel fade out (-1 disable fading)", options="-1,0,500,1000,1500,2000,2500,3500", order=M_order++ /> wheel_fade_time="2500"
+    </ label="Wheel fade on Main Menu", help="Fade Wheel on Main Menu", options="Yes, No", order=M_order++ /> wheel_fade_main="No"
+    </ label="Number of wheel ", help="Number of wheel to display", options="4,6,8,10,12",order=M_order++ /> wheels_slots="12";
+    </ label="Select round or vertical wheel", help="Switch between a round and vertical wheel", options="Wheel,Vertical Wheel", order=M_order++ /> wheel_type="Wheel"
+    </ label="Wheel Offset", help="X Wheel Offset", options="", order=M_order++ /> wheel_offset="0"
+    </ label="Media Path", help="Path of HyperSpin media, if empty, media is considered inside layout folder", options="", order=M_order++ /> medias_path=""
+    </ label="Override Transitions", help="Use FLV Override Video Transitions", options="Yes, No", order=M_order++ /> override_transitions="Yes"
+    </ label="Themes Wait For Override", help="Themes load after override transition has played", options="Yes, No", order=M_order++ /> wait_override="Yes"
+    </ label="Animated Backgrounds", help="Use background transitions", options="Yes, No", order=M_order++ /> animated_backgrounds="Yes"
+    </ label="Aspect", help="Theme aspect", options="Stretch, Center", order=M_order++ /> Aspect="Center"
+    </ label="Bezels", help="If display is centered, use bezels to replace pixel stretched border", options="Yes, No", order=M_order++ /> Bezels="Yes"
+    </ label="Low GPU", help="'Yes' = Low GPU (Intel HD,.. less backgrounds transition), 'No' = Recent GPU", options="Yes, No", order=M_order++ /> Low_GPU="No"
+    </ label="Background Stretch", help="Stretch all background or main menu only", options="Yes, No, Main Menu", order=M_order++ /> Background_Stretch="Main Menu"
+    </ label="Interface Language", help="Preferred User Language", options="Fr, En", order=M_order++ /> user_lang="En"
+    </ label="Game Info Coordinates", help="x,y coordinates for the game info surface. If empty = left bottom", options="", order=M_order++ /> infos_coord = ""
+    </ label="Global Stats", help="Enable or disable the main menu stats system", options="Yes, No", order=M_order++ /> stats_main = "Yes"
+    </ label="Special Atworks", help="Enable or disable the special artwoks", options="Yes, No", order=M_order++ /> special_artworks = "Yes"
     //</ label="Animated Artworks", help="Animate artworks", options="Yes, No", order=6 /> animated_artworks="Yes"
 }
 
@@ -360,7 +363,10 @@ local g_coord = [ 0, flh*0.805 ];
 if(my_config["infos_coord"] != "") {
     local g_c = split( my_config["infos_coord"], ",");
     if( g_c.len() == 2 ) {
-      if( g_c[0].tofloat() >= 0 && g_c[0].tofloat() < flw && g_c[1].tofloat() >= 0 && g_c[1].tofloat() < flh ) g_coord = [ g_c[0].tofloat(), g_c[1].tofloat() ];
+        local I_x = 0; local I_y = 0;
+        try { I_x = g_c[1].tofloat(); } catch ( e ) { I_x = 0 }
+        try { I_y = g_c[1].tofloat(); } catch ( e ) { I_y = 0 }
+        if( I_x > 0 && I_x < flw && I_y > 0 && I_y < flh ) g_coord = [ I_x, I_y ];
     }
 }
 
@@ -967,7 +973,10 @@ function hide_art(){
 
 
 // Wheels
-local wheel_count = 12;
+local wheel_count = my_config["wheels_slots"].tointeger();
+local wheel_offset = 0;
+try { wheel_offset = my_config["wheel_offset"].tofloat(); } catch ( e ) { wheel_offset = 0 }
+
 local ww = flw*0.15;
 local wh = flh*0.10;
 local wheel_x = [ flw*0.94, flw*0.935, flw*0.896, flw*0.865, flw*0.84, flw*0.82, flw*0.78, flw*0.82, flw*0.84, flw*0.865, flw*0.896, flw*0.90, ];
@@ -1008,7 +1017,7 @@ class WheelEntry extends ConveyorSlot
         if ( slot < 0 ) slot=0;
         if ( slot >=10 ) slot=10;
 
-        m_obj.x = wheel_x[slot] + p * ( wheel_x[slot+1] - wheel_x[slot] );
+        m_obj.x = wheel_x[slot] + p * ( wheel_x[slot+1] - wheel_x[slot] ) - wheel_offset;
         m_obj.y = wheel_y[slot] + p * ( wheel_y[slot+1] - wheel_y[slot] );
         m_obj.width = wheel_w[slot] + p * ( wheel_w[slot+1] - wheel_w[slot] );
         m_obj.height = wheel_h[slot] + p * ( wheel_h[slot+1] - wheel_h[slot] );
@@ -1034,7 +1043,7 @@ conveyor.transition_ms = 50;
 
 try { conveyor.transition_ms = my_config["transition_ms"].tointeger(); } catch ( e ) { }
 
-local center_animation = PresetAnimation(conveyor.m_objs[6].m_obj)
+local center_animation = PresetAnimation(conveyor.m_objs[wheel_count/2].m_obj)
 .auto(true)
 .preset("zoom", 1.16)
 .yoyo()
@@ -1043,7 +1052,7 @@ local center_animation = PresetAnimation(conveyor.m_objs[6].m_obj)
 .delay(550)
 .easing("ease-in-cubic")
 
-local center_Wheel_fade = PresetAnimation(conveyor.m_objs[6])
+local center_Wheel_fade = PresetAnimation(conveyor.m_objs[wheel_count/2])
 .auto(true)
 .from({alpha=0})
 .to({alpha=255})
@@ -1056,7 +1065,7 @@ function conveyor_tick( ttime )
     local delay = 1100; local fade_time = my_config["wheel_fade_time"].tofloat();
     local from = 255; local to = 0;
     local elapsed = glob_time - rtime;
-    if ( !conveyor_bool && elapsed > delay && curr_sys != "Main Menu" && fade_time > 0 ) {
+    if ( !conveyor_bool && elapsed > delay && ( curr_sys != "Main Menu" || my_config["wheel_fade_main"] == "Yes" ) && fade_time > 0 ) {
         alpha = (from * (fade_time - elapsed + delay)) / fade_time;
         alpha = (alpha < 0 ? 0 : alpha);
         local count = conveyor.m_objs.len();
