@@ -71,6 +71,9 @@ if( my_config["Aspect"] == "Stretch"){
     offset_y = 0;
 }
 
+local wheel_offset = 0;
+try { wheel_offset = my_config["wheel_offset"].tofloat(); } catch ( e ) { wheel_offset = 0 }
+
 ArtObj <- {};
 snap_is_playing <- false;
 availables <- { artwork1 = false, artwork2 = false, artwork3 = false, artwork4 = false, video = false }; // artworks available in theme zip
@@ -417,7 +420,7 @@ favo.set_rgb( 255, 170, 0 );
 main_infos <- {};
 game_elapse <- 0;
 
-local m_infos = fe.add_text("",flw*0.878, flh*0.537, flw*0.11, flh*0.046);
+local m_infos = fe.add_text("",(flw*0.878) - wheel_offset, flh*0.537, flw*0.11, flh*0.046);
 if ( my_config["wheel_type"] != "Vertical Wheel"){
     m_infos.set_pos( flw*0.785, flh*0.546 );
     m_infos.rotation = -5.2;
@@ -974,8 +977,6 @@ function hide_art(){
 
 // Wheels
 local wheel_count = my_config["wheels_slots"].tointeger();
-local wheel_offset = 0;
-try { wheel_offset = my_config["wheel_offset"].tofloat(); } catch ( e ) { wheel_offset = 0 }
 
 local ww = flw*0.15;
 local wh = flh*0.10;
@@ -1157,6 +1158,9 @@ function hs_transition( ttype, var, ttime )
                 global_fade( ttime, 500, true);
                 return true;
             }else{
+                ArtObj.background1.video_playing = true;
+                ArtObj.background2.video_playing = true;
+                ArtObj.snap.video_playing = true;
                 global_fade( 500, 500, true);
                 // update stats for this system
                 game_elapse = fe.game_info(Info.PlayedTime).tointeger() - game_elapse;
@@ -1176,6 +1180,9 @@ function hs_transition( ttype, var, ttime )
         case Transition.ToGame:
             if ( ttime <= 1500  ) {
                 global_fade(ttime, 1500, false)
+                ArtObj.background1.video_playing = false;
+                ArtObj.background2.video_playing = false;
+                ArtObj.snap.video_playing = false;
                 return true;
             }else{
                 global_fade(1500, 1500, false)
