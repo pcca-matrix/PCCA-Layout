@@ -1,6 +1,6 @@
 # PCCA Hyperspin theme conversion for Attract-Mode
 
-### Version 1.04 beta
+### Version 1.05 beta
 This script is intended to work with Attract-Mode http://attractmode.org/ , it intends to reproduce the real hyperspin experience in HD as precise as possible using the same themes and folder structure as a real Hyperspin setup.
 
 Hypertheme can be used to build new themes or you can build your own with a higher resolution than hyperspin's default 1024x768.
@@ -60,21 +60,21 @@ Select your language for some text translation present in game info.
 
 Use flv transition videos placed in folder -> \Media\Frontend\Video\Transitions
 
-If you think a certain transtion would look great for a certain game, then you can make a copy that transition to 
-your \Media\{SYSTEME NAME}\Video\Override Transitions folder and rename the video to the name of the rom you would like to see the transition on.
+If you think a certain transtion would look great for a certain game, then you can make a copy of that transition to 
+your \Media\{SYSTEME NAME}\Video\Override Transitions folder and rename the video with the same name of the rom you would like to see the transition on.
 
-If you give a transition the same name as one of your genre categories you will see the transtion when a game match the category if no other transition is available for this game.
+If you give a transition the same name as one of your genre categories you will see the transtion when a game match the category if no other transition is available for that game.
 
 
 ### Themes Wait For Override 
 Themes load after Override Transition has played ( Not implemented yet)
 
 ### Media Path
-This should point to your hyperspin media path. If empty, the media folder must be in the 'pcca' layout directory.
+This option should point to your hyperspin media path. If empty, the media folder must be in the 'pcca' layout directory.
 
 example:
 
-If you use HyperSpin installation is on c: ,media path should be:
+If your HyperSpin installation is on c: ,media path should be:
  
 `C:/Hyperspin/Media`
 
@@ -90,7 +90,7 @@ Identical to Hyperspin.
 
 ### Bezels
 
-Bezels need to be placed in images/bezel of 'pcca' layout folder, named as the system name you want the bezel for.
+Bezels need to be placed in images/bezel of 'pcca' layout folder, named as the system you want the bezel for.
 
 ### Backgrounds
 
@@ -121,9 +121,9 @@ Sound_Wheel_Out = when you exit a system (StartLayout)
 Sound_Wheel_Jump = when you use prev_page or next_page
 
 
-Background Music is played if an mp3 file is found anywhere in theme.zip, no matter how it is named or in the media folder Sound/Background Music/ named as the rom name of the game you want music.
+Background Music is played if an mp3 file is found anywhere in theme.zip, no matter how it is named or in the media folder Sound/Background Music/ named as the rom name of the game you want music for.
 
-if Background Music if found in the theme.zip file or the Sound/Background Music folder ("C:\Hyperspin\Media\Atari 2600\Sound\Background Music\Vanguard.mp3" for example), the theme Background Music is used and video snap sound is automaticly muted.
+if Background Music is found in the theme.zip file or the Sound/Background Music folder ("C:\Hyperspin\Media\Atari 2600\Sound\Background Music\Vanguard.mp3" for example), the theme Background Music is used and video snap sound is automaticly muted.
 
 
 ### Specials Artwork
@@ -131,7 +131,7 @@ if Background Music if found in the theme.zip file or the Sound/Background Music
 Identical to Hyperspin.
 pcca layout use special artworks placed in folder -> \Media\{SYSTEME NAME}\Images\Special
 
-Special artwork medias should be named :
+Special artwork media should be named :
 SpecialA1 , SpecialA2, ...
 SpecialB1 , SpecialB2, ...
 
@@ -141,7 +141,7 @@ Real Hyperspin Settings ini can be used as is by copying it to the pcca layout S
 
 ```
 [Special Art A] // the name of the special artwork collection (A or B)
-default=false    -> When in system use default artworks frommain menu
+default=false    -> When in system use default artworks from main menu
 active=true      -> enabled (true) or disabled (false)
 x=512            -> x alignement ( if width and height are specified , then it's real coord , if not, it's hyperspin default 1024x768 scaled for your screen resolution)
 y=720            -> y alignement ( if width and height are specified , then it's real coord , if not, it's hyperspin default 1024x768 scaled for your screen resolution)
@@ -156,9 +156,9 @@ w=500            -> width of your special artwork
 h=100            -> height of your special artwork
 ext=png          -> extension of your special artwork (you can use any media extension (video, swf, or any image supported by Attract-mode)
 ```
-if no .ini file is found but you have special artwork inside your images/Special folder , the default settings will be applied.
+If no .ini file is found but you have special artwork inside your images/Special folder , the default settings will be applied.
 
-the special artworks defaults settings is:
+The special artworks defaults settings is:
 
 ###Special A
 
@@ -187,7 +187,7 @@ default media extension is swf, as in hyperspin.
 default alignement is bottom center.
 
 ### Tags
-2 tags are available: 'completed' and 'fail'. These tage are displayed in the on-screen game info area (bottom left corner by default). You can add your own png file named as your tag name in pcca/images/tags (must be in .png format).
+2 tags are available: 'completed' and 'fail'. These tags are displayed in the on-screen game info area (bottom left corner by default). You can add your own png file named as your tag name in pcca/images/tags (must be in .png format).
 
 ## Known Issues:
 - axis rotation for video snap (AM does not have z-axis property for axis rotation ).
@@ -211,8 +211,6 @@ new outlined font for displaying game informations
 glyph for category
 
 particles animations
-
-rain float animation
 
 screensaver that random trough all your games when your are on main menu, displaying systeme and game wheel logo.
 

@@ -24,11 +24,11 @@ class UserConfig {
     </ label="Aspect", help="Theme aspect", options="Stretch, Center", order=M_order++ /> Aspect="Center"
     </ label="Bezels", help="If display is centered, use bezels to replace pixel stretched border", options="Yes, No", order=M_order++ /> Bezels="Yes"
     </ label="Low GPU", help="'Yes' = Low GPU (Intel HD,.. less backgrounds transition), 'No' = Recent GPU", options="Yes, No", order=M_order++ /> Low_GPU="No"
-    </ label="Background Stretch", help="Stretch all background or main menu only", options="Yes, No, Main Menu", order=M_order++ /> Background_Stretch="Main Menu"
+    </ label="Background Stretch", help="Stretch all backgrounds or main menu only", options="Yes, No, Main Menu", order=M_order++ /> Background_Stretch="Main Menu"
     </ label="Interface Language", help="Preferred User Language", options="Fr, En", order=M_order++ /> user_lang="En"
     </ label="Game Info Coordinates", help="x,y coordinates for the game info surface. If empty = left bottom", options="", order=M_order++ /> infos_coord = ""
     </ label="Global Stats", help="Enable or disable the main menu stats system", options="Yes, No", order=M_order++ /> stats_main = "Yes"
-    </ label="Special Atworks", help="Enable or disable the special artwoks", options="Yes, No", order=M_order++ /> special_artworks = "Yes"
+    </ label="Special Atwork", help="Enable or disable the special artwok", options="Yes, No", order=M_order++ /> special_artworks = "Yes"
     //</ label="Animated Artworks", help="Animate artworks", options="Yes, No", order=6 /> animated_artworks="Yes"
 }
 
