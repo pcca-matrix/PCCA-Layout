@@ -32,6 +32,9 @@ class UserConfig {
     //</ label="Animated Artworks", help="Animate artworks", options="Yes, No", order=6 /> animated_artworks="Yes"
 }
 
+flw <- fe.layout.width.tofloat();
+flh <- fe.layout.height.tofloat();
+
 // Modules
 fe.load_module("hs-animate");
 fe.load_module("conveyor");
@@ -54,8 +57,6 @@ local prev_back = {}; // previous background table infos ( transitions )
 //test <- fe.add_text("",0,200,1920,25);// DEBUG
 
 // Globals
-flw <- fe.layout.width.tofloat();
-flh <- fe.layout.height.tofloat();
 
 // Aspect - Center (only for HS theme)
 local nw = flh * 1.333;
@@ -109,6 +110,9 @@ ArtObj.artwork3 <- fe.add_image("",-1000,-1000,0.1,0.1);
 ArtObj.artwork4 <- fe.add_image("",-1000,-1000,0.1,0.1);
 ArtObj.snap <- fe.add_image("",-1000,-1000,0.1,0.1);
 ArtObj.video <- fe.add_image("",-1000,-1000,0.1,0.1);
+
+// Particles medias clones Array
+ArtArray <- [];
 
 // Override Transitions Videos
 local flv_transitions = fe.add_image("",0,0,flw,flh);
@@ -439,7 +443,7 @@ if( my_config["stats_main"] == "Yes" ){
 
 function stats_text_update( sys ){
     if( main_infos.rawin( sys ) ){
-        m_infos.msg = main_infos[sys].cnt + " " + LnG.Games;
+        m_infos.msg = main_infos[sys].cnt + " " + LnG.Games + " / " + LnG.Played + ": " + main_infos[sys].pl;
         if(main_infos[sys].time > 0)  m_infos.msg += "\n" + LnG.playedtime + " " + secondsToDhms( main_infos[sys].time );
     }else{
         m_infos.msg = "";
@@ -972,6 +976,8 @@ function hide_art(){
                 anims[a].play();
             }
         }
+        // hide every particles medias clones
+        for (local i=0; i < ArtArray.len(); i++ ) ArtArray[i].visible = false;
 }
 
 
@@ -1509,6 +1515,7 @@ function global_fade(ttime, target, direction){
         Trans_shader.set_param("alpha", ttime / target);
         ArtObj.SpecialA.shader.set_param("alpha", ttime / target);
         ArtObj.SpecialB.shader.set_param("alpha", ttime / target);
+        for (local i=0; i < ArtArray.len(); i++ ) ArtArray[i].alpha = ttime * (255.0 / target);
    }else{ // hide
         flv_transitions.video_playing = false; // stop playing ovveride video during fade
         foreach(obj in objlist) obj.alpha = 255.0 - ttime * (255.0 / target);
@@ -1518,6 +1525,7 @@ function global_fade(ttime, target, direction){
         ArtObj.SpecialA.shader.set_param("alpha",1.0 - (ttime / target) );
         ArtObj.SpecialB.shader.set_param("alpha",1.0 - (ttime / target) );
         for (local i=0; i < conveyor.m_objs.len(); i++) conveyor.m_objs[i].alpha = 0;
+        for (local i=0; i < ArtArray.len(); i++ ) ArtArray[i].alpha = 255.0 - ttime * (255.0 / target);
    }
    return;
 }

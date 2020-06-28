@@ -19,7 +19,7 @@ Screen <- {
     center = { x = fe.layout.width / 2, y = fe.layout.height / 2 }
 }
 
-const OFFSET = 200;
+OFFSET <- fe.layout.width * 0.10;
 
 POSITIONS <- {
     top = function(o) { return  { y = -(o.height + OFFSET), x=o.x } },

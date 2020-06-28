@@ -4,12 +4,13 @@ _LL["Fr"] <- {
     counter = "Compteur de jeu",
     playedtime = "Temps en jeu",
     display = "Jeux / Filtre",
-    add_fav = "Ajouté au favoris",
-    ret_fav = "Retiré des favoris",
+    add_fav = "AjoutÃ© au favoris",
+    ret_fav = "RetirÃ© des favoris",
     Sday = "J",
     Never = "Jamais",
     RefreshTxt = "Rafraichissement des statistiques",
-    Games = "Jeux"
+    Games = "Jeux",
+    Played = "Parties"
 }
 
 _LL["En"] <- {
@@ -21,5 +22,6 @@ _LL["En"] <- {
     Sday = "D",
     Never = "Never",
     RefreshTxt = "Refreshing stats",
-    Games = "Games"
+    Games = "Games",
+    Played = "Played"
 }

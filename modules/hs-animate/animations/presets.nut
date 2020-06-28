@@ -307,6 +307,32 @@ class PresetAnimation extends Animation {
 
     function update() {
         switch(opts.preset){
+            case "rain float":
+                local x=0; local y=0; local v=0;
+                if( progress == 0.0 )return;
+                progress = 0.1;
+                for ( local i=0; i < ArtArray.len(); i++ ){
+                    y = ArtArray[i].y + opts.datas.s[i];
+                    opts.datas.t[i] += opts.datas.x[i];
+                    v = cos(opts.datas.t[i] / 100) * 8;
+                    if(ArtArray[i].rotation > 0)
+                        x = ArtArray[i].x - v;
+                    else
+                        x = ArtArray[i].x + v;
+
+                    if( ArtArray[i].y >= flh ){
+                        y = - (ArtArray[i].height + rndint(flh * 0.10));
+                        x = rndint(flw);
+                        opts.datas.x[i] = rndfloat(2.0);
+                    }
+
+                    ArtArray[i].rotation = v;
+                    ArtArray[i].y = y;
+                    ArtArray[i].x = x;
+                }
+
+            break;
+
             case "arc grow":
                 if ( elapsed < opts.delay ) return true;  // wait delay before start
                 local arc;
@@ -774,25 +800,20 @@ class PresetAnimation extends Animation {
             return true;
         },
 
-        "rain float": // // tempo, not good ... try shader
+        "rain float": // OK
         function ( obj ){
-            if(opts.starting == "left"){
-              opts.from = { x=POSITIONS[opts.starting](obj).x, y=obj.y };
-              opts.to = { x=POSITIONS["right"](obj).x ,y=obj.y };
-            }else if(opts.starting == "right"){
-              opts.from = { x=POSITIONS[opts.starting](obj).x, y=obj.y };
-              opts.to = { x=POSITIONS["left"](obj).x ,y=obj.y };
-
-            }else if(opts.starting == "top"){
-              opts.from = { y=POSITIONS[opts.starting](obj).y, x=obj.x };
-              opts.to = { y=POSITIONS["bottom"](obj).y ,x=obj.x};
-
-            }else if(opts.starting == "bottom"){
-              opts.from = { y=POSITIONS[opts.starting](obj).y, x=obj.x};
-              opts.to = { y=POSITIONS["top"](obj).y, x=obj.x};
+            local nx = ArtArray.len();
+            if( nx < 4 ){ // add missings images if needed
+                for ( local i=0; i < 4-nx; i++ ){ ArtArray.push(fe.add_image("",0 , 0 , 0 , 0)) }
             }
-            opts.interpolator = CubicBezierInterpolator("linear")
-            opts.loops=-1;
+
+            for ( local i=0; i < 4; i++ ){
+                local posx = ( i > 0 ? (obj.width * i) + rndint(obj.width) : flw*0.01)
+                ArtArray[i].file_name = obj.file_name;
+                ArtArray[i].visible = true;
+                ArtArray[i].set_pos( posx , -( rndint(flh*0.5) + obj.height ) , obj.width, obj.height);
+            }
+            opts.datas <- { "s": [4.1, 2.8, 3.4, 1.9], "t": [0,0,0,0], "x": [rndfloat(2.1), rndfloat(2.1), rndfloat(2.1), rndfloat(2.1)] };
         },
 
         "bounce around 3d": // OK
@@ -1143,6 +1164,12 @@ class PresetAnimation extends Animation {
                 }
             } catch(e) {}
         return state;
+    }
+
+    // Generate a pseudo-random float between 0 and max - 1, inclusive
+    function rndfloat(max) {
+        local roll = 1.0 * max * rand() / RAND_MAX;
+        return roll;
     }
 
     //Generate a pseudo-random integer between 0 and max
