@@ -28,7 +28,7 @@ class UserConfig {
     </ label="Interface Language", help="Preferred User Language", options="Fr, En", order=M_order++ /> user_lang="En"
     </ label="Game Info Coordinates", help="x,y coordinates for the game info surface. If empty = left bottom", options="", order=M_order++ /> infos_coord = ""
     </ label="Global Stats", help="Enable or disable the main menu stats system", options="Yes, No", order=M_order++ /> stats_main = "Yes"
-    </ label="Special Atwork", help="Enable or disable the special artwok", options="Yes, No", order=M_order++ /> special_artworks = "Yes"
+    </ label="Special Artwork", help="Enable or disable the special artwork", options="Yes, No", order=M_order++ /> special_artworks = "Yes"
     //</ label="Animated Artworks", help="Animate artworks", options="Yes, No", order=6 /> animated_artworks="Yes"
 }
 
