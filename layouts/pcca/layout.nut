@@ -825,7 +825,15 @@ function load_theme(name, theme_content, prev_def){
             ArtObj.snap.file_name = ret_snap();
             ArtObj.snap.video_playing = false; // do not start playing snap now , wait delay from animation
             snap_is_playing = false;
-            if(forceaspect == "none" || forceaspect == "vertical") h = w / 1.33; // both , horizontal ?
+
+            if(ArtObj.snap.texture_width > ArtObj.snap.texture_height){ // landscape video
+                if(forceaspect == "vertical" || forceaspect == "none" ) h = w / ( ArtObj.snap.texture_width.tofloat() / ArtObj.snap.texture_height.tofloat() );
+            }
+
+            if(ArtObj.snap.texture_width < ArtObj.snap.texture_height){ // portrait video
+                if(forceaspect == "horizontal" || forceaspect == "none") w = h * ( ArtObj.snap.texture_width.tofloat() / ArtObj.snap.texture_height.tofloat() );
+            }
+
             local borderMax = 0;
             foreach(v in [bsize/2, bsize2, bsize3] ) if(v > borderMax) borderMax=v;
 
