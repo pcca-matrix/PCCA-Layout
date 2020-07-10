@@ -707,7 +707,7 @@ function load_theme(name, theme_content, prev_def){
         if(!availables.rawin( c.tag )) continue; // if xml tag not know continue
         local art = ""; local Xtag = c.tag;
         w=0,h=0,x=0,y=0,r=0,time=0,delay=0,overlayoffsetx=0,overlayoffsety=0,overlaybelow=false,below=false,forceaspect="none",type="none",start="none",rest="none";
-        bsize=0,bsize2=0,bsize3=0,bcolor=0,bcolor2=0,bcolor3=0,bshape=false,anim_rotate=0,hd=false;
+        bsize=0,bsize2=0,bsize3=0,bcolor=0,bcolor2=0,bcolor3=0,bshape=false,anim_rotate=0,hd=false,ry=0,rx=0;
 
         foreach(k,v in theme_content){
             if(strip_ext(v.tolower()) == zippath.tolower() + Xtag.tolower()){
@@ -731,7 +731,7 @@ function load_theme(name, theme_content, prev_def){
                 case "below": below = (v == "true" ? true : false ); break;
                 case "forceaspect": forceaspect = ( v == "" ? "none" : v ); break;
                 case "type":  type = ( v != "" ? v.tolower() : "none" ); break;
-                case "start": start = (v != "" ?  v : "none "); break;
+                case "start": start = ( (v.tolower() == "left" || v.tolower() == "right" || v.tolower() == "bottom" || v.tolower() == "top") ?  v.tolower() : "none"); break;
                 case "rest":  rest = (v != "" ? v : "none" ); break;
                 case "bsize": bsize = (v != "" ? v.tointeger() : 0 ); break;
                 case "bsize2": bsize2 = (v != "" ? v.tointeger() : 0 ); break;
@@ -740,6 +740,8 @@ function load_theme(name, theme_content, prev_def){
                 case "bcolor2": bcolor2 = (v != "" ? v.tointeger() : 0 ); break;
                 case "bcolor3": bcolor3 = (v != "" ? v.tointeger() : 0 ); break;
                 case "bshape": bshape =  ( (v == "round" || v == "true") ? true : false ); break;
+                case "ry": ry = ( v == "" ? 0 : v.tofloat() ); break;
+                case "rx": rx = ( v == "" ? 0 : v.tofloat() ); break;
             }
         }
 
@@ -768,7 +770,7 @@ function load_theme(name, theme_content, prev_def){
                     local mr = PI * r / 180;
                     x += cos( mr ) * (-w * 0.5) - sin( mr ) * (-h * 0.5) + w * 0.5;
                     y += sin( mr ) * (-w * 0.5) + cos( mr ) * (-h * 0.5) + h * 0.5;
-                    ArtObj.snap.rotation = r;
+                    ArtObj[Xtag].rotation = r;
                 }else if( r != 0 ){
                     anim_rotate = r;
                 }
@@ -792,28 +794,20 @@ function load_theme(name, theme_content, prev_def){
                 yy = (y - ( ArtObj[Xtag].texture_height * 0.5 ) );
 
                 if( ext(art).tolower() == "swf"){
-                   // try to fix swf  - arch rivals, asura blade, bombjack, ashura blaster, beast busters , gladiator, must understand before fixing
-                    /*if (ArtObj[Xtag].texture_width >= 1024){
-                        xx = 0;
-                    }
-
-                    if (ArtObj[Xtag].texture_height >= 768){
-                        yy = 0;
-                    }
-                    */
+                   // try to fix swf  - arch rivals, asura blade, bombjack, ashura blaster, beast busters , gladiator, must understand all cases before fixing
                     if(x > fe.layout.width || y > fe.layout.height){
                         yy = 0;
                         xx = 0;
                     }
 
                     if(ArtObj[Xtag].texture_width == 1024){
-                        //if (xx < 0) xx = 0;
-                        xx = 0;
+                        if (xx < 0) xx = 0;
+                        //xx = 0;
                     }
 
                     if(ArtObj[Xtag].texture_height == 768){
-                       //if (yy < 0) yy = 0;
-                        yy = 0;
+                       if (yy < 0) yy = 0;
+                        //yy = 0;
                     }
 
                 }
