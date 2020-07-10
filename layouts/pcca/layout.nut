@@ -834,37 +834,38 @@ function load_theme(name, theme_content, prev_def){
                 if(forceaspect == "horizontal" || forceaspect == "none") w = h * ( ArtObj.snap.texture_width.tofloat() / ArtObj.snap.texture_height.tofloat() );
             }
 
-            local borderMax = 0;
-            foreach(v in [bsize/2, bsize2, bsize3] ) if(v > borderMax) borderMax=v;
-
-            if(availables["video"]){
-                ArtObj["video"].file_name = name + "|" + art;
-                video_shader.set_param("datas",true, overlaybelow);
-            }else{
+            if(!availables["video"]){
                 video_shader.set_param("datas",false, overlaybelow);
                 overlayoffsetx = 0; overlayoffsety = 0; // fix if theme contain offset and no frame video is present
             }
 
-            video_shader.set_param("snap_coord", overlayoffsetx, overlayoffsety , w, h);
-
+            local borderMax = 0;
+            foreach(v in [bsize/2, bsize2, bsize3] ) if(v > borderMax) borderMax = v;
+            local viewport_snap_width = w;
+            local viewport_snap_height = h;
             if(borderMax > 0){
                 if(bsize  > 0)video_shader.set_param("border1", bcolor,  bsize, bshape); // + rounded
                 if(bsize2 > 0)video_shader.set_param("border2", bcolor2, bsize2, bshape);
                 if(bsize3 > 0)video_shader.set_param("border3", bcolor3, bsize3, bshape);
-                w = w + borderMax * 2;
-                h = h + borderMax * 2;
+                viewport_snap_width += borderMax * 2;
+                viewport_snap_height += borderMax * 2;
+            }
+            local viewport_width = viewport_snap_width;
+            local viewport_height = viewport_snap_height;
+
+            if(availables["video"]){ // if video overlay available
+                ArtObj["video"].file_name = name + "|" + art;
+                video_shader.set_param("datas",true, overlaybelow);
+                if( (ArtObj["video"].texture_width * 0.5) + abs(overlayoffsetx) > w * 0.5 )
+                    viewport_width = (ArtObj["video"].texture_width * 0.5 + abs(overlayoffsetx) )* 2;
+
+                if( (ArtObj["video"].texture_height * 0.5) + abs(overlayoffsety) > h * 0.5 )
+                    viewport_height = (ArtObj["video"].texture_height * 0.5 + abs(overlayoffsety) ) * 2;
             }
 
-            local overlay_width = ArtObj[Xtag].texture_width;
-            local overlay_height = ArtObj[Xtag].texture_height;
-            // if no frame overlay available
-            if(overlay_width  < w) overlay_width = w;
-            if(overlay_height < h ) overlay_height = h;
-
-            x =  (x + overlayoffsetx ) - ( overlay_width  * 0.5 );
-            y =  (y + overlayoffsety ) - ( overlay_height * 0.5 );
-
-            if( abs(r) < 180 || time <= 0 ){// center rotation hyperspin anime rotation only if it's greater 180 or lesser -180
+            x = x - ( viewport_width  * 0.5 );
+            y = y - ( viewport_height * 0.5 );
+            if( abs(r) < 180 || time <= 0 ){ // center rotation hyperspin anime rotation only if it's greater 180 or lesser -180
                 local mr = PI * r / 180;
                 x += cos( mr ) * (-w * 0.5) - sin( mr ) * (-h * 0.5) + w * 0.5;
                 y += sin( mr ) * (-w * 0.5) + cos( mr ) * (-h * 0.5) + h * 0.5;
@@ -872,8 +873,12 @@ function load_theme(name, theme_content, prev_def){
             }else if( r != 0 ){
                 anim_rotate = r;
             }
+            //video_shader.set_param("angles", -rx, ry, 0); // vertex test
+            video_shader.set_param("offsets",overlayoffsetx, overlayoffsety);
+            video_shader.set_param("snap_coord", w, h, viewport_snap_width, viewport_snap_height);
+            video_shader.set_param("frame_coord", ArtObj["video"].texture_width, ArtObj["video"].texture_height , viewport_width, viewport_height);
 
-            ArtObj.snap.set_pos(x  * art_mul + art_offset_x, y * art_mul_h + art_offset_y, overlay_width * art_mul, overlay_height * art_mul_h);
+            ArtObj.snap.set_pos( (x  * art_mul) + art_offset_x, (y * art_mul_h) + art_offset_y, viewport_width * art_mul, viewport_height * art_mul_h);
             if(below) ArtObj.artwork1.zorder = ArtObj.snap.zorder + 1;
             if(type == "fade") type = "video_fade";
         }
