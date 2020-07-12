@@ -289,9 +289,12 @@ class PresetAnimation extends Animation {
         }
 
         //ensure all keys are accounted for
-        foreach( key, val in states["to"] )
+        foreach( key, val in states["to"] ){
+            if(key == "width" && val == "0.1")opts.target["visible"] = false; // if width is set to 0.1 and animation is started unhide object !
             if ( supported.find(key) != null )
                 states["from"][key] <- ( key in states["from"] ) ? states["from"][key] : ( opts.default_state in states ) ? states[opts.default_state][key] : states["current"][key];
+        }
+
         foreach( key, val in states["from"] )
             if ( supported.find(key) != null )
                 states["to"][key] <- ( key in states["to"] ) ? states["to"][key] : ( opts.default_state in states ) ? states[opts.default_state][key] : states["current"][key];
@@ -439,6 +442,9 @@ class PresetAnimation extends Animation {
 
             default:
                 foreach( key, val in states["to"] ) {
+                    // if width is set to 0.1 hide object
+                    if(key == "width") if( _from[key] <= 0.1 && progress > 0 && opts.target["visible"] == false) opts.target["visible"] = true;
+
                     if ( key == "rgb" ) {
                         opts.target.set_rgb(
                             opts.interpolator.interpolate(_from[key][0], _to[key][0], progress),
