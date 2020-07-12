@@ -638,7 +638,7 @@ function load_theme(name, theme_content, prev_def){
     local theme_node = find_theme_node( xml_root );
 
     availables = { artwork1 = false, artwork2 = false, artwork3 = false, artwork4 = false, video = false };
-    local w,h,x,y,r,time,delay,overlayoffsetx,overlayoffsety,overlaybelow,below,forceaspect,type,start,rest,bsize,bsize2,bsize3,bcolor,bcolor2,bcolor3,bshape,anim_rotate,hd;
+    local w,h,x,y,r,time,delay,overlayoffsetx,overlayoffsety,overlaybelow,below,forceaspect,type,start,rest,bsize,bsize2,bsize3,bcolor,bcolor2,bcolor3,bshape,anim_rotate,hd,ry,rx;
 
     local art_mul = mul;
     local art_mul_h = mul_h;
