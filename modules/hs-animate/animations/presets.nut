@@ -439,6 +439,10 @@ class PresetAnimation extends Animation {
 
             default:
                 foreach( key, val in states["to"] ) {
+                    // if from width is set to 0.1 unhide object (hidden in layout !)
+                    if(key == "width"){                       
+                        if( _from[key] <= 0.1 && progress > 0 && !opts.target.visible) opts.target.visible = true;
+                    }
                     if ( key == "rgb" ) {
                         opts.target.set_rgb(
                             opts.interpolator.interpolate(_from[key][0], _to[key][0], progress),

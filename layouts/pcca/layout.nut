@@ -1372,9 +1372,9 @@ fe.add_ticks_callback( "hs_tick" );
 function hs_tick( ttime )
 {
     glob_time=ttime;
-    // give all artwork and video visible after x ms next to triggerload
+    // set all artwork and video visible after x ms next to triggerload except those who have width set to 0.1 (unhided later in animation preset)
     if( (glob_time - rtime > glob_delay + 150) && visi == false){
-        foreach(obj in ["artwork1", "artwork2", "artwork3", "artwork4", "video", "snap"] ) ArtObj[obj].visible = true;
+        foreach(obj in ["artwork1", "artwork2", "artwork3", "artwork4", "video", "snap"] ) if(ArtObj[obj].width > 0.1) ArtObj[obj].visible = true;
         visi = true;
     }
     if(!snap_is_playing && anim_video.elapsed > anim_video.opts.delay ){ // start playing video snap after animation delay
