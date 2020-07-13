@@ -440,7 +440,7 @@ class PresetAnimation extends Animation {
             default:
                 foreach( key, val in states["to"] ) {
                     // if from width is set to 0.1 unhide object (hidden in layout !)
-                    if(key == "width"){                       
+                    if(key == "width"){
                         if( _from[key] <= 0.1 && progress > 0 && !opts.target.visible) opts.target.visible = true;
                     }
                     if ( key == "rgb" ) {
@@ -521,8 +521,8 @@ class PresetAnimation extends Animation {
                key_interpolator["x"] <- CubicBezierInterpolator("linear");
                opts.interpolator = CubicBezierInterpolator("ease-in-quart")
             }
-            opts.from = { y=starty, width=2, pinch_y=-states["origin"].height/6,  x=startx + states["origin"].width / 2 };
-            opts.to = {y=states["origin"].y, width=states["origin"].width, pinch_y=0 , x=states["origin"].x};
+            opts.from = { y=starty, width = 0.1, pinch_y=-states["origin"].height / 6,  x=startx + states["origin"].width * 0.5 };
+            opts.to = { y=states["origin"].y, width=states["origin"].width, pinch_y = 0, x=states["origin"].x };
 
         },
 
