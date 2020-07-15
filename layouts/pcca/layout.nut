@@ -616,7 +616,7 @@ function load_theme(name, theme_content, prev_def){
             ArtObj.background.set_pos(0,0,flw, flh);
             reset_art();
             flv_transitions.zorder = -6; // put override video on top of video snap
-            background_transitions(null, medias_path + curr_sys + "/Video/" + fe.game_info(Info.Name) + ".mp4", true);
+            background_transitions(null, medias_path + curr_sys + "/Video/" + fe.game_info(Info.Name) + ".mp4");
         }
         return false; // If there is no theme file, return (only video is present ! for unified theme)
     }
