@@ -23,6 +23,7 @@ class UserConfig {
     </ label="Animated Backgrounds", help="Use background transitions", options="Yes, No", order=M_order++ /> animated_backgrounds="Yes"
     </ label="Aspect", help="Theme aspect", options="Stretch, Center", order=M_order++ /> Aspect="Center"
     </ label="Bezels", help="If display is centered, use bezels to replace pixel stretched border", options="Yes, No", order=M_order++ /> Bezels="Yes"
+    </ label="Bezels on top", help="Put bezel on top of the theme artworks or below", options="Yes, No", order=M_order++ /> themes_bezels_on_top="No"
     </ label="Low GPU", help="'Yes' = Low GPU (Intel HD,.. less backgrounds transition), 'No' = Recent GPU", options="Yes, No", order=M_order++ /> Low_GPU="No"
     </ label="Background Stretch", help="Stretch all backgrounds or main menu only", options="Yes, No, Main Menu", order=M_order++ /> Background_Stretch="Main Menu"
     </ label="Interface Language", help="Preferred User Language", options="Fr, En", order=M_order++ /> user_lang="En"
@@ -91,7 +92,7 @@ local visi = false;
 local trigger_letter = false;
 local letters = fe.add_image("", flw * 0.5 - (flw*0.140 * 0.5), flh * 0.5 - (flh*0.280 * 0.5), flw*0.140, flh*0.280);
 conveyor_bool <- false; // fading conveyor
-Ini_settings <- {};
+hd <- true; // global bool for hd or hs theme
 
 // Background / Bezel
 ArtObj.background <- fe.add_image("", 0, 0, flw, flh);
@@ -136,7 +137,7 @@ ArtObj.artwork3.zorder = -3
 ArtObj.artwork2.zorder = -4
 ArtObj.snap.zorder = -7
 ArtObj.artwork1.zorder = -9
-ArtObj.bezel.zorder = -10
+ArtObj.bezel.zorder = -1
 ArtObj.background.zorder = -10
 flv_transitions.zorder = -10 // or -6 for some theme with video overlay on background ? test
 start_background.zorder=-11
@@ -501,9 +502,10 @@ ScrollingText.transition_callback = function( ttype, var, ttime ) {
     }
 }
 
-function background_transitions(anim, File, hd = false){
+function background_transitions(anim, File){
     if(File == ArtObj.background1.file_name && reverse) return;
     if(File == ArtObj.background2.file_name && !reverse) return;
+    ArtObj.bezel.visible = false;
     local fromIsSWF = false;
     local toIsSWF = false;
     local bw,bh;
@@ -600,6 +602,7 @@ function background_transitions(anim, File, hd = false){
             ArtObj.background1.video_playing = true;
             ArtObj.background2.file_name = "";
         }
+        if( !hd && my_config["themes_bezels_on_top"] ) ArtObj.bezel.visible = true;
     })
     bck_anim.play();
     reverse = 1 - reverse;
@@ -608,6 +611,7 @@ function background_transitions(anim, File, hd = false){
 function load_theme(name, theme_content, prev_def){
 
     if(theme_content.len() <= 0){
+        hd = true;
         if(file_exist(medias_path + curr_sys + "/Video/" + fe.game_info(Info.Name) + ".mp4")){
             ArtObj.background.set_pos(0,0,flw, flh);
             reset_art();
@@ -638,7 +642,7 @@ function load_theme(name, theme_content, prev_def){
     local theme_node = find_theme_node( xml_root );
 
     availables = { artwork1 = false, artwork2 = false, artwork3 = false, artwork4 = false, video = false };
-    local w,h,x,y,r,time,delay,overlayoffsetx,overlayoffsety,overlaybelow,below,forceaspect,type,start,rest,bsize,bsize2,bsize3,bcolor,bcolor2,bcolor3,bshape,anim_rotate,hd,ry,rx;
+    local w,h,x,y,r,time,delay,overlayoffsetx,overlayoffsety,overlaybelow,below,forceaspect,type,start,rest,bsize,bsize2,bsize3,bcolor,bcolor2,bcolor3,bshape,anim_rotate,ry,rx;
 
     local art_mul = mul;
     local art_mul_h = mul_h;
@@ -678,9 +682,9 @@ function load_theme(name, theme_content, prev_def){
         if(strip_ext(v.tolower()) == zippath.tolower() + "background"){ // background found in theme
             backg = name + "|" + v;
             if( my_config["animated_backgrounds"] == "Yes" ){
-               background_transitions(null, backg, hd);
+               background_transitions(null, backg);
             }else{
-               background_transitions(99, backg, hd);
+               background_transitions(99, backg);
             }
         }
 
@@ -695,9 +699,9 @@ function load_theme(name, theme_content, prev_def){
         backg = medias_path + fe.list.name + "/Images/Backgrounds/" + fe.game_info(Info.Name) + ".png";
         if(!file_exist(backg)) backg = "images/Backgrounds/Alt_Background.png";
         if( my_config["animated_backgrounds"] == "Yes" )
-            background_transitions(31 , backg, hd);
+            background_transitions(31 , backg);
         else
-            background_transitions(99, backg, hd);
+            background_transitions(99, backg);
     }
 
     if(raw_xml == "") return; // if broken with no theme.xml inside zip
@@ -707,7 +711,7 @@ function load_theme(name, theme_content, prev_def){
         if(!availables.rawin( c.tag )) continue; // if xml tag not know continue
         local art = ""; local Xtag = c.tag;
         w=0,h=0,x=0,y=0,r=0,time=0,delay=0,overlayoffsetx=0,overlayoffsety=0,overlaybelow=false,below=false,forceaspect="none",type="none",start="none",rest="none";
-        bsize=0,bsize2=0,bsize3=0,bcolor=0,bcolor2=0,bcolor3=0,bshape=false,anim_rotate=0,hd=false,ry=0,rx=0;
+        bsize=0,bsize2=0,bsize3=0,bcolor=0,bcolor2=0,bcolor3=0,bshape=false,anim_rotate=0,ry=0,rx=0;
 
         foreach(k,v in theme_content){
             if(strip_ext(v.tolower()) == zippath.tolower() + Xtag.tolower()){
@@ -1384,7 +1388,7 @@ function hs_tick( ttime )
 
     // load medias after glob_delay
     if( (glob_time - rtime > glob_delay) && trigger_load_theme){
-
+        hd = false;
         if( my_config["Bezels"] == "Yes" && my_config["Aspect"] == "Center" ){ // Systems bezels!  only if aspect center
             if( file_exist(fe.script_dir + "images/Bezels/" + curr_sys + ".png") ){
                 ArtObj.bezel.file_name = fe.script_dir + "images/Bezels/" + curr_sys + ".png";
