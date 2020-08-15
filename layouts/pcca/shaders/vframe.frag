@@ -5,6 +5,8 @@ uniform float alpha;
 uniform vec2 datas;
 uniform sampler2D tex_s;
 uniform sampler2D tex_f;
+uniform sampler2D tex_crt;
+uniform float scanline;
 uniform vec2 offsets; // x, y offsets
 uniform vec4 snap_coord; // snap_w, snap_h , snap_viewport_w, snap_viewport_h
 uniform vec4 frame_coord; // overlay_w, overlay_h , viewport_w, viewport_h
@@ -43,13 +45,14 @@ vec4 frame_border(vec2 uv){
     vec2 full_size = vec2( snap_coord.z , snap_coord.w);
     vec2 scale = vec2(snap_res / full_size);
     vec2 snap_uv = (uv - 0.5) / scale + 0.5; // scaled and centered video snap
-    vec4 color = texture2D(tex_s, snap_uv);
-
-	vec3 Brd1Col = ( border1[0] > 0 ? vec3( htmtcolor( int(border1[0]) ) ) : vec3(0,0,0) );
-	vec3 Brd2Col = ( border2[0] > 0 ? vec3( htmtcolor( int(border2[0]) ) ) : vec3(0,0,0) );
-	vec3 Brd3Col = ( border3[0] > 0 ? vec3( htmtcolor( int(border3[0]) ) ) : vec3(0,0,0) );
-	bool rounded = false;
-	if(border1[2] + border2[2] + border3[2] > 0.0 ) rounded = true;
+    vec4 color = texture(tex_s, snap_uv);
+    vec4 crt = texture( tex_crt, snap_uv) * scanline;
+    color = vec4 ( mix(color.rgb * 1.0 + (0.12 * scanline), crt.rgb, crt.a) , 1.0);
+    vec3 Brd1Col = ( border1[0] > 0 ? vec3( htmtcolor( int(border1[0]) ) ) : vec3(0,0,0) );
+    vec3 Brd2Col = ( border2[0] > 0 ? vec3( htmtcolor( int(border2[0]) ) ) : vec3(0,0,0) );
+    vec3 Brd3Col = ( border3[0] > 0 ? vec3( htmtcolor( int(border3[0]) ) ) : vec3(0,0,0) );
+    bool rounded = false;
+    if(border1[2] + border2[2] + border3[2] > 0.0 ) rounded = true;
     float b = 1.0;
     if(progress != 1.0) color = tv(color.xyz, uv);
     vec2 bn1 = (1.0 / snap_res) * (border1[1] * 0.5); // border 1

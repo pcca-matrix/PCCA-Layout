@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v1.05 beta
+// PCCA v1.06 beta
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -11,30 +11,42 @@
 ////////////////////////////////////////////////////////////////////
 local M_order = 0;
 class UserConfig {
-    </ label="Wheel transition time", help="Time in milliseconds for wheel spin", options="1,25,50,75,100,125,150,175,200,400", order=M_order++ /> transition_ms="25"
-    </ label="Wheel fade time", help="Time in milliseconds for wheel fade out (-1 disable fading)", options="-1,0,500,1000,1500,2000,2500,3500", order=M_order++ /> wheel_fade_time="2500"
-    </ label="Wheel fade on Main Menu", help="Fade Wheel on Main Menu", options="Yes, No", order=M_order++ /> wheel_fade_main="No"
-    </ label="Number of wheel ", help="Number of wheel to display", options="4,6,8,10,12",order=M_order++ /> wheels_slots="12";
-    </ label="Select round or vertical wheel", help="Switch between a round and vertical wheel", options="Wheel,Vertical Wheel", order=M_order++ /> wheel_type="Wheel"
+    </ label="Wheel transition time", help="Time in milliseconds for wheel spin", options="1,25,50,75,100,125,150,175,200,400", order=M_order++ /> wheel_transition_ms="25"
+    </ label="Wheel fade time", help="Time in seconds for wheel fade out (-1 disable fading)", options="-1,0,0.5,1.0,1.5,2.0,2.5,3.5", order=M_order++ /> wheel_fade_time="2.5"
+    </ label="Wheel fade alpha", help="Alpha value of the faded wheel (0.0 - 1.0)", options="", order=M_order++ /> wheel_alpha="0.0"
+    </ label="Number of wheel", help="Number of wheel to display", options="4,6,8,10,12",order=M_order++ /> wheel_slots="12";
+    //</ label="Select wheel type", help="Switch between a vertical, round, horizontal, and pin wheel", options="Rounded,Vertical,Horizontal,Pin", order=M_order++ /> wheel_type="rounded"
+    </ label="Select wheel type", help="Switch between a vertical or rounded wheel", options="Rounded,Vertical", order=M_order++ /> wheel_type="Rounded"
     </ label="Wheel Offset", help="X Wheel Offset", options="", order=M_order++ /> wheel_offset="0"
-    </ label="Media Path", help="Path of HyperSpin media, if empty, media is considered inside layout folder", options="", order=M_order++ /> medias_path=""
-    </ label="Override Transitions", help="Use FLV Override Video Transitions", options="Yes, No", order=M_order++ /> override_transitions="Yes"
-    </ label="Themes Wait For Override", help="Themes load after override transition has played", options="Yes, No", order=M_order++ /> wait_override="Yes"
-    </ label="Animated Backgrounds", help="Use background transitions", options="Yes, No", order=M_order++ /> animated_backgrounds="Yes"
-    </ label="Aspect", help="Theme aspect", options="Stretch, Center", order=M_order++ /> Aspect="Center"
-    </ label="Bezels", help="If display is centered, use bezels to replace pixel stretched border", options="Yes, No", order=M_order++ /> Bezels="Yes"
+    //</ label="Wheel image large", help="Center wheel width in pixels (0 = auto)", options="",order=M_order++ /> wheel_large="0";
+    //</ label="Wheel image small", help="Others wheel width in pixels (0 = auto)", options="",order=M_order++ /> wheel_small="0";
+
+    </ label="Override Transitions", help="Use FLV Override Video Transitions", options="Yes, No", order=M_order++ /> themes_override_transitions="Yes"
+    //</ label="Themes Wait For Override", help="Themes load after override transition has played", options="Yes, No", order=M_order++ /> themes_wait_override="Yes"
+    </ label="Animated Backgrounds", help="Use background transitions", options="Yes, No", order=M_order++ /> themes_animated_backgrounds="Yes"
+    </ label="Aspect", help="Theme aspect", options="Stretch, Center", order=M_order++ /> themes_aspect="Center"
+    </ label="Bezels", help="If display is centered, use bezels to replace pixel stretched border", options="Yes, No", order=M_order++ /> themes_bezels="Yes"
     </ label="Bezels on top", help="Put bezel on top of the theme artworks or below", options="Yes, No", order=M_order++ /> themes_bezels_on_top="No"
-    </ label="Low GPU", help="'Yes' = Low GPU (Intel HD,.. less backgrounds transition), 'No' = Recent GPU", options="Yes, No", order=M_order++ /> Low_GPU="No"
-    </ label="Background Stretch", help="Stretch all backgrounds or main menu only", options="Yes, No, Main Menu", order=M_order++ /> Background_Stretch="Main Menu"
+    </ label="Background Stretch", help="Stretch all backgrounds", options="Yes, No", order=M_order++ /> themes_background_stretch="No"
+    </ label="Game Info Coordinates", help="x,y coordinates for the game info surface. If empty = left bottom", options="", order=M_order++ /> themes_infos_coord = ""
+    //</ label="Animate Out Default", help="When moving off a default theme you can have theme artworks animate out each time", options="Yes, No", order=M_order++ /> themes_animate_out_default = "No"
+    </ label="Reload Backgrounds", help="Force reloading background transitions when navigating on default theme", options="Yes, No", order=M_order++ /> themes_reload_backgrounds = "No"
+    </ label="Video scanline", help="Add crt scanlines effect to video snap ", options="Yes, No", order=M_order++ /> themes_crt_scanline = "No"
+
+    </ label="Media Path", help="Path of HyperSpin media, if empty, media is considered inside layout folder", options="", order=M_order++ /> medias_path=""
+    </ label="Low GPU", help="'Yes' = Low GPU (Intel HD,.. less backgrounds transition), 'No' = Recent GPU", options="Yes, No", order=M_order++ /> LowGPU="No"
     </ label="Interface Language", help="Preferred User Language", options="Fr, En", order=M_order++ /> user_lang="En"
-    </ label="Game Info Coordinates", help="x,y coordinates for the game info surface. If empty = left bottom", options="", order=M_order++ /> infos_coord = ""
     </ label="Global Stats", help="Enable or disable the main menu stats system", options="Yes, No", order=M_order++ /> stats_main = "Yes"
+
     </ label="Special Artwork", help="Enable or disable the special artwork", options="Yes, No", order=M_order++ /> special_artworks = "Yes"
+    </ label="Game Sounds", help="Enable or disable the game sounds", options="Yes, No", order=M_order++ /> sounds_game_sounds = "Yes"
+    </ label="Wheel Click", help="Enable or disable the wheel click sound", options="Yes, No", order=M_order++ /> sounds_wheel_click = "Yes"
     //</ label="Animated Artworks", help="Animate artworks", options="Yes, No", order=6 /> animated_artworks="Yes"
 }
 
 flw <- fe.layout.width.tofloat();
 flh <- fe.layout.height.tofloat();
+
 
 // Modules
 fe.load_module("hs-animate");
@@ -47,6 +59,8 @@ fe.do_nut("nut/func.nut");
 fe.do_nut("nut/lang.nut");
 
 my_config <- fe.get_config();
+Ini_settings <- {}; // global settings !
+user_settings(); // first, load user settings
 
 medias_path <- ( my_config["medias_path"] != "" ? my_config["medias_path"] : fe.script_dir + "Media" );
 if ( medias_path.len()-1 != '/' ) medias_path += "/";
@@ -66,7 +80,7 @@ local mul_h = mul;
 local offset_x = (flw - nw) * 0.5;
 local offset_y = 0;
 
-if( my_config["Aspect"] == "Stretch"){
+if( Ini_settings.themes["aspect"] == "stretch"){
     mul = flw / 1024;
     mul_h = flh / 768;
     offset_x = 0;
@@ -74,7 +88,7 @@ if( my_config["Aspect"] == "Stretch"){
 }
 
 local wheel_offset = 0;
-try { wheel_offset = my_config["wheel_offset"].tofloat(); } catch ( e ) { wheel_offset = 0 }
+try { wheel_offset = Ini_settings.wheel["offset"].tofloat(); } catch ( e ) { wheel_offset = 0 }
 
 ArtObj <- {};
 snap_is_playing <- false;
@@ -122,7 +136,7 @@ flv_transitions.video_flags = Vid.NoLoop;
 local start_background = fe.add_image("images/Backgrounds/Background.jpg",0,0,flw,flh);
 local point = fe.add_image("", flw*0.99, flh*0.394, flw*0.10, flh*0.20);
 
-if ( my_config["wheel_type"] == "Vertical Wheel") point.set_pos(flw*0.99, flh*0.390, flw*0.10, flh*0.23);
+if ( Ini_settings.wheel["type"] == "vertical") point.set_pos(flw*0.99, flh*0.390, flw*0.10, flh*0.23);
 point.alpha = 200;
 
 local point_animation = PresetAnimation(point)
@@ -153,6 +167,9 @@ video_shader <- fe.add_shader( Shader.Fragment, "shaders/vframe.frag" );
 ArtObj.snap.shader = video_shader;
 video_shader.set_texture_param("tex_f", ArtObj.video);
 video_shader.set_texture_param("tex_s", ArtObj.snap);
+local scanline = fe.add_image("images/scanline-640.png",-1000,-1000,0.1,0.1);
+scanline.visible = false;
+video_shader.set_texture_param("tex_crt", scanline);
 
 ArtObj.artwork1.shader = artwork_shader[0];
 ArtObj.artwork2.shader = artwork_shader[1];
@@ -195,7 +212,7 @@ anim_video <- PresetAnimation(ArtObj.snap);
 anim_video.name("video");
 anim_video.auto(true);
 
-if( my_config["Low_GPU"] == "Yes" ) Trans_shader <- fe.add_shader( Shader.Fragment, "shaders/effect_low_gpu.frag" ); else Trans_shader <- fe.add_shader( Shader.Fragment, "shaders/effect.frag" );
+if( my_config["LowGPU"] == "Yes" ) Trans_shader <- fe.add_shader( Shader.Fragment, "shaders/effect_low_gpu.frag" ); else Trans_shader <- fe.add_shader( Shader.Fragment, "shaders/effect.frag" );
 
 ArtObj.background.shader = Trans_shader;
 
@@ -220,12 +237,26 @@ ArtObj.SpecialB.shader = fe.add_shader( Shader.Fragment, "shaders/special.frag")
 anim_special <- [];
 anim_special.push( PresetAnimation(ArtObj.SpecialA).auto(true) );
 anim_special.push( PresetAnimation(ArtObj.SpecialB).auto(true) );
+
 function load_special(){
     local syst = curr_sys;
-    foreach( i,n in ["A","B"] ){
-        local S_Art = special_settings( n );
-        if(S_Art.def) syst = "Main Menu"; // if default is true in ini , use main menu special artwor
-
+    foreach( i,n in ["a","b"] ){
+        local S_Art = Ini_settings["special art " + n];
+        S_Art["in"] = S_Art["in"].tofloat() * 1000;
+        S_Art["out"] = S_Art["out"].tofloat() * 1000;
+        S_Art["delay"] = (S_Art["delay"].tofloat() * 1000 < 100 ? 100 : S_Art["delay"].tofloat() * 1000 );
+        S_Art["length"] = S_Art["length"].tofloat()  * 1000;
+        S_Art["w"] = S_Art["w"].tofloat();
+        S_Art["h"] = S_Art["h"].tofloat();
+        S_Art["x"] = S_Art["x"].tofloat();
+        S_Art["y"] = S_Art["y"].tofloat();
+        S_Art["type"] = ( S_Art["type"] == "normal" ?  "linear" : S_Art["type"] );
+        if( S_Art["w"] > 0 && S_Art["h"] > 0 ){
+            S_Art["x"] -= ( S_Art["w"]  * 0.5 );
+            S_Art["y"] -= ( S_Art["h"]  * 0.5 );
+        }
+        n = n.toupper();
+        if(S_Art["default"]) syst = "Main Menu"; // if default is true in ini , use main menu special artwork
         if( !S_Art.active ){ // disable special if active = false in ini
             anim_special[i].reset();
             ArtObj["Special" + n].visible = false;
@@ -246,7 +277,7 @@ function load_special(){
                 ArtObj["Special" + n].height = ArtObj["Special" + n].texture_height * mul_h;
             }
 
-            if(S_Art.x != ""){ // if coord defined , use them
+            if(S_Art.x > 0 || S_Art.y > 0){ // if coord defined , use them
                 ArtObj["Special" + n].set_pos( S_Art.x.tofloat() , S_Art.y.tofloat() );
             }else{ // else use default centered bottom coord
                 local offsetY = 10;
@@ -258,12 +289,12 @@ function load_special(){
             anim_special[i].name("Special" + n)
             anim_special[i].preset(S_Art.type)
             anim_special[i].starting(S_Art.start)
-            anim_special[i].duration(S_Art.S_in)
+            anim_special[i].duration(S_Art["in"])
             anim_special[i].delay(S_Art.delay)
             anim_special[i].loops_delay(S_Art.length)
             anim_special[i].on("yoyo",function(anim){
                 if(S_Art.type == "bounce" ) anim.opts.interpolator = PennerInterpolator("linear");
-                anim.opts.duration = S_Art.S_out; // out
+                anim.opts.duration = S_Art["out"]; // out
             })
             anim_special[i].on("stop",function(anim){
                 S_Art.cnt++;
@@ -274,7 +305,7 @@ function load_special(){
                     S_Art.cnt = 0;
                 }
 
-                anim.opts.duration = S_Art.S_in; // in
+                anim.opts.duration = S_Art["in"]; // in
                 if(S_Art.type == "bounce" ) anim.opts.interpolator = PennerInterpolator("ease-out-bounce");
                 anim.play();
             })
@@ -282,43 +313,6 @@ function load_special(){
             anim_special[i].play();
         }
     }
-}
-
-function special_settings(n){
-    local inidatas = {
-        "nbr":"", "cnt": 1, "S_in": 500, "S_out": 500, "length": 3000, "delay": 100, "type": "linear", "start": "bottom", "active" : true,
-        "def" : false, "w": 0, "h": 0,
-        "x": "" , "y": "", "ext" : "swf"
-    }
-    if( n == "B" ){
-        inidatas.type = "fade";
-        inidatas.start = "none";
-    }
-    if(  !Ini_settings.rawin("special art " + n.tolower() ) ) return inidatas; // if no ini settings found for this special, return default
-
-    local S_ini = Ini_settings[ "special art " + n.tolower() ]
-    if( S_ini["type"] == "normal" ) inidatas.type  = "linear"; else inidatas.type = S_ini["type"];
-
-    if(S_ini.rawin("ext")) inidatas.ext = S_ini["ext"];
-
-    if(S_ini.rawin("w") && S_ini.rawin("h")){
-        inidatas.w = S_ini["w"].tofloat();
-        inidatas.h = S_ini["h"].tofloat();
-        inidatas.x = S_ini["x"].tofloat() - ( S_ini.w  * 0.5 );
-        inidatas.y = S_ini["y"].tofloat() - ( S_ini.h  * 0.5 );
-    }else{
-        inidatas.x = S_ini["x"];
-        inidatas.y = S_ini["y"];
-    }
-
-    inidatas.start = S_ini["start"];
-    inidatas.active = ( S_ini["active"] == "false" ? false : true );
-    inidatas.def = ( S_ini["default"] == "true" ? true : false );
-    inidatas.S_in = S_ini["in"].tofloat() * 1000;
-    inidatas.S_out = S_ini["out"].tofloat() * 1000;
-    inidatas.length = S_ini["length"].tofloat()  * 1000;
-    inidatas.delay = ( S_ini["delay"].tofloat() * 1000 < 100 ? 100 : S_ini["delay"].tofloat() * 1000 );
-    return inidatas;
 }
 
 // Sounds
@@ -338,6 +332,10 @@ local Sound_System_In_Out = fe.add_sound("");
 local Sound_Wheel = fe.add_sound( get_random_file( medias_path + "Sound/Wheel Sounds") );
 local Background_Music = fe.add_sound( get_random_file( medias_path + "Sound/Background Music") );
 local Game_In_Out = fe.add_sound("");
+local Wheelclick = [];
+local i;
+for (i=0; i<5; i++) Wheelclick.push(fe.add_sound(""));
+local sid = 0;
 
 // dialog
 local dialog = fe.add_surface(flw*0.180, flh*0.08);
@@ -368,8 +366,8 @@ local surf_ginfos = fe.add_surface(flw, flh*0.22);
 surf_ginfos.alpha = 200;
 local g_coord = [ 0, flh*0.805 ];
 
-if(my_config["infos_coord"] != "") {
-    local g_c = split( my_config["infos_coord"], ",");
+if(Ini_settings.themes["infos_coord"] != "") {
+    local g_c = split( Ini_settings.themes["infos_coord"], ",");
     if( g_c.len() == 2 ) {
         local I_x = 0; local I_y = 0;
         try { I_x = g_c[1].tofloat(); } catch ( e ) { I_x = 0 }
@@ -426,13 +424,13 @@ main_infos <- {};
 game_elapse <- 0;
 
 local m_infos = fe.add_text("",(flw*0.878) - wheel_offset, flh*0.537, flw*0.11, flh*0.046);
-if ( my_config["wheel_type"] != "Vertical Wheel"){
+if ( Ini_settings.wheel["type"] != "vertical"){
     m_infos.set_pos( flw*0.785, flh*0.546 );
     m_infos.rotation = -5.2;
 }
 
 
-if( my_config["stats_main"] == "Yes" ){
+if( my_config["stats_main"].tolower() == "yes" ){
     m_infos.align = Align.Left;
     //m_infos.font = ttfont;
     m_infos.word_wrap = true;
@@ -503,8 +501,10 @@ ScrollingText.transition_callback = function( ttype, var, ttime ) {
 }
 
 function background_transitions(anim, File){
-    if(File == ArtObj.background1.file_name && reverse) return;
-    if(File == ArtObj.background2.file_name && !reverse) return;
+    if( !Ini_settings.themes["reload_backgrounds"] ){ // dot not reload background if it's the same and option reload_backgrounds is false (Default behavior)
+        if(File == ArtObj.background1.file_name && reverse) return;
+        if(File == ArtObj.background2.file_name && !reverse) return;
+    }
     ArtObj.bezel.visible = false;
     local fromIsSWF = false;
     local toIsSWF = false;
@@ -538,7 +538,7 @@ function background_transitions(anim, File){
         bh = ArtObj.background1.texture_height;
     }
 
-    if( my_config["Background_Stretch"] == "Yes" || ( my_config["Background_Stretch"] == "Main Menu" && curr_sys == "Main Menu" ) || hd ) // no scaled backgrounds
+    if( Ini_settings.themes["background_stretch"] || hd ) // no scaled backgrounds
     {
         if( toIsSWF ){ // hyperspin seems to stretch any swf backgrounds !
             back_mul = flw / 1024;
@@ -602,7 +602,8 @@ function background_transitions(anim, File){
             ArtObj.background1.video_playing = true;
             ArtObj.background2.file_name = "";
         }
-        if( !hd && my_config["themes_bezels_on_top"] ) ArtObj.bezel.visible = true;
+
+        if( !hd && Ini_settings.themes["bezels_on_top"] ) ArtObj.bezel.visible = true;
     })
     bck_anim.play();
     reverse = 1 - reverse;
@@ -610,7 +611,7 @@ function background_transitions(anim, File){
 
 function load_theme(name, theme_content, prev_def){
 
-    if(theme_content.len() <= 0){
+    if(theme_content.len() <= 0){  // If there is no theme file, return (only video is present ! for unified theme)
         hd = true;
         if(file_exist(medias_path + curr_sys + "/Video/" + fe.game_info(Info.Name) + ".mp4")){
             ArtObj.background.set_pos(0,0,flw, flh);
@@ -618,7 +619,7 @@ function load_theme(name, theme_content, prev_def){
             flv_transitions.zorder = -6; // put override video on top of video snap
             background_transitions(null, medias_path + curr_sys + "/Video/" + fe.game_info(Info.Name) + ".mp4");
         }
-        return false; // If there is no theme file, return (only video is present ! for unified theme)
+        return false;
     }
 
     local zippath = "";
@@ -662,7 +663,7 @@ function load_theme(name, theme_content, prev_def){
             art_offset_x = (flw - nw) * 0.5;
             art_offset_y = 0;
 
-            if( my_config["Aspect"] == "Stretch"){
+            if( Ini_settings.themes["aspect"] == "stretch"){
                 art_mul = flw / lw;
                 art_mul_h = flh / lh;
                 art_offset_x = 0;
@@ -681,7 +682,7 @@ function load_theme(name, theme_content, prev_def){
     foreach(k,v in theme_content){
         if(strip_ext(v.tolower()) == zippath.tolower() + "background"){ // background found in theme
             backg = name + "|" + v;
-            if( my_config["animated_backgrounds"] == "Yes" ){
+            if( Ini_settings.themes["animated_backgrounds"] ){
                background_transitions(null, backg);
             }else{
                background_transitions(99, backg);
@@ -698,7 +699,7 @@ function load_theme(name, theme_content, prev_def){
     if(!backg){ // when background is missing in theme zip, fade anim and check in media background folder if background is present , otherwise use alternate
         backg = medias_path + fe.list.name + "/Images/Backgrounds/" + fe.game_info(Info.Name) + ".png";
         if(!file_exist(backg)) backg = "images/Backgrounds/Alt_Background.png";
-        if( my_config["animated_backgrounds"] == "Yes" )
+        if( Ini_settings.themes["animated_backgrounds"] )
             background_transitions(31 , backg);
         else
             background_transitions(99, backg);
@@ -872,6 +873,7 @@ function load_theme(name, theme_content, prev_def){
                 anim_rotate = r;
             }
             //video_shader.set_param("angles", -rx, ry, 0); // vertex test
+            video_shader.set_param("scanline", (Ini_settings.themes["crt_scanline"] ? 1.0 : 0.0 ) );
             video_shader.set_param("offsets",overlayoffsetx, overlayoffsety);
             video_shader.set_param("snap_coord", w, h, viewport_snap_width, viewport_snap_height);
             video_shader.set_param("frame_coord", ArtObj["video"].texture_width, ArtObj["video"].texture_height , viewport_width, viewport_height);
@@ -983,7 +985,7 @@ function hide_art(){
                     anim.opts.target.file_name = "";
                     anim.opts.target.visible = false;
                 })
-                .duration(glob_delay * 0.5)
+                .duration(glob_delay * 0.9)
                 anims[a].play();
             }
         }
@@ -993,7 +995,7 @@ function hide_art(){
 
 
 // Wheels
-local wheel_count = my_config["wheels_slots"].tointeger();
+local wheel_count = Ini_settings.wheel["slots"].tointeger();
 
 local ww = flw*0.15;
 local wh = flh*0.10;
@@ -1004,7 +1006,7 @@ local wheel_w = [ ww, ww, ww, ww, ww, ww, flw*0.17, ww, ww, ww, ww, ww, ];
 local wheel_r = [  30,  25,  20,  15,  10,   5,   0, -10, -15, -20, -25, -30, ];
 local wheel_a = [  255,  255,  255,  255,  255,  255,  255  ,  255,  255,  255,  255,  255, ];
 
-if ( my_config["wheel_type"] == "Vertical Wheel" ) // Vertical wheel
+if ( Ini_settings.wheel["type"] == "vertical" ) // Vertical wheel
 {
     local wx = flw*0.874;
     ww = flw*0.12;
@@ -1034,7 +1036,6 @@ class WheelEntry extends ConveyorSlot
 
         if ( slot < 0 ) slot=0;
         if ( slot >=10 ) slot=10;
-
         m_obj.x = wheel_x[slot] + p * ( wheel_x[slot+1] - wheel_x[slot] ) - wheel_offset;
         m_obj.y = wheel_y[slot] + p * ( wheel_y[slot+1] - wheel_y[slot] );
         m_obj.width = wheel_w[slot] + p * ( wheel_w[slot+1] - wheel_w[slot] );
@@ -1059,7 +1060,7 @@ local conveyor = Conveyor();
 conveyor.set_slots( wheel_entries );
 conveyor.transition_ms = 50;
 
-try { conveyor.transition_ms = my_config["transition_ms"].tointeger(); } catch ( e ) { }
+try { conveyor.transition_ms = Ini_settings.wheel["transition_ms"].tointeger(); } catch ( e ) { }
 
 local center_animation = PresetAnimation(conveyor.m_objs[wheel_count/2].m_obj)
 .auto(true)
@@ -1080,18 +1081,19 @@ local center_Wheel_fade = PresetAnimation(conveyor.m_objs[wheel_count/2])
 function conveyor_tick( ttime )
 {
     local alpha;
-    local delay = 1100; local fade_time = my_config["wheel_fade_time"].tofloat();
-    local from = 255; local to = 0;
+    local delay = 1100;
+    local fade_time = Ini_settings.wheel["fade_time"].tofloat() * 1000;
+    local from = 255; local to = clamp( Ini_settings.wheel["alpha"].tofloat() * 255 , 0.0 , 255.0);
     local elapsed = glob_time - rtime;
-    if ( !conveyor_bool && elapsed > delay && ( curr_sys != "Main Menu" || my_config["wheel_fade_main"] == "Yes" ) && fade_time > 0 ) {
+    if ( !conveyor_bool && elapsed > delay && fade_time > 0 ) {
         alpha = (from * (fade_time - elapsed + delay)) / fade_time;
         alpha = (alpha < 0 ? 0 : alpha);
         local count = conveyor.m_objs.len();
         for (local i=0; i < count; i++) if (i != count / 2) conveyor.m_objs[i].alpha=alpha; // do not hide center wheel !
-        if(alpha == to) conveyor_bool = true;
+        if(alpha <= to || alpha == 0) conveyor_bool = true;
     }
 }
-fe.add_ticks_callback( "conveyor_tick" );
+//fe.add_ticks_callback( "conveyor_tick" );
 
 /* OVERLAY SCREEN */
 
@@ -1123,6 +1125,20 @@ local exit_overlay = fe.overlay.set_custom_controls( overlay_title, overlay_list
 local wheel_art = custom_overlay.add_image( "[!ret_wheel]", flw*0.425, flh*0.192, flw*0.156, flh*0.138);
 wheel_art.visible = false;
 
+function custom_settings() {
+    if( Ini_settings.themes["aspect"] == "stretch"){
+        mul = flw / 1024;
+        mul_h = flh / 768;
+        offset_x = 0;
+        offset_y = 0;
+    }else{
+        nw = flh * 1.333;
+        mul = nw / 1024;
+        mul_h = mul;
+        offset_x = (flw - nw) * 0.5;
+        offset_y = 0;
+    }
+}
 /*
 search_surface <- fe.add_surface(800, 1080);
 //search_surface.set_pos(850,0);
@@ -1220,7 +1236,7 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.ToNewSelection: //2
-            if(my_config["transition_ms"].tointeger() < 125) point_animation.play(); // disable pointer animation on slow wheel transition
+            if(Ini_settings.wheel["transition_ms"].tointeger() < 150) point_animation.play(); // disable pointer animation on slow wheel transition
             center_animation.cancel();
             ArtObj.snap.video_flags = Vid.NoAudio;
             Background_Music.playing = false;
@@ -1242,10 +1258,16 @@ function hs_transition( ttype, var, ttime )
         case Transition.EndNavigation: //7
             center_animation.play();
             trigger_load_theme = true;
-            // check if systeme have custom wheel sounds , if not, use main menu wheel sounds like in HS !
-            local wsound = get_random_file( medias_path + curr_sys + "/Sound/Wheel Sounds");
-            if( wsound != "" ) Sound_Wheel.file_name = wsound; else Sound_Wheel.file_name = get_random_file( medias_path + "Main Menu/Sound/Wheel Sounds");
-            Sound_Wheel.playing = true;
+            //Play entierly games sounds-fx (Yaron fix)
+            if( Ini_settings.sounds["game_sounds"] ) {
+                // check if systeme have custom wheel sounds , if not, use main menu wheel sounds like in HS !
+                local wsound = get_random_file( medias_path + curr_sys + "/Sound/Wheel Sounds");
+                if( wsound == "" ) wsound = get_random_file( medias_path + "Main Menu/Sound/Wheel Sounds");
+                sid++;
+                if (sid > 5) sid = 0;
+                Wheelclick[sid].file_name = wsound;
+                Wheelclick[sid].playing = true;
+            }
         break;
 
         case Transition.StartLayout: //0
@@ -1267,7 +1289,6 @@ function hs_transition( ttype, var, ttime )
 
         case Transition.ToNewList: //6
             curr_sys = ( fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.list.name );
-
             if(curr_sys != "Main Menu"){ // conveyor don't fade on main menu
                 hide_art(); // hide artwork when you change list
                 local count = conveyor.m_objs.len();
@@ -1279,7 +1300,7 @@ function hs_transition( ttype, var, ttime )
                 m_infos.msg = ""; // Hide global stats
 
                 // Update stats if list size change
-                if( my_config["stats_main"] == "Yes" && glob_time){
+                if( my_config["stats_main"].tolower() == "yes" && glob_time){
                     if( main_infos.rawin(curr_sys) ){
                         if(fe.list.size != main_infos[curr_sys].cnt){
                             main_infos[curr_sys].cnt = fe.list.size;
@@ -1290,7 +1311,6 @@ function hs_transition( ttype, var, ttime )
                     }
                 }
             }
-
             if( glob_time ){  // when glob_time > 0 not startlayout
                 local es = get_random_file( medias_path + curr_sys + "/Sound/System Start/" );
                 if( es != "" ){ // if exit sound exist for this system
@@ -1300,7 +1320,8 @@ function hs_transition( ttype, var, ttime )
                 FE_Sound_Wheel_In.playing = true;
             }
             Ini_settings = get_ini_values(curr_sys); // get settings ini value
-            if(my_config["special_artworks"] == "Yes") load_special(); // Load special artworks
+            custom_settings(); // load theme custom settings
+            if(my_config["special_artworks"].tolower() == "yes") load_special(); // Load special artworks
 
             rtime = glob_time
             trigger_load_theme = true;
@@ -1389,11 +1410,11 @@ function hs_tick( ttime )
     // load medias after glob_delay
     if( (glob_time - rtime > glob_delay) && trigger_load_theme){
         hd = false;
-        if( my_config["Bezels"] == "Yes" && my_config["Aspect"] == "Center" ){ // Systems bezels!  only if aspect center
+        if( Ini_settings.themes["bezels"] && Ini_settings.themes["aspect"] == "center" ){ // Systems bezels!  only if aspect center
             if( file_exist(fe.script_dir + "images/Bezels/" + curr_sys + ".png") ){
                 ArtObj.bezel.file_name = fe.script_dir + "images/Bezels/" + curr_sys + ".png";
             }else{
-                if( ( my_config["Background_Stretch"] == "Main Menu" && curr_sys != "Main Menu" ) || my_config["Background_Stretch"] == "No" )
+                if( !Ini_settings.themes["background_stretch"] )
                     ArtObj.bezel.file_name = fe.script_dir + "images/Bezels/Bezel_Main.png";
             }
         }else{
@@ -1409,8 +1430,8 @@ function hs_tick( ttime )
         path+=fe.game_info(Info.Name) + ".zip";
         local theme_content = zip_get_dir( path );
 
-        // load transitions override video if enabled and not in default system theme browsing
-        if ( my_config["override_transitions"] == "Yes" &&
+        // load transitions override video if enabled and not in the default system theme browsing
+        if ( Ini_settings.themes["override_transitions"] &&
            ( theme_content.len() || (!theme_content.len() && curr_theme != "Default") ) )
         {
             local flv_folder = medias_path + curr_sys + "/Video/Override Transitions/";
@@ -1424,15 +1445,15 @@ function hs_tick( ttime )
             flv_transitions.visible = true;
         }
 
-        // if no theme is found assume it's system default theme.
-        if( !theme_content.len() ) {
+        if( !theme_content.len() ) { // if no theme is found assume it's system default theme.
             path = medias_path + fe.list.name + "/Themes/Default.zip";
             theme_content = zip_get_dir( path );
 
-            if( prev_path == path ){
+            if( prev_path == path ){ // if previous and current theme is equal.
                 reset_art(true);
                 load_theme(path, theme_content, true);
-               foreach(a,b in ["artwork1", "artwork2", "artwork3", "artwork4"] ) if( availables[b] == false ) anims[a].restart();
+                foreach(a,b in ["artwork1", "artwork2", "artwork3", "artwork4"] ) if( availables[b] == false ) anims[a].restart(); // not needed aymore (fot list wihhout xml) ???
+
             }else{
                 reset_art();
                 load_theme(path, theme_content, false);
@@ -1498,7 +1519,7 @@ function on_signal(str) {
 
             case "next_game":
             case "prev_game":
-                if( glob_time - last_click  > 160 ) Sound_Click.playing = true; // need better key hold detection
+                if( glob_time - last_click  > 160 &&  Ini_settings.sounds["wheel_click"] ) Sound_Click.playing = true; // need better key hold detection
                 last_click = glob_time;
             break;
 

@@ -1,25 +1,60 @@
+function user_settings(){
+    foreach(v, value in my_config){
+        if(v.find("_")){
+            value = value.tolower();
+            local temp = split(v, "_" );
+            local valr = v.slice(v.find("_") + 1);
+            local key = strip(temp[0]);
+            if(!Ini_settings.rawin(key)) Ini_settings[ key ] <- {};
+            if(!Ini_settings[ key ].rawin(valr)) Ini_settings[ key ][ valr ] <- {};
+            if(value == "no")value = false; if(value == "yes")value = true;
+            Ini_settings[ key ][ valr ] <- value;
+        }else{
+            Ini_settings[v] <- my_config[v];
+        }
+
+    }
+
+  /* Special artworks */
+    foreach( n in ["a","b"] ){
+        Ini_settings["special art " + n] <- {
+            "nbr":"", "cnt": 1, "in": 0.5, "out": 0.5, "length": 3, "delay": 0.1, "type": "linear", "start": "bottom",
+            "active" : "true", "default" : "false", "w": 0, "h": 0, "x": 0 , "y": 0, "ext" : "swf"
+        }
+        if( n == "b" ){
+            Ini_settings["special art " + n].type = "fade";
+            Ini_settings["special art " + n].start = "none";
+        }
+    }
+
+   return Ini_settings;
+}
+
+
 function get_ini_values(name){
     local f = ReadTextFile( fe.script_dir + "Settings/" + name + ".ini" );
     local entity = null;
-    local map = {};
+    local map = user_settings();
     while ( !f.eos() )
     {
         local line = strip( f.read_line() );
         if (( line.len() > 0 ) && ( line[0] == '[' ))
         {
             entity = line.slice( 1, line.len()-1 ).tolower();
-            map[ entity ] <- {};
+            if( ! map.rawin(entity) ) map[ entity ] <- {};
         }
         else
         {
             if(!line.find("=")) continue;
             local temp = split( line, "=" );
-            local v = ( temp.len() > 1 ) ? strip( temp[1] ) : "";
-
-            if ( entity ) map[entity][ strip(temp[0]) ] <- v;
-            else map[ strip(temp[0]) ] <- v;
+            local v = ( temp.len() > 1 ) ? strip( temp[1] ).tolower() : "";
+            if(v == "true")v = true; if(v == "false") v = false;
+            local key = strip(temp[0]).tolower();
+            if ( entity ) map[ entity ][ key ] <- v;
+            else map[ key ] <- v;
         }
     }
+
     return map;
 }
 
@@ -315,7 +350,10 @@ function ret_snap(){
     return m;
 }
 
-
+//clamp a value from min to max
+function clamp(value, min, max) {
+    if (value < min) value = min; if (value > max) value = max; return value
+}
 
 /* DEBUG */
 
