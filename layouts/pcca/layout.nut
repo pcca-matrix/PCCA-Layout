@@ -39,7 +39,7 @@ class UserConfig {
     </ label="Interface Language", help="Preferred User Language", options="Fr, En", order=M_order++ /> user_lang="En"
     </ label="Global Stats", help="Enable or disable the main menu stats system", options="Yes, No", order=M_order++ /> stats_main = "Yes"
 
-    </ label="Special Artwork", help="Enable or disable the special artwork", options="Yes, No", order=M_order++ /> special_artworks = "Yes"
+    </ label="Special Artwork", help="Enable or disable the special artwork (if No special is disabled globally)", options="Yes, No", order=M_order++ /> special_artworks = "Yes"
     </ label="Game Sounds", help="Enable or disable the game sounds", options="Yes, No", order=M_order++ /> sounds_game_sounds = "Yes"
     </ label="Wheel Click", help="Enable or disable the wheel click sound", options="Yes, No", order=M_order++ /> sounds_wheel_click = "Yes"
     //</ label="Animated Artworks", help="Animate artworks", options="Yes, No", order=6 /> animated_artworks="Yes"
@@ -257,8 +257,8 @@ function load_special(){
             S_Art["y"] -= ( S_Art["h"]  * 0.5 );
         }
         n = n.toupper();
-        if(S_Art["default"]) syst = "Main Menu"; // if default is true in ini , use main menu special artwork
-        if( !S_Art.active ){ // disable special if active = false in ini
+        if(S_Art["default"].tointeger() == 1 ) syst = "Main Menu"; // if default is true in ini , use main menu special artwork
+        if(S_Art["active"].tointeger() == 0 ){ // disable special if active = false in ini
             anim_special[i].reset();
             ArtObj["Special" + n].visible = false;
            continue;
