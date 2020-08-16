@@ -28,6 +28,7 @@ class UserConfig {
     </ label="Bezels", help="If display is centered, use bezels to replace pixel stretched border", options="Yes, No", order=M_order++ /> themes_bezels="Yes"
     </ label="Bezels on top", help="Put bezel on top of the theme artworks or below", options="Yes, No", order=M_order++ /> themes_bezels_on_top="No"
     </ label="Background Stretch", help="Stretch all backgrounds", options="Yes, No", order=M_order++ /> themes_background_stretch="No"
+    </ label="Game Info Visibility", help="Enable or disable the Game Info Surface", options="Yes, No", order=M_order++ /> themes_infos_visibility = "Yes"
     </ label="Game Info Coordinates", help="x,y coordinates for the game info surface. If empty = left bottom", options="", order=M_order++ /> themes_infos_coord = ""
     //</ label="Animate Out Default", help="When moving off a default theme you can have theme artworks animate out each time", options="Yes, No", order=M_order++ /> themes_animate_out_default = "No"
     </ label="Reload Backgrounds", help="Force reloading background transitions when navigating on default theme", options="Yes, No", order=M_order++ /> themes_reload_backgrounds = "No"
@@ -334,7 +335,8 @@ local Background_Music = fe.add_sound( get_random_file( medias_path + "Sound/Bac
 local Game_In_Out = fe.add_sound("");
 local Wheelclick = [];
 local i;
-for (i=0; i<5; i++) Wheelclick.push(fe.add_sound(""));
+local sound_buffer_size = 5; // size of the audio buffer
+for (i=0; i<sound_buffer_size+1; i++) Wheelclick.push(fe.add_sound(""));
 local sid = 0;
 
 // dialog
@@ -361,22 +363,8 @@ function dialog_datas(type){
     dialog_anim.play();
 }
 
-// Game Infos
+// Game Infos surface
 local surf_ginfos = fe.add_surface(flw, flh*0.22);
-surf_ginfos.alpha = 200;
-local g_coord = [ 0, flh*0.805 ];
-
-if(Ini_settings.themes["infos_coord"] != "") {
-    local g_c = split( Ini_settings.themes["infos_coord"], ",");
-    if( g_c.len() == 2 ) {
-        local I_x = 0; local I_y = 0;
-        try { I_x = g_c[1].tofloat(); } catch ( e ) { I_x = 0 }
-        try { I_y = g_c[1].tofloat(); } catch ( e ) { I_y = 0 }
-        if( I_x > 0 && I_x < flw && I_y > 0 && I_y < flh ) g_coord = [ I_x, I_y ];
-    }
-}
-
-surf_ginfos.set_pos( g_coord[0], g_coord[1] );
 local ttfont = "College Halo";
 
 local txt_title = surf_ginfos.add_text( "[Title]", flw*0.021, flh*0.072, flw*0.9375, flh*0.040 );
@@ -1093,7 +1081,7 @@ function conveyor_tick( ttime )
         if(alpha <= to || alpha == 0) conveyor_bool = true;
     }
 }
-//fe.add_ticks_callback( "conveyor_tick" );
+fe.add_ticks_callback( "conveyor_tick" );
 
 /* OVERLAY SCREEN */
 
@@ -1126,6 +1114,19 @@ local wheel_art = custom_overlay.add_image( "[!ret_wheel]", flw*0.425, flh*0.192
 wheel_art.visible = false;
 
 function custom_settings() {
+    local g_coord = [ 0, flh*0.805 ];
+    if(Ini_settings.themes["infos_coord"] != "") {
+        local g_c = split( Ini_settings.themes["infos_coord"], ",");
+        if( g_c.len() == 2 ) {
+            local I_x = 0; local I_y = 0;
+            try { I_x = g_c[0].tofloat(); } catch ( e ) { I_x = 0 }
+            try { I_y = g_c[1].tofloat(); } catch ( e ) { I_y = 0 }
+            if( I_x >=0 && I_x < flw && I_y >=0 && I_y < flh ) g_coord = [ I_x, I_y ];
+        }
+    }
+    surf_ginfos.set_pos( g_coord[0], g_coord[1] );
+    surf_ginfos.alpha = 200;
+    
     if( Ini_settings.themes["aspect"] == "stretch"){
         mul = flw / 1024;
         mul_h = flh / 768;
@@ -1264,7 +1265,7 @@ function hs_transition( ttype, var, ttime )
                 local wsound = get_random_file( medias_path + curr_sys + "/Sound/Wheel Sounds");
                 if( wsound == "" ) wsound = get_random_file( medias_path + "Main Menu/Sound/Wheel Sounds");
                 sid++;
-                if (sid > 5) sid = 0;
+                if (sid > sound_buffer_size) sid = 0;
                 Wheelclick[sid].file_name = wsound;
                 Wheelclick[sid].playing = true;
             }
@@ -1299,8 +1300,8 @@ function hs_transition( ttype, var, ttime )
                 syno.text.msg = ""; // Hide Overview
                 m_infos.msg = ""; // Hide global stats
 
-                // Update stats if list size change
-                if( my_config["stats_main"].tolower() == "yes" && glob_time){
+                // Update stats if list size change and we are not on a filter !!
+                if( my_config["stats_main"].tolower() == "yes" && glob_time && fe.filters[fe.list.filter_index].name.tolower() == "all"){
                     if( main_infos.rawin(curr_sys) ){
                         if(fe.list.size != main_infos[curr_sys].cnt){
                             main_infos[curr_sys].cnt = fe.list.size;
@@ -1468,7 +1469,7 @@ function hs_tick( ttime )
             load_theme(path, theme_content, false);
         }
 
-        surf_ginfos.visible = ( curr_sys == "Main Menu" ? false : true ); // Game infos surface
+        if(Ini_settings.themes["infos_visibility"]) surf_ginfos.visible = ( curr_sys == "Main Menu" ? false : true ); // Game infos surface
 
         trigger_load_theme = false;
         visi = false;
