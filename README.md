@@ -1,6 +1,6 @@
 # PCCA Hyperspin theme conversion for Attract-Mode
 
-### Version 1.05 beta
+### Version 1.07 beta
 This script is intended to work with Attract-Mode http://attractmode.org/ , it intends to reproduce the real hyperspin experience in HD as precise as possible using the same themes and folder structure as a real Hyperspin setup.
 
 Hypertheme can be used to build new themes or you can build your own with a higher resolution than hyperspin's default 1024x768.
@@ -199,8 +199,6 @@ default alignement is bottom center.
 
 ## TODO:
 Keyboard search
-
-separate config settings per systeme
 
 trying to fix AM crash with swf, misalignment and strange behavior...
 
