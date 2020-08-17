@@ -62,23 +62,19 @@ function refresh_stats(system = "") {
     fe.overlay.splash_message (LnG.RefreshTxt + " ...")
     local datas = main_infos; local sys = "";local cnt;
     local g_cnt = 0; local g_time = 0; local g_played = 0; local dirs = {};
-
+    dirs.results <- [];
     if(system != ""){ // Get games count for single system
-        dirs.results <- [];
-        dirs.results.push( system + ".txt");
+        dirs.results.push( system );
     }else{ // Get games count for each system
-        dirs = DirectoryListing( FeConfigDirectory + "romlists", false );
+        for ( local i = 0; i < fe.displays.len(); i++ ) dirs.results.push(fe.displays[i].romlist);
     }
 
     foreach(file in dirs.results){
         cnt=0;
-        if ( ext(file) == "txt" ){
-            sys = strip_ext(file);
-            local text = txt.loadFile( FeConfigDirectory + "romlists\\" + file );
-            foreach( line in text.lines ) if( line != "" ) cnt++;
-            datas[sys] <- {"cnt":cnt-1, "pl":0, "time":0};
-            g_cnt+=cnt-1;
-        }
+        local text = txt.loadFile( FeConfigDirectory + "romlists\\" + file + ".txt" );
+        foreach( line in text.lines ) if( line != "" ) cnt++;
+        datas[file] <- {"cnt":cnt-1, "pl":0, "time":0};
+        g_cnt+=cnt-1;
     }
 
     // Get Stats for each System
