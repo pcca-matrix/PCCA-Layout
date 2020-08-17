@@ -243,6 +243,7 @@ function load_special(){
     local syst = curr_sys;
     foreach( i,n in ["a","b"] ){
         local S_Art = Ini_settings["special art " + n];
+        S_Art["syst"] = syst;
         S_Art["in"] = S_Art["in"].tofloat() * 1000;
         S_Art["out"] = S_Art["out"].tofloat() * 1000;
         S_Art["delay"] = (S_Art["delay"].tofloat() * 1000 < 100 ? 100 : S_Art["delay"].tofloat() * 1000 );
@@ -266,7 +267,7 @@ function load_special(){
 
         ArtObj["Special" + n].visible = true;
         ArtObj["Special" + n].file_name = medias_path + syst + "/Images/Special/Special" + n + "1." + S_Art.ext;
-        if( !ArtObj["Special"+n].file_name) continue; // continue if special does not exist
+        if( !ArtObj["Special" + n].file_name) continue; // continue if special does not exist
         S_Art.nbr = n;
         if(S_Art){
 
@@ -299,10 +300,10 @@ function load_special(){
             })
             anim_special[i].on("stop",function(anim){
                 S_Art.cnt++;
-                if(file_exist(medias_path + syst + "/Images/Special/Special" + S_Art.nbr + S_Art.cnt + "." + S_Art.ext)){
-                    ArtObj["Special" + S_Art.nbr].file_name = medias_path + syst + "/Images/Special/Special" + S_Art.nbr + S_Art.cnt + "." + S_Art.ext;
+                if(file_exist(medias_path + S_Art.syst + "/Images/Special/Special" + S_Art.nbr + S_Art.cnt + "." + S_Art.ext)){
+                    ArtObj["Special" + S_Art.nbr].file_name = medias_path + S_Art.syst + "/Images/Special/Special" + S_Art.nbr + S_Art.cnt + "." + S_Art.ext;
                 }else{
-                    ArtObj["Special" + S_Art.nbr].file_name = medias_path + syst + "/Images/Special/Special" + S_Art.nbr + "1." + S_Art.ext;
+                    ArtObj["Special" + S_Art.nbr].file_name = medias_path + S_Art.syst + "/Images/Special/Special" + S_Art.nbr + "1." + S_Art.ext;
                     S_Art.cnt = 0;
                 }
 
@@ -1196,17 +1197,19 @@ function hs_transition( ttype, var, ttime )
                 ArtObj.background2.video_playing = true;
                 ArtObj.snap.video_playing = true;
                 global_fade( 500, 500, true);
-                // update stats for this system
-                game_elapse = fe.game_info(Info.PlayedTime).tointeger() - game_elapse;
-                if(main_infos.rawin(fe.list.name)){
-                    main_infos[fe.list.name].time += game_elapse;
-                    main_infos[fe.list.name].pl++;
-                    if( main_infos.rawin("Main Menu") ){
-                        main_infos["Main Menu"].pl++;
-                        main_infos["Main Menu"].time += game_elapse;
+                
+                // update stats for this system only if Track Usage is set to Yes in AM!
+                if( fe.game_info(Info.PlayedTime) != "" ){  
+                    game_elapse = fe.game_info(Info.PlayedTime).tointeger() - game_elapse;
+                    if(main_infos.rawin(fe.list.name)){
+                        main_infos[fe.list.name].time += game_elapse;
+                        main_infos[fe.list.name].pl++;
+                        if( main_infos.rawin("Main Menu") ){
+                            main_infos["Main Menu"].pl++;
+                            main_infos["Main Menu"].time += game_elapse;
+                        }
+                        SaveStats(main_infos);
                     }
-
-                    SaveStats(main_infos);
                 }
             }
         break;
@@ -1220,7 +1223,8 @@ function hs_transition( ttype, var, ttime )
                 return true;
             }else{
                 global_fade(1500, 1500, false)
-                game_elapse = fe.game_info(Info.PlayedTime).tointeger();
+                // store old playedtime when lauching a game (only if Track Usage is set to Yes in AM!)
+                if( fe.game_info(Info.PlayedTime) != "" ) game_elapse = fe.game_info(Info.PlayedTime).tointeger();
             }
         break;
 
@@ -1291,6 +1295,7 @@ function hs_transition( ttype, var, ttime )
         case Transition.ToNewList: //6
             curr_sys = ( fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.list.name );
             if(curr_sys != "Main Menu"){ // conveyor don't fade on main menu
+                if( fe.game_info(Info.PlayedTime) == "" ) PCount.visible = false; else PCount.visible = true; //show game stats surface only if Track Usage is set to Yes in AM!               
                 hide_art(); // hide artwork when you change list
                 local count = conveyor.m_objs.len();
                 for (local i=0; i < count; i++) conveyor.m_objs[i].alpha=0;

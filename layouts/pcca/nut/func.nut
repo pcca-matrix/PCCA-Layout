@@ -19,7 +19,7 @@ function user_settings(){
     foreach( n in ["a","b"] ){
         Ini_settings["special art " + n] <- {
             "nbr":"", "cnt": 1, "in": 0.5, "out": 0.5, "length": 3, "delay": 0.1, "type": "linear", "start": "bottom",
-            "active" : 1, "default" : 0, "w": 0, "h": 0, "x": 0 , "y": 0, "ext" : "swf"
+            "active" : 1, "default" : 0, "w": 0, "h": 0, "x": 0 , "y": 0, "ext" : "swf", "syst" : ""
         }
         if( n == "b" ){
             Ini_settings["special art " + n].type = "fade";
