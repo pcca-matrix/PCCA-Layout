@@ -258,7 +258,7 @@ function load_special(){
             S_Art["y"] -= ( S_Art["h"]  * 0.5 );
         }
         n = n.toupper();
-        if(S_Art["default"].tointeger() == 1 ) syst = "Main Menu"; // if default is true in ini , use main menu special artwork
+        if(S_Art["default"].tointeger() == 1 ) S_Art["syst"] = "Main Menu"; // if default is true in ini , use main menu special artwork
         if(S_Art["active"].tointeger() == 0 ){ // disable special if active = false in ini
             anim_special[i].reset();
             ArtObj["Special" + n].visible = false;
@@ -266,7 +266,7 @@ function load_special(){
         }
 
         ArtObj["Special" + n].visible = true;
-        ArtObj["Special" + n].file_name = medias_path + syst + "/Images/Special/Special" + n + "1." + S_Art.ext;
+        ArtObj["Special" + n].file_name = medias_path + S_Art["syst"] + "/Images/Special/Special" + n + "1." + S_Art.ext;
         if( !ArtObj["Special" + n].file_name) continue; // continue if special does not exist
         S_Art.nbr = n;
         if(S_Art){
