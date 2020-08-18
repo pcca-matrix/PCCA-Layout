@@ -66,15 +66,24 @@ function refresh_stats(system = "") {
     if(system != ""){ // Get games count for single system
         dirs.results.push( system );
     }else{ // Get games count for each system
-        for ( local i = 0; i < fe.displays.len(); i++ ) dirs.results.push(fe.displays[i].romlist);
+        for ( local i = 0; i < fe.displays.len(); i++ ) dirs.results.push(fe.displays[i].name);
     }
 
-    foreach(file in dirs.results){
+    foreach(display in dirs.results){
         cnt=0;
-        local text = txt.loadFile( FeConfigDirectory + "romlists\\" + file + ".txt" );
-        foreach( line in text.lines ) if( line != "" ) cnt++;
-        datas[file] <- {"cnt":cnt-1, "pl":0, "time":0};
-        g_cnt+=cnt-1;
+        local romlist = "";
+        for ( local i = 0; i < fe.displays.len(); i++ ){
+            if(fe.displays[i].name == display){
+                romlist = fe.displays[i].romlist;
+                break;
+            } 
+        }
+        if(romlist != ""){
+            local text = txt.loadFile( FeConfigDirectory + "romlists\\" + romlist + ".txt" );
+            foreach( line in text.lines ) if( line != "" ) cnt++;
+            datas[display] <- {"cnt":cnt-1, "pl":0, "time":0};
+            g_cnt+=cnt-1;
+        }
     }
 
     // Get Stats for each System
