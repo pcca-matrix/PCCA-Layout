@@ -579,6 +579,8 @@ function background_transitions(anim, File){
         Trans_shader.set_param("datas", anim, reverse, fromIsSWF ,toIsSWF);
     }
 
+    if( !hd && Ini_settings.themes["bezels_on_top"] ) ArtObj.bezel.visible = true; else ArtObj.bezel.visible = false;
+
     Trans_shader.set_param("alpha", 1.0);
     local to = (reverse == 0.0 ? 1.0 : 0.0)
     bck_anim.from([reverse])
@@ -591,8 +593,6 @@ function background_transitions(anim, File){
             ArtObj.background1.video_playing = true;
             ArtObj.background2.file_name = "";
         }
-
-        if( !hd && Ini_settings.themes["bezels_on_top"] ) ArtObj.bezel.visible = true;
     })
     bck_anim.play();
     reverse = 1 - reverse;
