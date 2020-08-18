@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v1.06 beta
+// PCCA v1.08 beta
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -442,14 +442,14 @@ function stats_text_update( sys ){
 surf_ginfos.add_image("[!get_media_tag]", flw*0.006, 0, flw*0.063, flh*0.036)
 
 // Synopsis
-syno <- ScrollingText.add( "", flw*0.125, flh*0.976, fe.layout.width - (offset_x * 2) , flh*0.022, ScrollType.HORIZONTAL_LEFT );
+syno <- ScrollingText.add( "", offset_x, flh*0.976, fe.layout.width - (offset_x * 2) , flh*0.022, ScrollType.HORIZONTAL_LEFT );
 syno.settings.delay = 2500;
 syno.settings.speed_x = 2.5;
 
 function overview( offset ) {
    local input = fe.game_info(Info.Overview, offset);
    if( input.len() > 1 ){
-        syno.text.width = input.len() * flh*0.022;
+        syno.text.width = input.len() * flw*0.022;
         syno.set_bg_rgb(20,0,0,75);
         syno.text.msg = input;
         return;
@@ -1127,7 +1127,7 @@ function custom_settings() {
     }
     surf_ginfos.set_pos( g_coord[0], g_coord[1] );
     surf_ginfos.alpha = 200;
-    
+
     if( Ini_settings.themes["aspect"] == "stretch"){
         mul = flw / 1024;
         mul_h = flh / 768;
@@ -1197,9 +1197,9 @@ function hs_transition( ttype, var, ttime )
                 ArtObj.background2.video_playing = true;
                 ArtObj.snap.video_playing = true;
                 global_fade( 500, 500, true);
-                
+
                 // update stats for this system only if Track Usage is set to Yes in AM!
-                if( fe.game_info(Info.PlayedTime) != "" ){  
+                if( fe.game_info(Info.PlayedTime) != "" ){
                     game_elapse = fe.game_info(Info.PlayedTime).tointeger() - game_elapse;
                     if(main_infos.rawin(fe.list.name)){
                         main_infos[fe.list.name].time += game_elapse;
@@ -1295,7 +1295,7 @@ function hs_transition( ttype, var, ttime )
         case Transition.ToNewList: //6
             curr_sys = ( fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.list.name );
             if(curr_sys != "Main Menu"){ // conveyor don't fade on main menu
-                if( fe.game_info(Info.PlayedTime) == "" ) PCount.visible = false; else PCount.visible = true; //show game stats surface only if Track Usage is set to Yes in AM!               
+                if( fe.game_info(Info.PlayedTime) == "" ) PCount.visible = false; else PCount.visible = true; //show game stats surface only if Track Usage is set to Yes in AM!
                 hide_art(); // hide artwork when you change list
                 local count = conveyor.m_objs.len();
                 for (local i=0; i < count; i++) conveyor.m_objs[i].alpha=0;
