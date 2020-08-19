@@ -104,7 +104,7 @@ function get_new_video( obj )
     if(fe.game_info(Info.Emulator) == "@")
         sys = fe.game_info(Info.Title, rand() );
     else
-        sys = fe.game_info(Info.Emulator);
+        sys = fe.list.name;
 
     local a=0;
     local vid;
