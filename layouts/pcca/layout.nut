@@ -1545,7 +1545,7 @@ function on_signal(str) {
 // Apply a global fade on objs and shaders
 function global_fade(ttime, target, direction){
    ttime = ttime.tofloat();
-   local objlist = [surf_ginfos, point, syno.surface, flv_transitions]; // objects list to fade
+   local objlist = [surf_ginfos, point, syno.surface, flv_transitions, ArtObj.bezel]; // objects list to fade
    if(direction){ // show
         foreach(obj in objlist) obj.alpha = ttime * (255.0 / target);
         video_shader.set_param("alpha", (ttime / target) );
