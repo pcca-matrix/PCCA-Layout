@@ -630,7 +630,7 @@ function load_theme(name, theme_content, prev_def){
     try{ xml_root = xml.load( raw_xml ); } catch ( e ) { };
 
     local theme_node = find_theme_node( xml_root );
-
+    try{ theme_node.children } catch ( e ) { return; }; // return if no xml
     availables = { artwork1 = false, artwork2 = false, artwork3 = false, artwork4 = false, video = false };
     local w,h,x,y,r,time,delay,overlayoffsetx,overlayoffsety,overlaybelow,below,forceaspect,type,start,rest,bsize,bsize2,bsize3,bcolor,bcolor2,bcolor3,bshape,anim_rotate,ry,rx;
 
