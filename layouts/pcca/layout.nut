@@ -788,22 +788,13 @@ function load_theme(name, theme_content, prev_def){
                 yy = (y - ( ArtObj[Xtag].texture_height * 0.5 ) );
 
                 if( ext(art).tolower() == "swf"){
-                   // try to fix swf  - arch rivals, asura blade, bombjack, ashura blaster, beast busters , gladiator, must understand all cases before fixing
-                    if(x > fe.layout.width || y > fe.layout.height){
-                        yy = 0;
-                        xx = 0;
-                    }
-
-                    if(ArtObj[Xtag].texture_width == 1024){
-                        if (xx < 0) xx = 0;
-                        //xx = 0;
-                    }
-
-                    if(ArtObj[Xtag].texture_height == 768){
-                       if (yy < 0) yy = 0;
-                        //yy = 0;
-                    }
-
+                    // try to fix swf  - arch rivals, asura blade, bombjack, ashura blaster, beast busters , gladiator, must understand all cases before fixing
+                    if(x > fe.layout.width ) xx = 0;
+                    if(y > fe.layout.height) yy = 0;
+                    if(ArtObj[Xtag].texture_width == 1024) xx = 0;
+                    if(ArtObj[Xtag].texture_height == 768) yy = 0;
+                    if (xx < 0) xx = 0;
+                    if (yy < 0) yy = 0;
                 }
 
                 ArtObj[Xtag].set_pos( (xx * art_mul) + art_offset_x, (yy * art_mul_h) + art_offset_y, ArtObj[Xtag].texture_width * art_mul, ArtObj[Xtag].texture_height * art_mul_h);
