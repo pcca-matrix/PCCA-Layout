@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v1.08 beta
+// PCCA v1.09 beta
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -43,6 +43,10 @@ class UserConfig {
     </ label="Game Sounds", help="Enable or disable the game sounds", options="Yes, No", order=M_order++ /> sounds_game_sounds = "Yes"
     </ label="Wheel Click", help="Enable or disable the wheel click sound", options="Yes, No", order=M_order++ /> sounds_wheel_click = "Yes"
     //</ label="Animated Artworks", help="Animate artworks", options="Yes, No", order=6 /> animated_artworks="Yes"
+
+    </ label="Search Key", help="Choose the key to initiate a search", options="custom1,custom2,custom3,custom4,custom5,custom6,up,down,left,right", order=M_order++ />keyboard_search_key="custom1";
+    </ label="Search Results", help="Choose the search method", options="show_results,next_match", order=M_order++ />keyboard_search_method="show_results";
+    </ label="Keyboard Layout", help="Choose the keyboard layout", options="qwerty,azerty,alpha", order=M_order++ />keyboard_layout="alpha";
 }
 
 flw <- fe.layout.width.tofloat();
@@ -52,7 +56,7 @@ flh <- fe.layout.height.tofloat();
 // Modules
 fe.load_module("hs-animate");
 fe.load_module("conveyor");
-//fe.load_module("objects/keyboard-search");
+fe.load_module("objects/keyboard-search");
 fe.load_module("file");
 fe.load_module("file-format");
 fe.load_module("objects/scrollingtext");
@@ -1132,28 +1136,181 @@ function custom_settings() {
         offset_y = 0;
     }
 }
-/*
-search_surface <- fe.add_surface(800, 1080);
-//search_surface.set_pos(850,0);
-local search = KeyboardSearch( search_surface )
-.search_key( "custom1" )
-.mode( "next_match" ) // or  show_results
-.text_font("SF Slapstick Comic Bold Oblique")
-.init()
-//.bg_color()
-//.keys_pos()
-//.keys_color()
-//.keys_selected_color()
-//.text_pos()
-//.text_color()
 
-/*search_surface_anim <- PresetAnimation(search_surface)
-.auto(false)
-.from({x=search_surface.x, alpha=0})
-.to({x=0, alpha=255})
-.reverse(false)
-.duration(1050)
-*/
+//-- KeyboardSearch
+
+class Keyboard extends KeyboardSearch
+{
+    trigger = false;
+    state = 0 // 0 closed, 1 open, 2 move open, 3 move close
+    sys = ""
+
+    function preset(name) {
+        switch(name) {
+            case "qwerty":
+                keys_rows([ "1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm", "- <~" ])
+                break
+            case "azerty":
+                keys_rows([ "1234567890", "azertyuiop", "qsdfghjklm", "wxcvbn", "- <~" ])
+                break
+            case "alpha":
+                keys_rows(["1234567890", "abcdefghi", "jklmnopqr", "stuvwxyz", "- <~"])
+                break
+        }
+        return this
+    }
+
+    function toggle() {
+        if(curr_sys != sys){ // reload letters artwork only if sys is changed
+            foreach( key, val in key_names ) {
+                if(file_exist(medias_path + curr_sys + "/Images/Letters/" + val.tolower() + ".png")){
+                    keys[ key.tolower() ].file_name = medias_path + curr_sys + "/Images/Letters/" + val.tolower() + ".png";
+                }else{
+                    keys[ key.tolower() ].file_name = fe.module_dir + "keyboard-search/images" + "/" + val.tolower() + ".png";
+                }
+            }
+            sys = curr_sys
+        }
+        trigger = true;
+        if(state == 0 || state == 3){
+            state = 2;
+            surface.alpha = 255
+            if ( !config.retain || config.retain == "false") clear()
+        }else if(state == 1 || state == 2){
+            state = 3;
+        }
+    }
+
+    function update_rule()
+    {
+        try
+        {
+            local rule = "Title contains " + _massage(text)
+            switch ( config.mode )
+            {
+                case "next_match":
+                    if ( text.len() == 0 ) return
+                    local s = fe.filters[fe.list.filter_index].size
+                    for ( local i = 1; i < s; i++ )
+                    {
+                        local name = fe.game_info( Info.Title, i ).tolower()
+                        if ( regexp( text ).capture(name) ) {
+                            fe.list.index = (fe.list.index+i)%s
+                            break
+                        }
+                    }
+                    break
+                case "show_results":
+                default:
+                    if(text.len() < 2) return;
+                    fe.list.search_rule = "";
+                    fe.list.search_rule = ( text.len() > 1 ) ? rule : ""
+                    break
+            }
+        } catch ( err ) { print( "Unable to apply filter: " + err ); }
+    }
+
+    function draw_osd(){
+        //draw the search surface bg
+        local bg = surface.add_image(config.bg, 0, 0, surface.width, surface.height)
+        bg.set_rgb(config.bg_red, config.bg_green, config.bg_blue)
+        bg.alpha = config.bg_alpha
+
+        //draw the search text object
+        local osd_search = {
+            x = ( surface.width * config.search_text.pos[0] ) * 1.0,
+            y = ( surface.height * config.search_text.pos[1] ) * 1.0,
+            width = ( surface.width * config.search_text.pos[2] ) * 1.0,
+            height = ( surface.height * config.search_text.pos[3] ) * 1.0
+        }
+        search_text = surface.add_text(text, osd_search.x, osd_search.y, osd_search.width, osd_search.height)
+        search_text.align = Align.Left
+        search_text.font = config.search_text.font
+        search_text.set_rgb( config.search_text.rgba[0], config.search_text.rgba[1], config.search_text.rgba[2] )
+        search_text.alpha = config.search_text.rgba[3]
+
+        //draw the search key objects
+        foreach( key, val in key_names ) {
+            if ( config.keys.folder != null && config.keys.folder != "" ) {
+                //use key images
+                keys[ key.tolower() ] <- surface.add_image( "", -1, -1, 64, 64 )
+            } else {
+                //use text
+                local key_name = ( key == "-" ) ? "CLR" : ( key == " " ) ? "SPC" : ( key == "<" )  ? "DEL" : ( key == "~" ) ? "DONE" : key.toupper()
+                keys[ key.tolower() ] <- surface.add_text( key_name, -1, -1, 1, 1 )
+                keys[ key.tolower() ].font = config.keys.font
+                keys[ key.tolower() ].charsize = config.keys.charsize
+            }
+            keys[ key.tolower() ].set_rgb( config.keys.rgba[0], config.keys.rgba[1], config.keys.rgba[2])
+            keys[ key.tolower() ].alpha = config.keys.rgba[3]
+        }
+
+        //set search key positions
+        local row_count = 0
+        foreach ( row in config.keys.rows )
+        {
+            local col_count = 0
+            local osd = {
+                x = ( surface.width * config.keys.pos[0] ) * 1.0,
+                y = ( surface.height * config.keys.pos[1] ) * 1.0,
+                width = ( surface.width * config.keys.pos[2] ) * 1.0,
+                height = ( surface.height * config.keys.pos[3] ) * 1.0
+            }
+            local key_width = ( osd.width / row.len() ) * 1.0
+            local key_height = ( osd.height / config.keys.rows.len() ) * 1.0
+            foreach ( char in row )
+            {
+                local key_image = keys[ char.tochar() ]
+                local pos = {
+                    x = osd.x + ( key_width * col_count ),
+                    y = osd.y + key_height * row_count,
+                    w = key_width,
+                    h = key_height
+                }
+                key_image.set_pos( pos.x, pos.y, pos.w, pos.h )
+                col_count++
+            }
+            row_count++
+        }
+    }
+
+    function on_tick( ttime )
+    {
+        if(trigger == true){
+
+            if(state == 3){ surface.x = surface.x - flw*0.032 }
+            if(state == 2){ surface.x = surface.x + flw*0.028 }
+
+            if(state == 2 && surface.x >= 0){
+                state = 1;
+                surface.x = 0
+                trigger = false;
+            }
+            if(state == 3 && surface.x <= -surface.width){
+                surface.x = -surface.width;
+                surface.alpha = 0;
+                state = 0;
+                trigger = false;
+            }
+        }
+    }
+}
+
+
+local search = Keyboard( fe.add_surface(flw*0.370, flh) )
+    .set_pos(-flw*0.370,0,flw*0.370,flh)
+    .retain(true)
+    .search_key( my_config["keyboard_search_key"] )
+    .mode( my_config["keyboard_search_method"] )
+    .preset( my_config["keyboard_layout"] )
+    .text_font("SF Slapstick Comic Bold Oblique")
+    .text_color(214,211,210)
+    .text_pos( [ 0.075, 0.3, 0.9, 0.07 ] )
+    .keys_selected_color(255,255,255)
+    .bg("Images/Backgrounds/Search_Background.png")
+    .keys_image_folder(medias_path + fe.list.name + "/Images/Letters")
+    .init()
+
 
 // Start game sounds transition callback
 fe.add_transition_callback( "game_in_out" );
