@@ -56,7 +56,7 @@ flh <- fe.layout.height.tofloat();
 // Modules
 fe.load_module("hs-animate");
 fe.load_module("conveyor");
-fe.load_module("objects/keyboard-search");
+fe.do_nut("nut/keyboard-search/module.nut");
 fe.load_module("file");
 fe.load_module("file-format");
 fe.load_module("objects/scrollingtext");
@@ -1138,35 +1138,15 @@ function custom_settings() {
 }
 
 //-- KeyboardSearch
-
 class Keyboard extends KeyboardSearch
 {
-    trigger = false;
-    state = 0 // 0 closed, 1 open, 2 move open, 3 move close
-    sys = ""
-
-    function preset(name) {
-        switch(name) {
-            case "qwerty":
-                keys_rows([ "1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm", "- <~" ])
-                break
-            case "azerty":
-                keys_rows([ "1234567890", "azertyuiop", "qsdfghjklm", "wxcvbn", "- <~" ])
-                break
-            case "alpha":
-                keys_rows(["1234567890", "abcdefghi", "jklmnopqr", "stuvwxyz", "- <~"])
-                break
-        }
-        return this
-    }
-
     function toggle() {
         if(curr_sys != sys){ // reload letters artwork only if sys is changed
             foreach( key, val in key_names ) {
                 if(file_exist(medias_path + curr_sys + "/Images/Letters/" + val.tolower() + ".png")){
                     keys[ key.tolower() ].file_name = medias_path + curr_sys + "/Images/Letters/" + val.tolower() + ".png";
                 }else{
-                    keys[ key.tolower() ].file_name = fe.module_dir + "keyboard-search/images" + "/" + val.tolower() + ".png";
+                    keys[ key.tolower() ].file_name = fe.script_dir + "nut/keyboard-search/images" + "/" + val.tolower() + ".png";
                 }
             }
             sys = curr_sys
@@ -1180,120 +1160,6 @@ class Keyboard extends KeyboardSearch
             state = 3;
         }
     }
-
-    function update_rule()
-    {
-        try
-        {
-            local rule = "Title contains " + _massage(text)
-            switch ( config.mode )
-            {
-                case "next_match":
-                    if ( text.len() == 0 ) return
-                    local s = fe.filters[fe.list.filter_index].size
-                    for ( local i = 1; i < s; i++ )
-                    {
-                        local name = fe.game_info( Info.Title, i ).tolower()
-                        if ( regexp( text ).capture(name) ) {
-                            fe.list.index = (fe.list.index+i)%s
-                            break
-                        }
-                    }
-                    break
-                case "show_results":
-                default:
-                    if(text.len() < 2) return;
-                    fe.list.search_rule = "";
-                    fe.list.search_rule = ( text.len() > 1 ) ? rule : ""
-                    break
-            }
-        } catch ( err ) { print( "Unable to apply filter: " + err ); }
-    }
-
-    function draw_osd(){
-        //draw the search surface bg
-        local bg = surface.add_image(config.bg, 0, 0, surface.width, surface.height)
-        bg.set_rgb(config.bg_red, config.bg_green, config.bg_blue)
-        bg.alpha = config.bg_alpha
-
-        //draw the search text object
-        local osd_search = {
-            x = ( surface.width * config.search_text.pos[0] ) * 1.0,
-            y = ( surface.height * config.search_text.pos[1] ) * 1.0,
-            width = ( surface.width * config.search_text.pos[2] ) * 1.0,
-            height = ( surface.height * config.search_text.pos[3] ) * 1.0
-        }
-        search_text = surface.add_text(text, osd_search.x, osd_search.y, osd_search.width, osd_search.height)
-        search_text.align = Align.Left
-        search_text.font = config.search_text.font
-        search_text.set_rgb( config.search_text.rgba[0], config.search_text.rgba[1], config.search_text.rgba[2] )
-        search_text.alpha = config.search_text.rgba[3]
-
-        //draw the search key objects
-        foreach( key, val in key_names ) {
-            if ( config.keys.folder != null && config.keys.folder != "" ) {
-                //use key images
-                keys[ key.tolower() ] <- surface.add_image( "", -1, -1, 64, 64 )
-            } else {
-                //use text
-                local key_name = ( key == "-" ) ? "CLR" : ( key == " " ) ? "SPC" : ( key == "<" )  ? "DEL" : ( key == "~" ) ? "DONE" : key.toupper()
-                keys[ key.tolower() ] <- surface.add_text( key_name, -1, -1, 1, 1 )
-                keys[ key.tolower() ].font = config.keys.font
-                keys[ key.tolower() ].charsize = config.keys.charsize
-            }
-            keys[ key.tolower() ].set_rgb( config.keys.rgba[0], config.keys.rgba[1], config.keys.rgba[2])
-            keys[ key.tolower() ].alpha = config.keys.rgba[3]
-        }
-
-        //set search key positions
-        local row_count = 0
-        foreach ( row in config.keys.rows )
-        {
-            local col_count = 0
-            local osd = {
-                x = ( surface.width * config.keys.pos[0] ) * 1.0,
-                y = ( surface.height * config.keys.pos[1] ) * 1.0,
-                width = ( surface.width * config.keys.pos[2] ) * 1.0,
-                height = ( surface.height * config.keys.pos[3] ) * 1.0
-            }
-            local key_width = ( osd.width / row.len() ) * 1.0
-            local key_height = ( osd.height / config.keys.rows.len() ) * 1.0
-            foreach ( char in row )
-            {
-                local key_image = keys[ char.tochar() ]
-                local pos = {
-                    x = osd.x + ( key_width * col_count ),
-                    y = osd.y + key_height * row_count,
-                    w = key_width,
-                    h = key_height
-                }
-                key_image.set_pos( pos.x, pos.y, pos.w, pos.h )
-                col_count++
-            }
-            row_count++
-        }
-    }
-
-    function on_tick( ttime )
-    {
-        if(trigger == true){
-
-            if(state == 3){ surface.x = surface.x - flw*0.032 }
-            if(state == 2){ surface.x = surface.x + flw*0.028 }
-
-            if(state == 2 && surface.x >= 0){
-                state = 1;
-                surface.x = 0
-                trigger = false;
-            }
-            if(state == 3 && surface.x <= -surface.width){
-                surface.x = -surface.width;
-                surface.alpha = 0;
-                state = 0;
-                trigger = false;
-            }
-        }
-    }
 }
 
 
@@ -1305,7 +1171,7 @@ local search = Keyboard( fe.add_surface(flw*0.370, flh) )
     .preset( my_config["keyboard_layout"] )
     .text_font("SF Slapstick Comic Bold Oblique")
     .text_color(214,211,210)
-    .text_pos( [ 0.075, 0.3, 0.9, 0.07 ] )
+    .text_pos( [ 0.1, 0.31, 0.8, 0.07 ] )
     .keys_selected_color(255,255,255)
     .bg("Images/Backgrounds/Search_Background.png")
     .keys_image_folder(medias_path + fe.list.name + "/Images/Letters")
