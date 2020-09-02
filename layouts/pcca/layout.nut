@@ -44,7 +44,7 @@ class UserConfig {
     </ label="Wheel Click", help="Enable or disable the wheel click sound", options="Yes, No", order=M_order++ /> sounds_wheel_click = "Yes"
     //</ label="Animated Artworks", help="Animate artworks", options="Yes, No", order=6 /> animated_artworks="Yes"
 
-    </ label="Search Key", help="Choose the key to initiate a search", options="custom1,custom2,custom3,custom4,custom5,custom6,up,down,left,right", order=M_order++ />keyboard_search_key="custom1";
+    </ label="Search Key", help="Choose the key to initiate a search", options="custom1,custom2,custom3,custom4,custom5,custom6,none", order=M_order++ />keyboard_search_key="custom1";
     </ label="Search Results", help="Choose the search method", options="show_results,next_match", order=M_order++ />keyboard_search_method="show_results";
     </ label="Keyboard Layout", help="Choose the keyboard layout", options="qwerty,azerty,alpha", order=M_order++ />keyboard_layout="alpha";
 }
@@ -1517,7 +1517,7 @@ function on_signal(str) {
     if(curr_sys == "Main Menu"){ //disable some buttons on main-menu
        	switch ( str )	
         {
-            case "custom1":
+            case my_config["keyboard_search_key"]:
             case "add_favourite":
             case "add_tags":
             case "prev_favourite":
