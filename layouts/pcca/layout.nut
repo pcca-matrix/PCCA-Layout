@@ -791,14 +791,19 @@ function load_theme(name, theme_content, prev_def){
                 xx = (x - ( ArtObj[Xtag].texture_width  * 0.5 ) );
                 yy = (y - ( ArtObj[Xtag].texture_height * 0.5 ) );
 
-                if( ext(art).tolower() == "swf"){
-                    // try to fix swf  - arch rivals, asura blade, bombjack, ashura blaster, beast busters , gladiator, must understand all cases before fixing
-                    if(x > fe.layout.width ) xx = 0;
-                    if(y > fe.layout.height) yy = 0;
-                    if(ArtObj[Xtag].texture_width == 1024) xx = 0;
-                    if(ArtObj[Xtag].texture_height == 768) yy = 0;
-                    if (xx < 0) xx = 0;
-                    if (yy < 0) yy = 0;
+                if( ext(art).tolower() == "swf" && !hd ){
+                    local swf_except = { "Mame" : ["bonzeadv","ironclad"] };// table of system and theme name where the swf fixes should not be applied.
+                    local exception = false;
+                    if(swf_except.rawin(curr_sys)) if ( swf_except[curr_sys].find(fe.game_info(Info.Name)) != null ) exception = true;
+                    if(!exception){
+                        // try to fix swf
+                        if(x > fe.layout.width ) xx = 0;
+                        if(y > fe.layout.height) yy = 0;
+                        if(ArtObj[Xtag].texture_width == 1024) xx = 0;
+                        if(ArtObj[Xtag].texture_height == 768) yy = 0;
+                        if (xx < 0) xx = 0;
+                        if (yy < 0) yy = 0;
+                    }
                 }
 
                 ArtObj[Xtag].set_pos( (xx * art_mul) + art_offset_x, (yy * art_mul_h) + art_offset_y, ArtObj[Xtag].texture_width * art_mul, ArtObj[Xtag].texture_height * art_mul_h);
