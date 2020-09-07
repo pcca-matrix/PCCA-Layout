@@ -1426,7 +1426,9 @@ function hs_tick( ttime )
         ArtObj.snap.video_playing = true;
         snap_is_playing = true;
     }
-
+    
+    if( glob_time - rtime > glob_delay + 350) letters.visible = false; // if visible , hide letter search with a small delay 
+    
     // load medias after glob_delay
     if( (glob_time - rtime > glob_delay) && trigger_load_theme){
         hd = false;
@@ -1444,7 +1446,6 @@ function hs_tick( ttime )
         prev_path = path;
         overview(0); // start checking for games overview
         start_background.visible = false;
-        letters.visible = false; // hide letter search if present
         path = medias_path + fe.list.name + "/Themes/";
         if(curr_sys == "Main Menu") path = medias_path + "Main Menu/Themes/";
         path+=fe.game_info(Info.Name) + ".zip";
@@ -1505,6 +1506,7 @@ function hs_tick( ttime )
         local firstl = fe.game_info(Info.Title);
         letters.file_name = medias_path + fe.list.name + "/Images/Letters/" + firstl.slice(0,1) + ".png";
         FE_Sound_Letter_Click.playing = true;
+        letters.visible = true;
         trigger_letter = false;
     }
 }
@@ -1546,7 +1548,6 @@ function on_signal(str) {
             case "next_letter":
             case "prev_letter":
                 trigger_letter = true;
-                letters.visible = true;
             break;
         }
     //}
