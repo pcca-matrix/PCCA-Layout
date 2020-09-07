@@ -1543,15 +1543,24 @@ function on_signal(str) {
             case "next_page":
                 FE_Sound_Wheel_Jump.playing = true;
             break;
-
+            
+            case "next_display":
+            case "prev_display":
+                letters.visible = false;
+            break;
+            
             case "next_game":
             case "prev_game":
+                letters.visible = false;
+                conveyor.transition_ms = 50;
+                try { conveyor.transition_ms = Ini_settings.wheel["transition_ms"].tointeger(); } catch ( e ) { } // restore conveyor transition time
                 if( glob_time - last_click  > 160 &&  Ini_settings.sounds["wheel_click"] ) Sound_Click.playing = true; // need better key hold detection
                 last_click = glob_time;
             break;
 
             case "next_letter":
             case "prev_letter":
+                conveyor.transition_ms = 250; // smooth conveyor on letter jump
                 trigger_letter = true;
             break;
         }
