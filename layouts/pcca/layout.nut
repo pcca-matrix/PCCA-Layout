@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v1.09 beta
+// PCCA v1.10
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -1053,19 +1053,11 @@ try { conveyor.transition_ms = Ini_settings.wheel["transition_ms"].tointeger(); 
 
 local center_animation = PresetAnimation(conveyor.m_objs[wheel_count/2].m_obj)
 .auto(true)
-.preset("zoom", 1.16)
+.preset("zoom", 1.25)
 .yoyo()
-.loops(-1)
-.duration(1800)
-.delay(550)
+.duration(350)
+.delay(400)
 .easing("ease-in-cubic")
-
-local center_Wheel_fade = PresetAnimation(conveyor.m_objs[wheel_count/2])
-.auto(true)
-.from({alpha=0})
-.to({alpha=255})
-.delay(500)
-.duration(800)
 
 function conveyor_tick( ttime )
 {
@@ -1078,7 +1070,7 @@ function conveyor_tick( ttime )
         alpha = (from * (fade_time - elapsed + delay)) / fade_time;
         alpha = (alpha < 0 ? 0 : alpha);
         local count = conveyor.m_objs.len();
-        for (local i=0; i < count; i++) if (i != count / 2) conveyor.m_objs[i].alpha=alpha; // do not hide center wheel !
+        for (local i=0; i < count; i++) conveyor.m_objs[i].alpha=alpha;
         if(alpha <= to || alpha == 0) conveyor_bool = true;
     }
 }
@@ -1207,7 +1199,6 @@ function hs_transition( ttype, var, ttime )
     switch ( ttype )
     {
         case Transition.FromGame:
-            conveyor_bool = true; // do not restore alpha on conveyor
             if ( ttime <= 500  ) {
                 global_fade( ttime, 500, true);
                 return true;
@@ -1215,8 +1206,9 @@ function hs_transition( ttype, var, ttime )
                 ArtObj.background1.video_playing = true;
                 ArtObj.background2.video_playing = true;
                 ArtObj.snap.video_playing = true;
-                global_fade( 500, 500, true);
-
+                global_fade( 500, 500, true); // security for sure 100% alpha is passed to function
+                rtime = glob_time + 2000 // add 2 seconds before fading wheel
+                conveyor_bool = false; // do not restore alpha on conveyor
                 // update stats for this system only if Track Usage is set to Yes in AM!
                 if( fe.game_info(Info.PlayedTime) != "" ){
                     game_elapse = fe.game_info(Info.PlayedTime).tointeger() - game_elapse;
@@ -1260,8 +1252,8 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.ToNewSelection: //2
+            center_animation.cancel("origin");
             if(Ini_settings.wheel["transition_ms"].tointeger() < 150) point_animation.play(); // disable pointer animation on slow wheel transition
-            center_animation.cancel();
             ArtObj.snap.video_flags = Vid.NoAudio;
             Background_Music.playing = false;
             Background_Music.file_name = "";
@@ -1313,13 +1305,12 @@ function hs_transition( ttype, var, ttime )
 
         case Transition.ToNewList: //6
             curr_sys = ( fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.list.name );
-            if(curr_sys != "Main Menu"){ // conveyor don't fade on main menu
+            center_animation.cancel("origin");
+            for (local i=0; i < conveyor.m_objs.len(); i++) conveyor.m_objs[i].alpha=255;
+            if(curr_sys != "Main Menu"){
                 if( fe.game_info(Info.PlayedTime) == "" ) PCount.visible = false; else PCount.visible = true; //show game stats surface only if Track Usage is set to Yes in AM!
                 hide_art(); // hide artwork when you change list
-                local count = conveyor.m_objs.len();
-                for (local i=0; i < count; i++) conveyor.m_objs[i].alpha=0;
-                conveyor_bool = true;
-                center_Wheel_fade.play();
+                conveyor_bool = false;
                 syno.set_bg_rgb(20,0,0,0);
                 syno.text.msg = ""; // Hide Overview
                 m_infos.msg = ""; // Hide global stats
@@ -1560,7 +1551,7 @@ function on_signal(str) {
 
             case "next_letter":
             case "prev_letter":
-                conveyor.transition_ms = 250; // smooth conveyor on letter jump
+                conveyor.transition_ms = 200; // smooth conveyor on letter jump
                 trigger_letter = true;
             break;
         }
@@ -1582,6 +1573,7 @@ function global_fade(ttime, target, direction){
         Trans_shader.set_param("alpha", ttime / target);
         ArtObj.SpecialA.shader.set_param("alpha", ttime / target);
         ArtObj.SpecialB.shader.set_param("alpha", ttime / target);
+        for (local i=0; i < conveyor.m_objs.len(); i++) conveyor.m_objs[i].alpha = ttime * (255.0 / target);
         for (local i=0; i < ArtArray.len(); i++ ) ArtArray[i].alpha = ttime * (255.0 / target);
    }else{ // hide
         flv_transitions.video_playing = false; // stop playing ovveride video during fade
