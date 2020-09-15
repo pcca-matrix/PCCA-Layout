@@ -82,7 +82,7 @@ class Animation {
         yoyo = false,               //bounce back and forth the 'from' and 'to' states
         reverse = false,            //reverse the animation
         interpolator = CubicBezierInterpolator("linear"),
-        auto = false                // use internal ticks on external
+        auto = true                // use internal ticks on external
     }
 
     constructor(...) {
@@ -351,6 +351,10 @@ class Animation {
         //print("\nAnimation canceled" + this + "\n");
         running = false;
         progress = 1.0;
+        if(state == "origin" ){
+            yoyoing = false; 
+            opts.reverse = false;
+        }
         set_state(state);
         run_callback( "cancel", this );
     }
@@ -360,14 +364,16 @@ class Animation {
     //set the target state
     function set_state( state ) {
         if ( "target" in opts && opts.target != null ) {
-            if ( typeof(state) == "string" && state in states ) state = states[state];
+            if ( typeof(state) == "string" && state in states ) state = states[state]; else return this;
             foreach( key, val in state )
                 try {
                     if ( key == "rgb" ) {
                         opts.target.set_rgb( val[0], val[1], val[2] );
                         if ( val.len() > 3 ) opts.target.alpha = val[3];
+                    } else {
+                        opts.target[ key ] = val;
                     }
-                } catch (err) { print("error settings state: " + err); }
+                } catch (err) { /*print("error settings state: " + err);*/ }
         }
         return this;
     }
