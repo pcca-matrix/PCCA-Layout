@@ -26,7 +26,7 @@ It informs the script that you are using a real HD theme, 'lw' and 'lh' must be 
 
 Bezel and background stretch have no ifluence if 'hd' tag is present.
 
-Unified video themes can be used. Place videos named as system name / rom name in their respective folders and the unified video will be diplayed in full-screen.
+Unified video themes can be used. Place videos named as system name / rom name in their respective Themes folders and the unified video will be diplayed in full-screen.
  
 
 # Layouts Options

@@ -603,14 +603,13 @@ function background_transitions(anim, File){
 }
 
 function load_theme(name, theme_content, prev_def){
-
-    if(theme_content.len() <= 0){  // If there is no theme file, return (only video is present ! for unified theme)
+    if(theme_content.len() <= 0){  // If there is no theme file, return (unified theme)
         hd = true;
-        if(file_exist(medias_path + curr_sys + "/Video/" + fe.game_info(Info.Name) + ".mp4")){
+        if(file_exist(medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4")){
             ArtObj.background.set_pos(0,0,flw, flh);
             reset_art();
             flv_transitions.zorder = -6; // put override video on top of video snap
-            background_transitions(null, medias_path + curr_sys + "/Video/" + fe.game_info(Info.Name) + ".mp4");
+            background_transitions(null, medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4");
         }
         return false;
     }
@@ -1422,9 +1421,9 @@ function hs_tick( ttime )
         ArtObj.snap.video_playing = true;
         snap_is_playing = true;
     }
-    
+
     if( glob_time - rtime > glob_delay + 350) letters.visible = false; // if visible , hide letter search with a small delay 
-    
+
     // load medias after glob_delay
     if( (glob_time - rtime > glob_delay) && trigger_load_theme){
         hd = false;
@@ -1462,9 +1461,14 @@ function hs_tick( ttime )
             flv_transitions.visible = true;
         }
 
-        if( !theme_content.len() ) { // if no theme is found assume it's system default theme.
-            path = medias_path + fe.list.name + "/Themes/Default.zip";
-            theme_content = zip_get_dir( path );
+        if( !theme_content.len() ) { // if no theme is found .
+            if(file_exist(medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4")){ // if mp4 is found assume it's unified video theme
+                path = medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4";
+                theme_content = [];
+            }else{ //if no video is found assume it's system default theme
+                path = medias_path + fe.list.name + "/Themes/Default.zip";
+                theme_content = zip_get_dir( path );
+            }
 
             if( prev_path == path ){ // if previous and current theme is equal.
                 reset_art(true);
@@ -1534,12 +1538,12 @@ function on_signal(str) {
             case "next_page":
                 FE_Sound_Wheel_Jump.playing = true;
             break;
-            
+
             case "next_display":
             case "prev_display":
                 letters.visible = false;
             break;
-            
+
             case "next_game":
             case "prev_game":
                 letters.visible = false;
