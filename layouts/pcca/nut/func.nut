@@ -290,6 +290,15 @@ function find_theme_node( node )
 
 /* Magic tokens Functions */
 
+function Langue( offset = 0 ){
+   local lng = fe.game_info(Info.Language, offset);
+    for ( local i = 1; i < 18; i++ ) Lang[i].file_name = "";
+    if( lng.len() > 0 ){
+        local g_c = split( lng, ",");   
+        for ( local i = 1; i < g_c.len(); i++ ) Lang[i].file_name = "images/flags/lang/" + g_c[i] + ".png";
+    }
+}
+
 function copyright( index_offset ) {
     local d = "";
     local year =  fe.game_info( Info.Year);

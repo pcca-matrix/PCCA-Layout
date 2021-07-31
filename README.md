@@ -1,6 +1,6 @@
 # PCCA Hyperspin theme conversion for Attract-Mode
 
-### Version 1.10 
+### Version 1.11 beta
 This script is intended to work with Attract-Mode http://attractmode.org/ , it intends to reproduce the real hyperspin experience in HD as precise as possible using the same themes and folder structure as a real Hyperspin setup.
 
 Hypertheme can be used to build new themes or you can build your own with a higher resolution than hyperspin's default 1024x768.
@@ -29,27 +29,48 @@ Bezel and background stretch have no ifluence if 'hd' tag is present.
 Unified video themes can be used. Place videos named as system name / rom name in their respective Themes folders and the unified video will be diplayed in full-screen.
  
 
-# Layouts Options
+# Layouts and ini Options
+Settings can be defined per system in pcca/Settings/{SYSTEME NAME}.ini , and for main menu,  pcca/Settings/Main Menu.ini
+Real Hyperspin Settings ini can be used as is by copying it to the pcca layout Settings folder.
+If no .ini is found or an option is not present , the attract-mode "layout option setting" will be applied.
 
-### Animated Backgrounds
+### Animated Backgrounds (Yes / No)
 Enable or disable bakgrounds transitions.
+Ini: 
+[themes] 
+animated_backgrounds=true or false
 
 ### Aspect
 Stretched or centered theme.
+Ini: 
+[themes] 
+aspect=center or stretch
 
 ### Bezels
 Display or hide bezel.
+Ini:
+[themes] 
+bezels=true or false
 
-### Bezels On Top
+### Bezels On Top (Yes / No)
 Put bezel on top of the theme background or below.
+Ini:
+[themes] 
+bezels_on_top=true or false
 
 ### Background Stretch
 'Yes': Strecth Background only (some themes with video frame in background may look distorted with this option enabled).
 
 'Main Menu': Stretch background only when you are in main menu wheel.
+Ini:
+[themes] 
+background_stretch=true or false
 
-### Game Info Coordinates
+### Game Info Coordinates (x,y)
 Provide x,y coordinates for game info surface display. If empty, game info is positioned at the bottom left (default).
+Ini:
+[themes]
+infos_coord = x,y
 
 ### Language
 
@@ -65,6 +86,9 @@ your \Media\{SYSTEME NAME}\Video\Override Transitions folder and rename the vide
 
 If you give a transition the same name as one of your genre categories you will see the transtion when a game match the category if no other transition is available for that game.
 
+Ini:
+[themes]
+override_transitions = true or false
 
 ### Themes Wait For Override 
 Themes load after Override Transition has played ( Not implemented yet)
@@ -125,6 +149,10 @@ Background Music is played if an mp3 file is found anywhere in theme.zip, no mat
 
 if Background Music is found in the theme.zip file or the Sound/Background Music folder ("C:\Hyperspin\Media\Atari 2600\Sound\Background Music\Vanguard.mp3" for example), the theme Background Music is used and video snap sound is automaticly muted.
 
+Ini:
+[sounds]
+game_sounds=true or false
+wheel_click=true or false
 
 ### Specials Artwork
 
@@ -196,6 +224,14 @@ default alignement is bottom center.
 
 - crash sometime occurs with some swf backgrounds, it's due to a buggy swf implementation in Attract-Mode, not the pcca script itself.
 
+### Extras Artworks 
+Extra Artworks Key : key to open extra artworks overlay layout 
+
+Extra artworks must be put in folder -> \Media\{SYSTEME NAME}\Images\Artwork\{ROM NAME}\any_name.{jpg,png,mp4}
+this folder can contain an unlimited number of medias related to the game.
+it can be viewed when Extra Artworks Key is pressed.
+you can navigate trough the medias in the Artwork folder with the controls mapped in AM to next_display and prev_display.
+if your media folder contains more than one media , a double arrow will be displayed below the media currently displayed.
 
 ## TODO:
 

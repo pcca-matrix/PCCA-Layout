@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v1.10
+// PCCA v1.11
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -33,6 +33,7 @@ class UserConfig {
     //</ label="Animate Out Default", help="When moving off a default theme you can have theme artworks animate out each time", options="Yes, No", order=M_order++ /> themes_animate_out_default = "No"
     </ label="Reload Backgrounds", help="Force reloading background transitions when navigating on default theme", options="Yes, No", order=M_order++ /> themes_reload_backgrounds = "No"
     </ label="Video scanline", help="Add crt scanlines effect to video snap ", options="Yes, No", order=M_order++ /> themes_crt_scanline = "No"
+    </ label="Extra Artworks Key", help="Choose the key to initiate extra artworks overlay", options="custom1,custom2,custom3,custom4,custom5,custom6,none", order=M_order++ />extra_artworks_key="custom2";
 
     </ label="Media Path", help="Path of HyperSpin media, if empty, media is considered inside layout folder", options="", order=M_order++ /> medias_path=""
     </ label="Low GPU", help="'Yes' = Low GPU (Intel HD,.. less backgrounds transition), 'No' = Recent GPU", options="Yes, No", order=M_order++ /> LowGPU="No"
@@ -412,6 +413,55 @@ favo.font = "fontello.ttf";
 favo.align = Align.Left;
 favo.set_rgb( 255, 170, 0 );
 
+/* Extra Artworks Screen Overlay */
+local surf_inf = fe.add_surface(flw, flh);
+local surf_bck = surf_inf.add_image("images/Backgrounds/faded.png", 0, 0, flw, flh );
+local surf_img = surf_inf.add_image("", 0, 0, 0, flh * 0.82 );
+local surf_arrow = surf_inf.add_image("images/double_arrow.png", flw * 0.5 - ( flw * 0.083 * 0.5), flh * 0.942, flw * 0.083, flh * 0.037);
+surf_img.preserve_aspect_ratio = true;
+surf_inf.visible = false;
+
+local surf_inf_anim = PresetAnimation(surf_inf)
+.auto(true)
+.key("alpha").from(0).to(255)
+.on("stop", function(anim){
+    if(anim.opts.target.alpha == 0) anim.opts.target.visible = false;
+})
+.duration(600)
+
+local extraArtworks = {
+    lists = [],
+    num = 0,
+    
+    function getLists(){
+        lists = []
+        num = 0
+        local lst = zip_get_dir( medias_path + curr_sys + "/Images/Artworks/" +  fe.game_info(Info.Name) );
+        foreach( v in lst ) if( ["jpg","png","mp4"].find( ext(v) ) != null ) lists.push(v);
+    },
+    
+    function setImage( act=0 ){
+        if( !lists.len() ){
+            surf_img.file_name = "";
+            return false;            
+        }
+        if(lists.len() > 1) surf_arrow.visible = true; else surf_arrow.visible = false;
+        if(act == "s") num = 0
+        if(act == "next_display") ( num < lists.len() - 1 ? num++ : num = 0 )
+        if(act == "prev_display") ( num > 0 ? num-- : num = lists.len() - 1 )
+        surf_img.file_name =  medias_path + curr_sys + "/Images/Artworks/" +  fe.game_info(Info.Name) + "/" + lists[num];
+        local ratio = surf_img.texture_height / (flh * 0.82);
+        surf_img.x = flw * 0.5 - (surf_img.texture_width / ratio * 0.5);
+        surf_img.y = flh * 0.5 - (flh * 0.82 * 0.5);
+    }
+}
+
+Lang <- {};
+local lng_x = flw*0.110;
+for ( local i = 1; i < 18; i++ ) {
+    lng_x += flw*0.0230;
+    Lang[i] <- surf_ginfos.add_image("", lng_x, flh*0.049, flw*0.0200, flh*0.0300 );
+}
 // Main Menu Infos
 main_infos <- {};
 game_elapse <- 0;
@@ -1272,6 +1322,11 @@ function hs_transition( ttype, var, ttime )
 
         case Transition.EndNavigation: //7
             center_animation.play();
+            Langue();
+            if(surf_inf.visible){
+                extraArtworks.getLists();
+                extraArtworks.setImage();
+            }
             trigger_load_theme = true;
             //Play entierly games sounds-fx (Yaron fix)
             if( Ini_settings.sounds["game_sounds"] ) {
@@ -1542,6 +1597,10 @@ function on_signal(str) {
             case "next_display":
             case "prev_display":
                 letters.visible = false;
+                if(surf_inf.visible){
+                    extraArtworks.setImage(str);
+                    return true;
+                }
             break;
 
             case "next_game":
@@ -1557,6 +1616,18 @@ function on_signal(str) {
             case "prev_letter":
                 conveyor.transition_ms = 200; // smooth conveyor on letter jump
                 trigger_letter = true;
+            break;
+
+            case my_config["extra_artworks_key"] : // Extra artworks screen
+                if(curr_sys == "Main Menu") break;
+                if(surf_inf.visible){
+                    surf_inf_anim.reverse(true).play();
+                }else{
+                    extraArtworks.getLists();
+                    extraArtworks.setImage();
+                    surf_inf.visible = true; 
+                    surf_inf_anim.reverse(false).play();
+                }  
             break;
         }
     //}
