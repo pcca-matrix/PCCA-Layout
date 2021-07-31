@@ -338,9 +338,9 @@ function font_pl( offset ){
 function ret_wheel( offset ){
     local m;
     if(fe.game_info(Info.Emulator) == "@"){
-        m  = medias_path + "Main Menu/Images/Wheel/"+fe.game_info(Info.Name, offset)
+        m  = medias_path + "Main Menu/Images/Wheel/[Name].png";
     }else{
-        m = medias_path + fe.list.name + "/Images/Wheel/" + fe.game_info(Info.Name, offset);
+        m = medias_path + fe.list.name + "/Images/Wheel/[Name].png";
     }
     return m;
 }
