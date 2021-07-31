@@ -215,7 +215,8 @@ class KeyboardSearch {
     {
         try
         {
-            local rule = "Title contains " + _massage(text)
+            local rule = "Name contains " + _massage(text)
+            //local rule = "Title contains " + _massage(text)
             switch ( config.mode )
             {
                 case "next_match":
@@ -232,8 +233,7 @@ class KeyboardSearch {
                     break
                 case "show_results":
                 default:
-                    if(text.len() < 2) return;
-                    fe.list.search_rule = "";
+                    if(text.len() < 2) return; 
                     fe.list.search_rule = ( text.len() > 1 ) ? rule : ""
                     break
             }
