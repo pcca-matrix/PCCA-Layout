@@ -1341,7 +1341,7 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.EndNavigation: //7
-            center_animation.play();
+            if(conveyor.m_objs[wheel_count/2].m_obj.alpha == 255) center_animation.play();
             Langue();
             if(surf_inf.visible){
                 extraArtworks.getLists();
