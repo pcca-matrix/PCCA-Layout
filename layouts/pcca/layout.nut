@@ -245,10 +245,15 @@ anim_special.push( PresetAnimation(ArtObj.SpecialA).auto(true) );
 anim_special.push( PresetAnimation(ArtObj.SpecialB).auto(true) );
 
 function load_special(){
-    local syst = curr_sys;
+    foreach( i,n in ["A","B"] ){
+        anim_special[i].reset();
+        ArtObj["Special" + n].file_name = "";
+    }
+    
     foreach( i,n in ["a","b"] ){
         local S_Art = Ini_settings["special art " + n];
-        S_Art["syst"] = syst;
+        S_Art["lst"] <- [];
+        S_Art["syst"] = curr_sys;
         S_Art["in"] = S_Art["in"].tofloat() * 1000;
         S_Art["out"] = S_Art["out"].tofloat() * 1000;
         S_Art["delay"] = (S_Art["delay"].tofloat() * 1000 < 100 ? 100 : S_Art["delay"].tofloat() * 1000 );
@@ -258,39 +263,50 @@ function load_special(){
         S_Art["x"] = S_Art["x"].tofloat();
         S_Art["y"] = S_Art["y"].tofloat();
         S_Art["type"] = ( S_Art["type"] == "normal" ?  "linear" : S_Art["type"] );
-        if( S_Art["w"] > 0 && S_Art["h"] > 0 ){
-            S_Art["x"] -= ( S_Art["w"]  * 0.5 );
-            S_Art["y"] -= ( S_Art["h"]  * 0.5 );
-        }
+        
+        if(S_Art["active"].tointeger() == 0 ) continue;
+        
         n = n.toupper();
-        if(S_Art["default"].tointeger() == 1 ) S_Art["syst"] = "Main Menu"; // if default is true in ini , use main menu special artwork
-        if(S_Art["active"].tointeger() == 0 ){ // disable special if active = false in ini
-            anim_special[i].reset();
-            ArtObj["Special" + n].visible = false;
-           continue;
+        if(S_Art["default"].tointeger() == 1 ) {
+            S_Art["syst"] = "Main Menu"; // if default is true in ini , use main menu special artwork
+        } else if(S_Art["sys_global"].tointeger() == 1 ){
+            S_Art["syst"] = "Global"; // use Global systeme special artwork ( must be only if not artowrk is fgound inside folder)
         }
+    
+        local lst = zip_get_dir( medias_path + S_Art["syst"] + "/Images/Special" );
+        foreach( v in lst ){
+            if( ["png","swf","jpg","mp4","gif"].find( ext(v) ) != null ){
+                if( v.find("Special" + n) != null ) S_Art["lst"].push(v);
+            }
+        } 
 
-        ArtObj["Special" + n].visible = true;
-        ArtObj["Special" + n].file_name = medias_path + S_Art["syst"] + "/Images/Special/Special" + n + "1." + S_Art.ext;
+        if(!S_Art["lst"].len() && !S_Art["default"]) continue;
+        ArtObj["Special" + n].file_name = medias_path + S_Art["syst"] + "/Images/Special/" + S_Art["lst"][0];
         if( !ArtObj["Special" + n].file_name) continue; // continue if special does not exist
+        
+        ArtObj["Special" + n].visible = true;
         S_Art.nbr = n;
         if(S_Art){
-
-            if(S_Art.w > 0 && S_Art.h > 0){ // if width and height defined , it's hd Special
-                ArtObj["Special" + n].width = S_Art.w;
-                ArtObj["Special" + n].height = S_Art.h;
+            local special_hd = ( S_Art.w > 0 && S_Art.h > 0 ? true : false);  // if width and height define , assume it's hd Special
+            if(special_hd){
+                if( S_Art.x > 0 && S_Art.y > 0){ // if coord defined in HD, use them as is
+                    S_Art["x"] -= ( S_Art["w"] * 0.5 );
+                    S_Art["y"] -= ( S_Art["h"] * 0.5 );
+                }else{ //default bottom centered
+                    S_Art["x"] = flw * 0.5 - ( S_Art.w * 0.5);
+                    S_Art["y"] = flh - S_Art.h;
+                }
+                ArtObj["Special" + n].set_pos( S_Art["x"] , S_Art["y"], S_Art["w"], S_Art["h"]  );
             }else{ // else assume it's Hyperspin scaled special
+               if( S_Art.x > 0 && S_Art.y > 0){ // if coord
+                    ArtObj["Special" + n].x =  S_Art["x"] * mul - (ArtObj["Special" + n].texture_width * mul * 0.5) + offset_x;
+                    ArtObj["Special" + n].y =  S_Art["y"] * mul_h - (ArtObj["Special" + n].texture_height * mul_h * 0.5) + offset_y;
+                }else{ // default bottom centered
+                    ArtObj["Special" + n].x = flw * 0.5 - ( (ArtObj["Special" + n].texture_width * mul ) * 0.5);
+                    ArtObj["Special" + n].y = flh - ( (ArtObj["Special" + n].texture_height ) * mul_h);
+                }
                 ArtObj["Special" + n].width = ArtObj["Special" + n].texture_width * mul;
                 ArtObj["Special" + n].height = ArtObj["Special" + n].texture_height * mul_h;
-            }
-
-            if(S_Art.x > 0 || S_Art.y > 0){ // if coord defined , use them
-                ArtObj["Special" + n].set_pos( S_Art.x.tofloat() , S_Art.y.tofloat() );
-            }else{ // else use default centered bottom coord
-                local offsetY = 10;
-                if(n == "B") offsetY -= flh*0.018;
-                ArtObj["Special" + n].x = flw * 0.5 - ( (ArtObj["Special" + n].texture_width * mul ) * 0.5);
-                ArtObj["Special" + n].y = flh - ( (ArtObj["Special" + n].texture_height - offsetY) * mul_h);
             }
 
             anim_special[i].name("Special" + n)
@@ -304,14 +320,9 @@ function load_special(){
                 anim.opts.duration = S_Art["out"]; // out
             })
             anim_special[i].on("stop",function(anim){
+                if(S_Art.cnt == S_Art["lst"].len()) S_Art.cnt = 0;
+                ArtObj["Special" + S_Art.nbr].file_name = medias_path + S_Art["syst"] + "/Images/Special/" + S_Art["lst"][S_Art.cnt];
                 S_Art.cnt++;
-                if(file_exist(medias_path + S_Art.syst + "/Images/Special/Special" + S_Art.nbr + S_Art.cnt + "." + S_Art.ext)){
-                    ArtObj["Special" + S_Art.nbr].file_name = medias_path + S_Art.syst + "/Images/Special/Special" + S_Art.nbr + S_Art.cnt + "." + S_Art.ext;
-                }else{
-                    ArtObj["Special" + S_Art.nbr].file_name = medias_path + S_Art.syst + "/Images/Special/Special" + S_Art.nbr + "1." + S_Art.ext;
-                    S_Art.cnt = 0;
-                }
-
                 anim.opts.duration = S_Art["in"]; // in
                 if(S_Art.type == "bounce" ) anim.opts.interpolator = PennerInterpolator("ease-out-bounce");
                 anim.play();
@@ -421,6 +432,11 @@ local surf_arrow = surf_inf.add_image("images/double_arrow.png", flw * 0.5 - ( f
 surf_img.preserve_aspect_ratio = true;
 surf_inf.visible = false;
 
+local surf_txt = surf_inf.add_text( "", flw * 0.007, flh * 0.018, flw, flh * 0.066)
+surf_txt.font = ttfont;
+surf_txt.align = Align.Left;
+surf_txt.set_rgb( 241, 250, 200 );
+
 local surf_inf_anim = PresetAnimation(surf_inf)
 .auto(true)
 .key("alpha").from(0).to(255)
@@ -443,6 +459,7 @@ local extraArtworks = {
     function setImage( act=0 ){
         if( !lists.len() ){
             surf_img.file_name = "";
+            surf_arrow.visible = false
             return false;            
         }
         if(lists.len() > 1) surf_arrow.visible = true; else surf_arrow.visible = false;
@@ -453,6 +470,8 @@ local extraArtworks = {
         local ratio = surf_img.texture_height / (flh * 0.82);
         surf_img.x = flw * 0.5 - (surf_img.texture_width / ratio * 0.5);
         surf_img.y = flh * 0.5 - (flh * 0.82 * 0.5);
+        local title = strip_ext(lists[num]);
+        if( title.len() )surf_txt.msg = title.slice( 0, 1 ).toupper() + title.slice( 1, title.len() );// caps first char
     }
 }
 
@@ -1104,18 +1123,19 @@ local center_animation = PresetAnimation(conveyor.m_objs[wheel_count/2].m_obj)
 .auto(true)
 .preset("zoom", 1.25)
 .yoyo()
-.duration(350)
-.delay(400)
+.duration(300)
+.delay(100)
 .easing("ease-in-cubic")
 
 function conveyor_tick( ttime )
 {
     local alpha;
-    local delay = 1100;
+    local delay = 650;
     local fade_time = Ini_settings.wheel["fade_time"].tofloat() * 1000;
+    if(!fade_time) fade_time = 0.01;
     local from = 255; local to = clamp( Ini_settings.wheel["alpha"].tofloat() * 255 , 0.0 , 255.0);
     local elapsed = glob_time - rtime;
-    if ( !conveyor_bool && elapsed > delay && fade_time > 0 ) {
+    if( !conveyor_bool && elapsed > delay && fade_time > 0 ) {
         alpha = (from * (fade_time - elapsed + delay)) / fade_time;
         alpha = (alpha < 0 ? 0 : alpha);
         local count = conveyor.m_objs.len();
