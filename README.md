@@ -167,10 +167,13 @@ Special artwork settings is defined in pcca/Settings/{SYSTEME NAME}.ini , and fo
 
 Real Hyperspin Settings ini can be used as is by copying it to the pcca layout Settings folder.
 
+You can use media type (png,swf,jpg,mp4,gif)
+
 ```
 [Special Art A] // the name of the special artwork collection (A or B)
 default=false    -> When in system use default artworks from main menu
 active=true      -> enabled (true) or disabled (false)
+sys_global=false -> enabled (true) or disabled (false) , use artworks in a new folder \Media\Global\Images\Special if no artwork exist in your systeme special folder
 x=512            -> x alignement ( if width and height are specified , then it's real coord , if not, it's hyperspin default 1024x768 scaled for your screen resolution)
 y=720            -> y alignement ( if width and height are specified , then it's real coord , if not, it's hyperspin default 1024x768 scaled for your screen resolution)
 in=0.4           -> Time it takes the artworks to animate in  position (in seconds).
@@ -182,7 +185,6 @@ start=bottom     -> The side of the screen from which animations enter. (bottom,
 /* Added for Attract-mode (not mandatory) */
 w=500            -> width of your special artwork
 h=100            -> height of your special artwork
-ext=png          -> extension of your special artwork (you can use any media extension (video, swf, or any image supported by Attract-mode)
 ```
 If no .ini file is found but you have special artwork inside your images/Special folder , the default settings will be applied.
 
