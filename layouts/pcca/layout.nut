@@ -6,7 +6,7 @@
 // This program comes with NO WARRANTY.  It is licensed under
 // the terms of the GNU General Public License, version 3 or later.
 //
-// PCCA-Matrix 2020
+// PCCA-Matrix 2021
 //
 ////////////////////////////////////////////////////////////////////
 local M_order = 0;
@@ -58,6 +58,7 @@ flh <- fe.layout.height.tofloat();
 fe.load_module("hs-animate");
 fe.load_module("conveyor");
 fe.do_nut("nut/keyboard-search/module.nut");
+fe.do_nut("nut/class.nut");
 fe.load_module("file");
 fe.load_module("file-format");
 fe.load_module("objects/scrollingtext");
@@ -382,36 +383,32 @@ function dialog_datas(type){
 
 // Game Infos surface
 local surf_ginfos = fe.add_surface(flw, flh*0.22);
-local ttfont = "College Halo";
 
-local txt_title = surf_ginfos.add_text( "[Title]", flw*0.021, flh*0.072, flw*0.9375, flh*0.040 );
-txt_title.set_rgb( 255, 255, 255 );
-txt_title.font = ttfont;
-txt_title.align = Align.Left;
+local ttfont = "ArialCEMTBlack";
+local Title = OutlinedText(surf_ginfos, "[Title]", {"color":[255,255,255], "x":flw*0.0195, "y":flh*0.077, "w": flw*0.9375 , "size":flh*0.037}, 1.5);
+Title.set("align" , Align.Left);
+Title.set("font" , ttfont);
 
-local copyr = surf_ginfos.add_text("[!copyright]", flw*0.023, flh*0.106, flw*0.9375, flh*0.030 );
-copyr.font = ttfont;
-copyr.align = Align.Left;
-copyr.set_rgb( 255, 255, 150 );
+local list_entry = OutlinedText(surf_ginfos, "[ListEntry]/[ListSize] " + LnG.display + ": [FilterName]", {"color":[255,255,255], "x":flw*0.027, "y":flh*0.135, "w": flw*0.3125 , "size":flh*0.021}, 1.5);
+list_entry.set("align" , Align.Left);
+list_entry.set("font" , ttfont);
 
-local list_entry = surf_ginfos.add_text( "[ListEntry]/[ListSize] " + LnG.display + ": [FilterName]", flw*0.027, flh*0.135, flw*0.3125, flh*0.022 );
-list_entry.font = ttfont;
-list_entry.align = Align.Left;
+local Copy =  OutlinedText(surf_ginfos, "[!copyright]", {"color":[255,255,150], "x":flw*0.023, "y":flh*0.111, "w": flw*0.9375 , "size":flh*0.025}, 1.5);
+Copy.set("align" , Align.Left);
+Copy.set("font" , ttfont);
 
-local PCount = surf_ginfos.add_text( LnG.counter + " [PlayedCount] / " + LnG.playedtime + " [PlayedTime]", flw*0.027, flh*0.152, flw*0.3125, flh*0.022 );
-PCount.font = ttfont;
-PCount.align = Align.Left;
+local PCount = OutlinedText(surf_ginfos, LnG.counter + " [PlayedCount] / " + LnG.playedtime + " [PlayedTime]", {"color":[255,255,255], "x":flw*0.027, "y":flh*0.152, "w": flw*0.3325 , "size":flh*0.021} , 1.5);
+PCount.set("align" , Align.Left);
+PCount.set("font" , ttfont);
 
-local flags = surf_ginfos.add_image("images/flags/[!region]", flw*0.007, flh*0.085, flw*0.0213, flh*0.037);
-copyr.align = Align.Left;
-
+local flags = surf_ginfos.add_image("images/flags/[!region]", flw*0.007, flh*0.077, flw*0.0213, flh*0.037);
 local rating = surf_ginfos.add_image("images/rating/[!rating]", flw*0.007, flh*0.120, flw*0.0213, flh*0.051 );
 
 local pl = surf_ginfos.add_text( "[!font_pl]", -flw*0.006, flh*0.032, flw*0.510, flh*0.0462 );
 pl.font = "fontello.ttf";
 pl.align = Align.Left;
 
-local Ctrl = surf_ginfos.add_text( "[!font_ctrl]", flw*0.031, flh*0.032, flw*0.030, flh*0.046 );
+local Ctrl = surf_ginfos.add_text( "[!font_ctrl]", flw*0.035, flh*0.035, flw*0.030, flh*0.046 );
 Ctrl.font = "fontello.ttf";
 Ctrl.align = Align.Left;
 
@@ -1167,7 +1164,6 @@ overlay_list.selbg_alpha = 0;
 overlay_list.set_sel_rgb( 255, 0, 0 );
 
 local overlay_title = custom_overlay.add_text("", flw*0.346, flh*0.324, flw*0.312, flh*0.046);
-overlay_title.font = "College Halo";
 overlay_title.charsize = flw*0.018;
 overlay_title.set_rgb(192, 192, 192);
 local exit_overlay = fe.overlay.set_custom_controls( overlay_title, overlay_list );
@@ -1187,7 +1183,7 @@ function custom_settings() {
         }
     }
     surf_ginfos.set_pos( g_coord[0], g_coord[1] );
-    surf_ginfos.alpha = 200;
+    surf_ginfos.alpha = 255;
 
     if( Ini_settings.themes["aspect"] == "stretch"){
         mul = flw / 1024;
@@ -1382,7 +1378,7 @@ function hs_transition( ttype, var, ttime )
             center_animation.cancel("origin");
             for (local i=0; i < conveyor.m_objs.len(); i++) conveyor.m_objs[i].alpha=255;
             if(curr_sys != "Main Menu"){
-                if( fe.game_info(Info.PlayedTime) == "" ) PCount.visible = false; else PCount.visible = true; //show game stats surface only if Track Usage is set to Yes in AM!
+                if( fe.game_info(Info.PlayedTime) == "" ) PCount.set("visible", false); else PCount.set("visible", true); //show game stats surface only if Track Usage is set to Yes in AM!
                 hide_art(); // hide artwork when you change list
                 conveyor_bool = false;
                 syno.set_bg_rgb(20,0,0,0);
