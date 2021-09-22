@@ -806,6 +806,7 @@ class PresetAnimation extends Animation {
 
         "rain float": // OK
         function ( obj ){
+            opts.target.zorder-=1000
             local nx = ArtArray.len();
             if( nx < 4 ){ // add missings images if needed
                 for ( local i=0; i < 4-nx; i++ ){ ArtArray.push(fe.add_image("",0 , 0 , 0 , 0)) }
@@ -816,6 +817,7 @@ class PresetAnimation extends Animation {
                 ArtArray[i].file_name = obj.file_name;
                 ArtArray[i].visible = true;
                 ArtArray[i].set_pos( posx , -( rndint(flh*0.5) + obj.height ) , obj.width, obj.height);
+                ArtArray[i].zorder-=1; // fix: hide obj on exit menu
             }
             opts.datas <- { "s": [4.1, 2.8, 3.4, 1.9], "t": [0,0,0,0], "x": [rndfloat(2.1), rndfloat(2.1), rndfloat(2.1), rndfloat(2.1)] };
         },
