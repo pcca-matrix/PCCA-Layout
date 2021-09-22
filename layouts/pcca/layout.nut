@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v1.11
+// PCCA v2.00
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -34,6 +34,7 @@ class UserConfig {
     </ label="Reload Backgrounds", help="Force reloading background transitions when navigating on default theme", options="Yes, No", order=M_order++ /> themes_reload_backgrounds = "No"
     </ label="Video scanline", help="Add crt scanlines effect to video snap ", options="Yes, No", order=M_order++ /> themes_crt_scanline = "No"
     </ label="Extra Artworks Key", help="Choose the key to initiate extra artworks overlay", options="custom1,custom2,custom3,custom4,custom5,custom6,none", order=M_order++ />extra_artworks_key="custom2";
+    </ label="Settings/Edit Key", help="Choose the key to initiate settings/edit overlay", options="custom1,custom2,custom3,custom4,custom5,custom6,none", order=M_order++ />main_menu_key="custom4";
 
     </ label="Media Path", help="Path of HyperSpin media, if empty, media is considered inside layout folder", options="", order=M_order++ /> medias_path=""
     </ label="Low GPU", help="'Yes' = Low GPU (Intel HD,.. less backgrounds transition), 'No' = Recent GPU", options="Yes, No", order=M_order++ /> LowGPU="No"
@@ -52,7 +53,7 @@ class UserConfig {
 
 flw <- fe.layout.width.tofloat();
 flh <- fe.layout.height.tofloat();
-
+fe.layout.font = "ArialCEMTBlack";
 
 // Modules
 fe.load_module("hs-animate");
@@ -79,6 +80,7 @@ local prev_back = {}; // previous background table infos ( transitions )
 //test <- fe.add_text("",0,200,1920,25);// DEBUG
 
 // Globals
+xml_root <- [];
 
 // Aspect - Center (only for HS theme)
 local nw = flh * 1.333;
@@ -421,6 +423,17 @@ favo.font = "fontello.ttf";
 favo.align = Align.Left;
 favo.set_rgb( 255, 170, 0 );
 
+/* Main SettingsOverlay */
+local surf_menu = fe.add_surface(flw * 0.25, flh);
+local surf_menu_bck = surf_menu.add_image("images/Backgrounds/faded.png", 0, 0, flw, flh );
+//local surf_menu_img = surf_menu.add_image("", 0, 0, 0, flh * 0.82 );
+local surf_menu_title = surf_menu.add_text("", flw * 0.008, flh*0.002, flw * 0.24, flw * 0.009 );
+surf_menu_title.align = Align.Left;
+local surf_menu_info = surf_menu.add_text("", flw * 0.005, flh - (flh * 0.046), flw * 0.25, flw * 0.011 );
+surf_menu_info.align = Align.Left;
+surf_menu.visible = false;
+local sel_menu = SelMenu(surf_menu, flh * 0.025);
+
 /* Extra Artworks Screen Overlay */
 local surf_inf = fe.add_surface(flw, flh);
 local surf_bck = surf_inf.add_image("images/Backgrounds/faded.png", 0, 0, flw, flh );
@@ -445,19 +458,19 @@ local surf_inf_anim = PresetAnimation(surf_inf)
 local extraArtworks = {
     lists = [],
     num = 0,
-    
+
     function getLists(){
         lists = []
         num = 0
         local lst = zip_get_dir( medias_path + curr_sys + "/Images/Artworks/" +  fe.game_info(Info.Name) );
         foreach( v in lst ) if( ["jpg","png","mp4"].find( ext(v) ) != null ) lists.push(v);
     },
-    
+
     function setImage( act=0 ){
         if( !lists.len() ){
             surf_img.file_name = "";
             surf_arrow.visible = false
-            return false;            
+            return false;
         }
         if(lists.len() > 1) surf_arrow.visible = true; else surf_arrow.visible = false;
         if(act == "s") num = 0
@@ -695,7 +708,7 @@ function load_theme(name, theme_content, prev_def){
     raw_xml = replace( raw_xml, "start=\"bottom\"/>rest=", "start=\"bottom\"rest=" );
     raw_xml = replace( raw_xml, "start=\"right\"/>rest=", "start=\"right\"rest=" );
 
-    local xml_root = null;
+    xml_root = null;
     try{ xml_root = xml.load( raw_xml ); } catch ( e ) { };
 
     local theme_node = find_theme_node( xml_root );
@@ -821,14 +834,6 @@ function load_theme(name, theme_content, prev_def){
             }
 
             if( w > 0 || h > 0 ){ // theme resize if width and height available
-                ArtObj[Xtag].preserve_aspect_ratio = true; // keep aspect ratio
-                if(ArtObj[Xtag].texture_width < ArtObj[Xtag].texture_height){ // portrait or landscape swap the 2
-                   local www = w;
-                   local hhh = h;
-                   w = hhh;
-                   h = www;
-                }
-
                 if( abs(r) < 180 || time <= 0 ){ // center rotation ,hyperspin anim rotation only if it's greater than 180 or -180
                     local mr = PI * r / 180;
                     x += cos( mr ) * (-w * 0.5) - sin( mr ) * (-h * 0.5) + w * 0.5;
@@ -888,7 +893,7 @@ function load_theme(name, theme_content, prev_def){
             }
 
             if(!availables["video"]){
-                video_shader.set_param("datas",false, overlaybelow);
+                video_shader.set_param("datas", false, overlaybelow);
                 overlayoffsetx = 0; overlayoffsety = 0; // fix if theme contain offset and no frame video is present
             }
 
@@ -1493,7 +1498,7 @@ function hs_tick( ttime )
         snap_is_playing = true;
     }
 
-    if( glob_time - rtime > glob_delay + 350) letters.visible = false; // if visible , hide letter search with a small delay 
+    if( glob_time - rtime > glob_delay + 350) letters.visible = false; // if visible , hide letter search with a small delay
 
     // load medias after glob_delay
     if( (glob_time - rtime > glob_delay) && trigger_load_theme){
@@ -1512,10 +1517,14 @@ function hs_tick( ttime )
         prev_path = path;
         overview(0); // start checking for games overview
         start_background.visible = false;
-        path = medias_path + fe.list.name + "/Themes/";
-        if(curr_sys == "Main Menu") path = medias_path + "Main Menu/Themes/";
-        path+=fe.game_info(Info.Name) + ".zip";
+        local Rpath = medias_path + fe.list.name + "/Themes/";
+        if(curr_sys == "Main Menu") Rpath = medias_path + "Main Menu/Themes/";
+        path = Rpath + fe.game_info(Info.Name) + "/"
         local theme_content = zip_get_dir( path );
+        if(!theme_content.len()){
+            path = Rpath + fe.game_info(Info.Name) + ".zip"
+            theme_content = zip_get_dir( path );
+        }
 
         // load transitions override video if enabled and not in the default system theme browsing
         if ( Ini_settings.themes["override_transitions"] &&
@@ -1537,8 +1546,12 @@ function hs_tick( ttime )
                 path = medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4";
                 theme_content = [];
             }else{ //if no video is found assume it's system default theme
-                path = medias_path + fe.list.name + "/Themes/Default.zip";
+                path = medias_path + fe.list.name + "/Themes/Default/";
                 theme_content = zip_get_dir( path );
+                if(!theme_content.len()){
+                    path = medias_path + fe.list.name + "/Themes/Default.zip";
+                    theme_content = zip_get_dir( path );
+                }
             }
 
             if( prev_path == path ){ // if previous and current theme is equal.
@@ -1587,6 +1600,7 @@ fe.add_signal_handler(this, "on_signal")
 function on_signal(str) {
     //print("\n SIGNAL = "+str+ " - "+ last_click +"\n")
     //if(fe.overlay.is_up){
+    if( update_list(str) ) return true;    
     if(curr_sys == "Main Menu"){ //disable some buttons on main-menu
        	switch ( str )	
         {
@@ -1641,16 +1655,28 @@ function on_signal(str) {
                 }else{
                     extraArtworks.getLists();
                     extraArtworks.setImage();
-                    surf_inf.visible = true; 
+                    surf_inf.visible = true;
                     surf_inf_anim.reverse(false).play();
-                }  
+                }
             break;
+
+            case my_config["main_menu_key"] : // Main menu Key
+                if(surf_menu.visible){
+                    surf_menu.visible = false;
+                }else{
+                    surf_menu.visible = true;
+                    local main_rows = ["theme","settings","scraper"];
+                    if(curr_sys == "Main Menu") main_rows.pop(); //do not show scraper yet on main menu!
+                    sel_menu.add_rows( {"title":"main", "obj":"main", "rows":main_rows} );
+                    surf_menu_title.msg = sel_menu.titles();
+                }
+            break;
+
         }
     //}
 
     return false
 }
-
 
 
 // Apply a global fade on objs and shaders
@@ -1678,4 +1704,483 @@ function global_fade(ttime, target, direction){
         for (local i=0; i < ArtArray.len(); i++ ) ArtArray[i].alpha = 255.0 - ttime * (255.0 / target);
    }
    return;
+}
+
+
+// Menu
+function video_transform(){ // used for bsize and bcolor (live event)
+    local forceaspect = "none";
+    local overlaybelow = false;
+    local overlayoffsetx = 0;
+    local overlayoffsety = 0;
+    local bshape = false;
+    local bsize=0,bsize2=0,bsize3=0;
+    local bcolor=0,bcolor2=0,bcolor3=0;
+    local nw = flh * (flw / flh);
+    local art_mul = flh / 1080;
+    local art_mul_h = art_mul;
+    local art_offset_x = (flw - nw) * 0.5;
+    local art_offset_y = 0;
+    local x = 0;
+    local y = 0;
+    local w = 0;
+    local h = 0;
+    local r = 0; 
+    local time = 0 ;    
+    
+    local child = xml_root.getChild(sel_menu.obj());
+    try{ x = child.attr["x"].tofloat() } catch (e) {x = 0};
+    try{ y = child.attr["y"].tofloat() } catch (e) {x = 0};
+    try{ w = child.attr["w"].tofloat() } catch (e) {x = 0};
+    try{ h = child.attr["h"].tofloat() } catch (e) {x = 0};
+    try{ r = child.attr["r"].tofloat() } catch (e) {x = 0};
+    
+    try{ bshape = ( child.attr["bshape"] == "round" ? true: false ) } catch ( e ) {}
+    try{ bsize = child.attr["bsize"].tofloat()} catch ( e ) {}
+    try{ bsize2 = child.attr["bsize2"].tofloat()} catch ( e ) {}
+    try{ bsize3 = child.attr["bsize3"].tofloat()} catch ( e ) {} //(v != "" ? v.tointeger() : 0 )
+    try{ bcolor = child.attr["bcolor"].tointeger()} catch ( e ) {}
+    try{ bcolor2 = child.attr["bcolor2"].tointeger()} catch ( e ) {}
+    try{ bcolor3 = child.attr["bcolor3"].tointeger()} catch ( e ) {}
+    try{ forceaspect = child.attr["forceaspect"]} catch ( e ) {}
+
+    if(!availables["video"]){
+        video_shader.set_param("datas", false, overlaybelow);
+        overlayoffsetx = 0; overlayoffsety = 0; // fix if theme contain offset and no frame video is present
+    }
+
+    local borderMax = 0;
+    foreach(v in [bsize * 0.5, bsize2, bsize3] ) if(v > borderMax) borderMax = v;
+    local viewport_snap_width = w;
+    local viewport_snap_height = h;
+    if(borderMax > 0){
+        if(bsize  > 0)video_shader.set_param("border1", bcolor,  bsize, bshape); // + rounded
+        if(bsize2 > 0)video_shader.set_param("border2", bcolor2, bsize2, bshape);
+        if(bsize3 > 0)video_shader.set_param("border3", bcolor3, bsize3, bshape);
+        viewport_snap_width += borderMax * 2;
+        viewport_snap_height += borderMax * 2;
+    }
+    local viewport_width = viewport_snap_width;
+    local viewport_height = viewport_snap_height;
+
+    x = x - ( viewport_width  * 0.5 );
+    y = y - ( viewport_height * 0.5 );
+    if( abs(r) < 180 || time <= 0 ){ // center rotation hyperspin anime rotation only if it's greater 180 or lesser -180
+        local mr = PI * r / 180;
+        x += cos( mr ) * (-w * 0.5) - sin( mr ) * (-h * 0.5) + w * 0.5;
+        y += sin( mr ) * (-w * 0.5) + cos( mr ) * (-h * 0.5) + h * 0.5;
+        ArtObj.snap.rotation = r;
+    }
+
+    video_shader.set_param("scanline", (Ini_settings.themes["crt_scanline"] ? 1.0 : 0.0 ) );
+    video_shader.set_param("offsets", overlayoffsetx, overlayoffsety);
+    video_shader.set_param("snap_coord", w, h, viewport_snap_width, viewport_snap_height);
+    ArtObj.snap.set_pos( (x  * art_mul) + art_offset_x, (y * art_mul_h) + art_offset_y, viewport_width * art_mul, viewport_height * art_mul_h);
+}
+
+function update_list(str) {
+
+    if(surf_menu.visible){
+        local upd_res = 0;
+        local anim_tab = ["none","linear","ease","elastic","elastic bounce","flip","fade","bounce","blur","pixelate","zoom out","pixelate zoom out","chase","sweep left"];
+        anim_tab.extend(["sweep right","strobe","grow","grow blur","grow x","grow y","grow center shrink","scroll","flag","pendulum","stripes","stripes 2","arc grow"]);
+        anim_tab.extend(["arc shrink","bounce random","rain float","bounce around 3d","zoom","unzoom","fade out","expl"]);
+        local rest_tab = ["none","shake","rock","rock fast","squeeze","pusle","spin slow","spin fast","hover","hover vertical","hover horizontal"];
+        local start_tab = ["none","Top","Bottom","Left","Right"];
+        local video_anim_tab = ["none","pump","video_fade","tv","tv zoom out"];
+        local borders = ["bshape","bsize","bcolor","bsize2","bcolor2","bsize3","bcolor3"];
+        local border_conv = {"bsize":"border1","bsize2":"border2","bsize3":"border3"}
+        local child = null;
+        switch( str ) {
+            
+            case "select":
+
+                local selected = sel_menu.select();
+                local actual = xml_root.getChild(sel_menu.obj());
+                local discard = false;
+                switch(sel_menu.title()){
+                    case "time":
+                    case "delay":
+                    case "bshape":
+                    case "bcolor":
+                    case "bsize":
+                    case "bcolor2":
+                    case "bsize2":
+                    case "bsize3":
+                    case "bsize3":
+                    case "bcolor3":
+                        discard = true;
+                    break;    
+                }
+
+                if(sel_menu.title().find("bcolor") != null){
+                    local color = fe.overlay.edit_dialog("Enter color in HEX","").toupper();
+                    if(color == "") break;
+                    try{ actual.attr[ sel_menu.title() ]} catch ( e ) {actual.addAttr(sel_menu.title(), "")}
+                    actual.addAttr(sel_menu.title(), hex2dec(color));
+                    video_transform();
+                    local rgbC = dec2rgb(hex2dec(color));
+                    sel_menu._slot[0].set_bg_rgb(rgbC[0], rgbC[1], rgbC[2]);                   
+                }
+
+                if(discard) break;
+                
+                surf_menu_title.msg = sel_menu.titles() + selected;    
+
+                if(selected == "scraper"){
+                   sel_menu.add_rows( {"title":selected, "obj":selected, "rows":["Update Infos","Update Medias","Update Synopsis"]} );
+                }else
+
+                if(selected == "theme"){
+                    // check if theme is editable (hd, no zip, theme.xml present)
+                    if(IS_ARCHIVE(path)){
+                        fe.overlay.edit_dialog("Zip Theme are not editable...","Close")                      
+                        break;    
+                    }
+                    if( !file_exist(path + "Theme.xml") ){
+                        fe.overlay.edit_dialog("No theme xml found, empty one is created", "Close")
+                        local f = ReadTextFile( fe.script_dir, "empty.xml" );
+                        local raw_xml = "";
+                        while ( !f.eos() ) raw_xml += f.read_line();
+                        try{ xml_root = xml.load( raw_xml ); } catch ( e ) { }
+                        save_xml(xml_root);
+                        path = ""; // reset path forcing theme reload artworks ( add user_setting() for ini load )
+                        trigger_load_theme = true;
+                        save_ini(null, curr_sys);
+                        break;
+                    }
+                    if(!xml_root.getChild("hd")){
+                        fe.overlay.edit_dialog("Only HD are editable...","Close")                      
+                        break;
+                    }
+                    sel_menu.add_rows( {"title":selected, "obj":selected, "rows":["artwork1","artwork2","artwork3","artwork4","video"]} );
+                }else
+
+                if(selected.find("artwork") != null){
+                   sel_menu.add_rows( {"title":selected "obj":selected, "rows":["pos/size/rotate","animation","rest","start","time","delay"] });
+                }else
+
+                if(selected == "video"){
+                    sel_menu.add_rows( {"title":selected, "obj":selected ,"rows": ["pos/size/rotate","video anim","borders","start","time","delay","overlay offset","crt"]} );
+                }else
+
+                if(selected == "start"){
+                    sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows": start_tab} );
+                }else
+
+                if(selected == "borders"){
+                    sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows": borders} );
+                }else
+                
+                if(selected == "crt"){        
+
+                }else
+                    
+                if(selected == "rest"){        
+                    try{ actual.attr["rest"]} catch ( e ) {actual.addAttr("rest", "none")}
+                    local posT = rest_tab.find( actual.attr["rest"] );
+                    sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows":rest_tab} );
+                    sel_menu.set_slot_pos(posT);
+                }else
+
+                if(selected == "animation"){
+                    try{ actual.attr["type"]} catch ( e ) {actual.addAttr("type", "none")}
+                    local posT = anim_tab.find( actual.attr["type"] );
+                    sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows": anim_tab} );
+                    sel_menu.set_slot_pos(posT);
+                }else
+
+                if(selected == "video anim"){
+                    try{ actual.attr["type"]} catch ( e ) {actual.addAttr("type", "none")}
+                    local posT = video_anim_tab.find( actual.attr["type"] );
+                    sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj() ,"rows": video_anim_tab} );
+                    sel_menu.set_slot_pos(posT);
+                }else
+                    
+                if(selected.find("bsize") != null){
+                    local valb = 0;
+                    try{ valb = actual.attr[selected]} catch ( e ) {actual.addAttr(selected, format("%.1f", 0))}
+                    sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows":[valb]} );
+                }else                
+                
+                if(selected.find("bcolor") != null){
+                    local valc = 0;
+                    try{ valc = actual.attr[selected].tointeger() } catch ( e ) {actual.addAttr(selected, 00000000)}
+                    sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows":[""]} );
+                    local rgbC = dec2rgb(valc);
+                    sel_menu._slot[0].set_bg_rgb(rgbC[0], rgbC[1], rgbC[2]);
+                    
+                }else
+                
+                if(selected == "bshape"){
+                    local rd = "square";
+                    try{ rd = actual.attr[selected]} catch ( e ) {actual.addAttr(selected, "square")}
+                    sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows":[rd]} );
+                }else
+                    
+                if(selected == "time" || selected == "delay"){
+                    local time = 0;
+                    try{ time = actual.attr[selected]} catch ( e ) {actual.addAttr(selected, format("%.1f", 0))}
+                    sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows":[time]} );
+                }else
+
+                if( (video_anim_tab.find(selected) != null && sel_menu.title() == "video anim") || (anim_tab.find(selected) != null && sel_menu.title() == "animation" ) ){
+                    child = xml_root.getChild(sel_menu.obj());
+                    if(child) child.addAttr("type", selected);
+                }else
+
+                if( (rest_tab.find(selected) != null && sel_menu.title() == "rest" ) || start_tab.find(selected) != null){
+                    child = xml_root.getChild(sel_menu.obj());
+                    if(child) child.addAttr(sel_menu.title(), selected.tolower());
+                }
+
+                if(child != null){
+                    save_xml(xml_root)
+                    hide_art();
+                    trigger_load_theme = true;
+                }
+            break;
+
+
+            case "prev_game":
+            case "up":
+                sel_menu.up();
+                print("UP");
+                if(sel_menu.title().find("bsize") != null){
+                    child = xml_root.getChild(sel_menu.obj());
+                    if(child){
+                        local border = border_conv[sel_menu.title()];
+                        local bsize = child.attr[sel_menu.title()].tofloat();
+                        bsize+=1;
+                        if(bsize > 60) break;
+                        child.addAttr(sel_menu.title(), format("%.1f", bsize))
+                        sel_menu.set_text(0,  format("%.1f", bsize))
+                        video_transform();
+                    }
+                }
+                
+                if(sel_menu.title() == "bshape"){
+                   child = xml_root.getChild(sel_menu.obj()); 
+                   if(child){
+                        local shp = child.attr[sel_menu.title()];
+                        shp = (shp == "round" ? "square" : "round")
+                        child.addAttr(sel_menu.title(), shp)
+                        sel_menu.set_text(0, shp)
+                        video_transform()
+                    }
+                }
+                
+                if(sel_menu.title() == "time" || sel_menu.title() == "delay"){ // increase time value by 0.5
+                    child = xml_root.getChild(sel_menu.obj());
+                    if(child){
+                        local ntime = child.attr[sel_menu.title()].tofloat();
+                        if(ntime >= 20) break;
+                        ntime+=0.5
+                        child.addAttr(sel_menu.title(), format("%.1f", ntime))
+                        sel_menu.set_text(0,  format("%.1f", ntime))
+                    }
+                }
+            break;
+            
+            case "next_game":
+            case "down":
+                sel_menu.down();
+                if(sel_menu.title().find("bsize") != null){
+                    child = xml_root.getChild(sel_menu.obj());
+                    if(child){
+                        local border = border_conv[sel_menu.title()];
+                        local bsize = child.attr[sel_menu.title()].tofloat();
+                        bsize-=1;
+                        if(bsize < 0) break;
+                        child.addAttr(sel_menu.title(), format("%.1f", bsize))
+                        sel_menu.set_text(0,  format("%.1f", bsize))
+                        video_transform();
+                    }
+                }
+                
+                if(sel_menu.title() == "bshape"){
+                   child = xml_root.getChild(sel_menu.obj()); 
+                   if(child){
+                        local shp = child.attr[sel_menu.title()];
+                        shp = (shp == "round" ? "square" : "round")
+                        child.addAttr(sel_menu.title(), shp)
+                        sel_menu.set_text(0, shp)
+                        video_transform()
+                    }
+                }
+                
+                if(sel_menu.title() == "time" || sel_menu.title() == "delay"){ // decrease time value by 0.5
+                    child = xml_root.getChild(sel_menu.obj());
+                    if(child){
+                        local ntime = child.attr[sel_menu.title()].tofloat();
+                        if(ntime == 0) break;
+                        ntime-=0.5
+                        child.addAttr(sel_menu.title(), format("%.1f", ntime))
+                        sel_menu.set_text(0,  format("%.1f", ntime))
+                    }
+                }
+            break;
+
+            case "back":
+                if(sel_menu.select() == "pos/size/rotate") save_xml(xml_root);
+                sel_menu.back();
+                surf_menu_title.msg = sel_menu.titles();
+            break;
+
+            case my_config["main_menu_key"] : // Extra artworks screen
+                save_xml(xml_root);
+                surf_menu.visible = false;
+            break;
+        }
+        return true;
+    }
+    return false;
+}
+
+// Edit Theme
+abX <- null;
+abY <- null;
+
+function edit_center_rotate(elem, ro, step){ // set screen direct rotation
+    local r = ArtObj[elem].rotation;
+    local w = ArtObj[elem].width;
+    local h = ArtObj[elem].height;
+    local mr = PI * r / 180;
+    if(abX == null){
+        local mr1 = PI * ArtObj[elem].rotation / 180;
+        abX = ArtObj[elem].x - ( cos( mr ) * (-w * 0.5) - sin( mr ) * (-h * 0.5) + w * 0.5 );
+        abY = ArtObj[elem].y - ( sin( mr ) * (-w * 0.5) + cos( mr ) * (-h * 0.5) + h * 0.5 )
+    }
+    if(ro == "cw") r-=step; else r+=step;
+    mr = PI * r / 180;
+    ArtObj[elem].x = abX + ( cos( mr ) * (-w * 0.5) - sin( mr ) * (-h * 0.5) + w * 0.5 );
+    ArtObj[elem].y = abY + ( sin( mr ) * (-w * 0.5) + cos( mr ) * (-h * 0.5) + h * 0.5 );
+    ArtObj[elem].rotation = r;
+}
+
+function set_ratio (Xtag){ // set Xtag datas before save to xml
+    local nw = flh * (flw / flh);
+    local art_mul = flh / 1080;
+    local art_mul_h = art_mul;
+    local art_offset_x = (flw - nw) * 0.5;
+    local art_offset_y = 0;
+    
+    local x = ArtObj[Xtag].x
+    local y = ArtObj[Xtag].y
+    local w = ArtObj[Xtag].width
+    local h = ArtObj[Xtag].height
+    local r = ArtObj[Xtag].rotation
+    local ctag = (Xtag == "snap" ? "video" : Xtag);
+    local child = xml_root.getChild(ctag);
+    
+    x = (x + ( w * 0.5 ) );
+    y = (y + ( h * 0.5 ) );
+ 
+    if(r != 0){ // remove center rotation
+        local mr = PI * r / 180;
+        x -= ( cos( mr ) * (-w * 0.5) - sin( mr ) * (-h * 0.5) + w * 0.5 );
+        y -= ( sin( mr ) * (-w * 0.5) + cos( mr ) * (-h * 0.5) + h * 0.5 );
+    }
+    
+    if(Xtag == "snap"){
+        local bsize,bsize2,bsize3,borderMax;
+        try{ bshape = ( child.attr["bshape"] == "round" ? false: true ) } catch ( e ) {}
+        try{ bsize = child.attr["bsize"].tofloat()} catch ( e ) {}
+        try{ bsize2 = child.attr["bsize2"].tofloat()} catch ( e ) {}
+        try{ bsize3 = child.attr["bsize3"].tofloat()} catch ( e ) {} //(v != "" ? v.tointeger() : 0 )
+        foreach(v in [bsize * 0.5, bsize2, bsize3] ) if(v > borderMax) borderMax = v;
+        w-=borderMax * 2;
+        h-=borderMax * 2;
+    }
+    
+    child.addAttr( "x", (x / art_mul) - art_offset_x );
+    child.addAttr( "y", (y / art_mul_h) - art_offset_y );
+    child.addAttr( "w", w / art_mul );
+    child.addAttr( "h", h / art_mul_h );
+    child.addAttr( "r", r  );
+}
+
+
+local step = 0.5;
+function accel(ttime, last_click, sel_menu){
+    local key_delay = 1200;
+    if ( (ttime - last_click) > key_delay ){
+        step*=1.5;
+        sel_menu._last_click = ttime;
+    }
+    return step > 2.50 ? 3.0 : step;    
+}
+
+function edit(elem, edit_type, ttime, last_click){ // edit for pos/size/rotate
+    local child = null;
+    abX = null; abY = null; // reset for center rotation
+    if(elem == "video") elem = "snap";
+    if(edit_type == "overlay offset") elem = "video";
+    
+    local inf = "x:" + ArtObj[elem].x + " y:" + ArtObj[elem].y + " w:" + ArtObj[elem].width + " h:" + ArtObj[elem].height + " r:" + ArtObj[elem].rotation;
+    surf_menu_info.msg = inf;
+    
+    if(fe.get_input_state("Numpad6")){ // right
+        ArtObj[elem].x+=accel(ttime, last_click, sel_menu);
+        set_ratio( elem )
+    }
+
+    if(fe.get_input_state("Numpad4")){ // left
+        ArtObj[elem].x-=accel(ttime, last_click, sel_menu);
+        set_ratio( elem )
+    }
+    
+    if(fe.get_input_state("Numpad8")){ // Up
+        ArtObj[elem].y-=accel(ttime, last_click, sel_menu);
+        set_ratio( elem )
+    }
+    if(fe.get_input_state("Numpad2")){ // Down
+        ArtObj[elem].y+=accel(ttime, last_click, sel_menu);
+        set_ratio( elem )
+    }
+
+    if(fe.get_input_state("Subtract")){ // rotate cw
+        edit_center_rotate(elem,"cw", step);
+        set_ratio( elem )
+    }
+
+    if(fe.get_input_state("Add")){ // rotate c
+        edit_center_rotate(elem,"c", step);
+        set_ratio( elem )
+    }
+    
+    if(fe.get_input_state("Numpad7")){ // zoom width +
+        ArtObj[elem].width+=step;
+        set_ratio( elem );
+    }
+
+    if(fe.get_input_state("Numpad9")){ // zoom width -
+        ArtObj[elem].width-=step;
+        set_ratio( elem )
+    }
+
+    if(fe.get_input_state("Numpad1")){ // zoom height +
+        ArtObj[elem].height+=step;
+        set_ratio( elem )
+    }
+
+    if(fe.get_input_state("Numpad3")){ // zoom height -
+        ArtObj[elem].height-=step;
+        set_ratio( elem )
+    }
+    
+    if(!fe.get_input_state("Numpad6") && !fe.get_input_state("Numpad4") && !fe.get_input_state("Numpad8") && !fe.get_input_state("Numpad2")) step = 0.5;
+    
+    return;
+}
+
+// Save XMl
+function save_xml(xml_root){
+    if(xml_root == null) return;
+    local fileout = file(path + "Theme.xml", "w");
+    local line = xml_root.toXML();
+    local b = blob( line.len() );
+    for (local i=0; i<line.len(); i++) b.writen( line[i], 'b' );
+    fileout.writeblob( b );
+    return true;
 }

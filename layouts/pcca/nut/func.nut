@@ -76,7 +76,7 @@ function refresh_stats(system = "") {
             if(fe.displays[i].name == display){
                 romlist = fe.displays[i].romlist;
                 break;
-            } 
+            }
         }
         if(romlist != ""){
             local text = txt.loadFile( FeConfigDirectory + "romlists\\" + romlist + ".txt" );
@@ -183,7 +183,7 @@ function get_dir_lists(path)
 //Check if file exist
 function file_exist(path)
 {
-    try { file(path, "r" ); return true; }
+    try { local a = file(path, "r" ); a.close(); return true; }
     catch( e ){ return false; }
 }
 
@@ -294,7 +294,7 @@ function Langue( offset = 0 ){
    local lng = fe.game_info(Info.Language, offset);
     for ( local i = 1; i < 18; i++ ) Lang[i].file_name = "";
     if( lng.len() > 0 ){
-        local g_c = split( lng, ",");   
+        local g_c = split( lng, ",");
         for ( local i = 1; i < g_c.len(); i++ ) Lang[i].file_name = "images/flags/lang/" + g_c[i] + ".png";
     }
 }
@@ -369,6 +369,26 @@ function clamp(value, min, max) {
     if (value < min) value = min; if (value > max) value = max; return value
 }
 
+function dec2rgb(c){
+    c = c.tointeger();
+    return [floor(c / (256*256)), floor(c / 256) % 256, c % 256];
+}
+
+function hex2dec(hexVal){
+    local b = 1;
+    local dec_val = 0;
+    for (local i = hexVal.len() - 1; i >= 0; i--) {
+        if (hexVal[i] >= '0' && hexVal[i] <= '9') {
+            dec_val += ((hexVal[i]) - 48) * b;
+            b*= 16;
+        }
+        else if (hexVal[i] >= 'A' && hexVal[i] <= 'F') {
+            dec_val += ((hexVal[i]) - 55) * b;
+            b*= 16;
+        }
+    }
+    return dec_val;
+}
 /* DEBUG */
 
 //Convert a squirrel table to a string
