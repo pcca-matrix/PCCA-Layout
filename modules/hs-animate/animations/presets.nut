@@ -70,6 +70,7 @@ class PresetAnimation extends Animation {
         opts.yoyo = false;
         opts.delay = 0;
         opts.trigger_restart = true;
+        key_interpolator.clear();
         opts.speed = 1;
         opts.delay_from = 0;
         opts.interpolator = CubicBezierInterpolator("linear");
@@ -476,6 +477,10 @@ class PresetAnimation extends Animation {
         "linear": //OK (Default without Preset)
         function( obj )
         {
+            if(opts.delay > 0 && opts.duration == 0){
+                opts.duration = 1
+                opts.starting = "top"
+            }
             opts.from <- { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
             opts.to <- { x=states["origin"].x,  y=states["origin"].y  };
             opts.interpolator <- CubicBezierInterpolator("linear")

@@ -58,10 +58,6 @@ class OutlinedText
 }
 
 
-
-
-
-
 /* Menu Class */
 
 class SelMenu
@@ -83,7 +79,7 @@ class SelMenu
             _menu_tables.push(tbl);
             _title.push(_menu_tables.top().title);
         }
-        for (local i=0; i < 35; i++){
+        for ( i=0; i < 35; i++){
             if(i < tbl.rows.len()){
                 _slot[i].msg = tbl.rows[i];
             }else{
@@ -94,6 +90,12 @@ class SelMenu
         }
         _slot[0].bg_alpha = 255;
         _slot_pos = 0;
+    }
+
+    function reset(){
+        _edit_type = null;
+        _menu_tables = [];
+        _title = [];
     }
 
     function back(){
@@ -129,15 +131,15 @@ class SelMenu
     }
 
     function up (){
-        if(_slot_pos == 0) return true;
         _slot[_slot_pos].bg_alpha=0;
+        if(!_slot_pos) _slot_pos =_menu_tables[_menu_tables.len()-1].rows.len();
         _slot[_slot_pos-1].bg_alpha=255;
         _slot_pos--;
     }
 
     function down (){
-        if(_slot_pos == _menu_tables[_menu_tables.len()-1].rows.len()-1) return true;
         _slot[_slot_pos].bg_alpha=0;
+        if(_slot_pos == _menu_tables[_menu_tables.len()-1].rows.len()-1) _slot_pos=-1;
         _slot[_slot_pos+1].bg_alpha=255;
         _slot_pos++;
     }
@@ -150,7 +152,8 @@ class SelMenu
 
     function on_tick(ttime) {
         if(_edit_type == null) return;
-        if(_edit_type == "pos/size/rotate" || _edit_type == "overlay offset") edit(_obj, _edit_type, ttime, _last_click);
+        if(_edit_type == "pos/size") overlay_video(_obj, _edit_type, ttime, _last_click);
+        if(_edit_type == "pos/size/rotate") edit(_obj, _edit_type, ttime, _last_click);
     }
 
 

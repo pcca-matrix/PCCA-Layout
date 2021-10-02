@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.00
+// PCCA v2.01
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -81,6 +81,7 @@ local prev_back = {}; // previous background table infos ( transitions )
 
 // Globals
 xml_root <- [];
+local main_menu_rows = ["theme","settings","scraper"];
 
 // Aspect - Center (only for HS theme)
 local nw = flh * 1.333;
@@ -425,6 +426,7 @@ favo.set_rgb( 255, 170, 0 );
 
 /* Main SettingsOverlay */
 local surf_menu = fe.add_surface(flw * 0.25, flh);
+surf_menu.zorder = 2;
 local surf_menu_bck = surf_menu.add_image("images/Backgrounds/faded.png", 0, 0, flw, flh );
 //local surf_menu_img = surf_menu.add_image("", 0, 0, 0, flh * 0.82 );
 local surf_menu_title = surf_menu.add_text("", flw * 0.008, flh*0.002, flw * 0.24, flw * 0.009 );
@@ -714,34 +716,9 @@ function load_theme(name, theme_content, prev_def){
     local theme_node = find_theme_node( xml_root );
     try{ theme_node.children } catch ( e ) { return; }; // return if no xml
     availables = { artwork1 = false, artwork2 = false, artwork3 = false, artwork4 = false, video = false };
-    local w,h,x,y,r,time,delay,overlayoffsetx,overlayoffsety,overlaybelow,below,forceaspect,type,start,rest,bsize,bsize2,bsize3,bcolor,bcolor2,bcolor3,bshape,anim_rotate,ry,rx;
+    local anim_rotate;
 
-    local art_mul = mul;
-    local art_mul_h = mul_h;
-    local art_offset_x = offset_x;
-    local art_offset_y = offset_y;
-
-    // check if it's a real HD theme
-    foreach ( c in theme_node.children )
-    {
-        if(c.tag.tolower() == "hd"){
-            hd = true;
-            local lw = c.attr.lw.tofloat();
-            local lh = c.attr.lh.tofloat();
-            local nw = flh * (flw / flh);
-            art_mul = flh / lh;
-            art_mul_h = art_mul;
-            art_offset_x = (flw - nw) * 0.5;
-            art_offset_y = 0;
-
-            if( Ini_settings.themes["aspect"] == "stretch"){
-                art_mul = flw / lw;
-                art_mul_h = flh / lh;
-                art_offset_x = 0;
-                offset_y = 0;
-            }
-        }
-    }
+    try{ hd = xml_root.getChild("hd") } catch(e) {}   // check if it's a real HD theme
 
     if(file_exist(medias_path + fe.list.name + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3") ){ // backrgound music found in media folder
         Background_Music.file_name = medias_path + fe.list.name + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3";
@@ -782,8 +759,7 @@ function load_theme(name, theme_content, prev_def){
     {
         if(!availables.rawin( c.tag )) continue; // if xml tag not know continue
         local art = ""; local Xtag = c.tag;
-        w=0,h=0,x=0,y=0,r=0,time=0,delay=0,overlayoffsetx=0,overlayoffsety=0,overlaybelow=false,below=false,forceaspect="none",type="none",start="none",rest="none";
-        bsize=0,bsize2=0,bsize3=0,bcolor=0,bcolor2=0,bcolor3=0,bshape=false,anim_rotate=0,ry=0,rx=0;
+        anim_rotate = 0;
 
         foreach(k,v in theme_content){
             if(strip_ext(v.tolower()) == zippath.tolower() + Xtag.tolower()){
@@ -791,41 +767,11 @@ function load_theme(name, theme_content, prev_def){
                 art = v
             }
         }
-
-        foreach(k,v in c.attr){
-            switch(k){
-                case "w": w = ( v == "" ? 0 : v.tofloat() ); break;
-                case "h": h = ( v == "" ? 0 : v.tofloat() ); break;
-                case "x": x = ( v == "" ? 0 : v.tofloat() ); break;
-                case "y": y = ( v == "" ? 0 : v.tofloat() ); break;
-                case "r": r = ( v == "" ? 0 : v.tointeger() ); break;
-                case "time": time = ( v == "" ? 0 : v.tofloat() * 1000 );  break;
-                case "delay": delay = ( v == "" ? 0 : v.tofloat() * 1000 );  break;
-                case "overlayoffsetx": overlayoffsetx =  ( v == "" ? 0 : v.tofloat() ); break;
-                case "overlayoffsety": overlayoffsety = ( v == "" ? 0 : v.tofloat() ); break;
-                case "overlaybelow": overlaybelow = (v == "true" ?  true : false );  break;
-                case "below": below = (v == "true" ? true : false ); break;
-                case "forceaspect": forceaspect = ( v == "" ? "none" : v ); break;
-                case "type":  type = ( v != "" ? v.tolower() : "none" ); break;
-                case "start": start = ( (v.tolower() == "left" || v.tolower() == "right" || v.tolower() == "bottom" || v.tolower() == "top") ?  v.tolower() : "none"); break;
-                case "rest":  rest = (v != "" ? v : "none" ); break;
-                case "bsize": bsize = (v != "" ? v.tointeger() : 0 ); break;
-                case "bsize2": bsize2 = (v != "" ? v.tointeger() : 0 ); break;
-                case "bsize3": bsize3 = (v != "" ? v.tointeger() : 0 ); break;
-                case "bcolor": bcolor = (v != "" ? v.tointeger() : 0 ); break;
-                case "bcolor2": bcolor2 = (v != "" ? v.tointeger() : 0 ); break;
-                case "bcolor3": bcolor3 = (v != "" ? v.tointeger() : 0 ); break;
-                case "bshape": bshape =  ( (v == "round" || v == "true") ? true : false ); break;
-                case "ry": ry = ( v == "" ? 0 : v.tofloat() ); break;
-                case "rx": rx = ( v == "" ? 0 : v.tofloat() ); break;
-            }
-        }
+        local artD = set_art_datas(Xtag);
 
         if( Xtag == "artwork1" || Xtag == "artwork2" || Xtag == "artwork3" || Xtag == "artwork4" ){
-
             if( prev_def && availables[Xtag] ) continue;
 
-            local xx=x, yy=y;
             if(availables[Xtag]){
                 ArtObj[Xtag].file_name = name + "|" + art;
             }else{
@@ -833,135 +779,50 @@ function load_theme(name, theme_content, prev_def){
                 ArtObj[Xtag].file_name =  medias_path + fe.list.name + "/Images/" + Xtag + "/" + art + "/" + fe.game_info(Info.Name) + ".png";
             }
 
-            if( w > 0 || h > 0 ){ // theme resize if width and height available
-                if( abs(r) < 180 || time <= 0 ){ // center rotation ,hyperspin anim rotation only if it's greater than 180 or -180
-                    local mr = PI * r / 180;
-                    x += cos( mr ) * (-w * 0.5) - sin( mr ) * (-h * 0.5) + w * 0.5;
-                    y += sin( mr ) * (-w * 0.5) + cos( mr ) * (-h * 0.5) + h * 0.5;
-                    ArtObj[Xtag].rotation = r;
-                }else if( r != 0 ){
-                    anim_rotate = r;
-                }
-                xx = (x - ( w * 0.5 ) );
-                yy = (y - ( h * 0.5 ) );
+            // center rotation ,hyperspin anim artworks rotation only if it's greater than 180 or -180 and time is > 0
+            if( abs(artD.r) > 180 && artD.time > 0 ) anim_rotate = artD.r;
+            artworks_transform(Xtag, (anim_rotate ? false : true), art);
 
-                ArtObj[Xtag].set_pos( (xx * art_mul) + art_offset_x, (yy * art_mul_h) + art_offset_y, w * art_mul , h * art_mul_h);
-
-            }else{ // no resize ( HS Default)
-
-                if( abs(r) < 180 || time <= 0 ){ // center rotation ,hyperspin anim rotation only if it's greater than 180 or -180
-                    local mr = PI * r / 180;
-                    x += (cos( mr ) * (-ArtObj[Xtag].texture_width * 0.5) - sin( mr ) * (-ArtObj[Xtag].texture_height * 0.5) + ArtObj[Xtag].texture_width * 0.5);
-                    y += (sin( mr ) * (-ArtObj[Xtag].texture_width * 0.5) + cos( mr ) * (-ArtObj[Xtag].texture_height * 0.5) + ArtObj[Xtag].texture_height * 0.5);
-                    ArtObj[Xtag].rotation = r;
-                }else if( r != 0 ){
-                    anim_rotate = r;
-                }
-
-                xx = (x - ( ArtObj[Xtag].texture_width  * 0.5 ) );
-                yy = (y - ( ArtObj[Xtag].texture_height * 0.5 ) );
-
-                if( ext(art).tolower() == "swf" && !hd ){
-                    local swf_except = { "Mame" : ["bonzeadv","ironclad"] };// table of system and theme name where the swf fixes should not be applied.
-                    local exception = false;
-                    if(swf_except.rawin(curr_sys)) if ( swf_except[curr_sys].find(fe.game_info(Info.Name)) != null ) exception = true;
-                    if(!exception){
-                        // try to fix swf
-                        if(x > fe.layout.width ) xx = 0;
-                        if(y > fe.layout.height) yy = 0;
-                        if(ArtObj[Xtag].texture_width == 1024) xx = 0;
-                        if(ArtObj[Xtag].texture_height == 768) yy = 0;
-                        if (xx < 0) xx = 0;
-                        if (yy < 0) yy = 0;
-                    }
-                }
-
-                ArtObj[Xtag].set_pos( (xx * art_mul) + art_offset_x, (yy * art_mul_h) + art_offset_y, ArtObj[Xtag].texture_width * art_mul, ArtObj[Xtag].texture_height * art_mul_h);
-            }
-       }else if( Xtag == "video" ){
+        }else if( Xtag == "video" ){
 
             ArtObj.snap.file_name = ret_snap();
             ArtObj.snap.video_playing = false; // do not start playing snap now , wait delay from animation
             snap_is_playing = false;
-
-            if(ArtObj.snap.texture_width > ArtObj.snap.texture_height){ // landscape video
-                if(forceaspect == "vertical" || forceaspect == "none" ) h = w / ( ArtObj.snap.texture_width.tofloat() / ArtObj.snap.texture_height.tofloat() );
-            }
-
-            if(ArtObj.snap.texture_width < ArtObj.snap.texture_height){ // portrait video
-                if(forceaspect == "horizontal" || forceaspect == "none") w = h * ( ArtObj.snap.texture_width.tofloat() / ArtObj.snap.texture_height.tofloat() );
-            }
-
-            if(!availables["video"]){
-                video_shader.set_param("datas", false, overlaybelow);
-                overlayoffsetx = 0; overlayoffsety = 0; // fix if theme contain offset and no frame video is present
-            }
-
-            local borderMax = 0;
-            foreach(v in [bsize/2, bsize2, bsize3] ) if(v > borderMax) borderMax = v;
-            local viewport_snap_width = w;
-            local viewport_snap_height = h;
-            if(borderMax > 0){
-                if(bsize  > 0)video_shader.set_param("border1", bcolor,  bsize, bshape); // + rounded
-                if(bsize2 > 0)video_shader.set_param("border2", bcolor2, bsize2, bshape);
-                if(bsize3 > 0)video_shader.set_param("border3", bcolor3, bsize3, bshape);
-                viewport_snap_width += borderMax * 2;
-                viewport_snap_height += borderMax * 2;
-            }
-            local viewport_width = viewport_snap_width;
-            local viewport_height = viewport_snap_height;
-
             if(availables["video"]){ // if video overlay available
                 ArtObj["video"].file_name = name + "|" + art;
-                video_shader.set_param("datas",true, overlaybelow);
-                if( (ArtObj["video"].texture_width * 0.5) + abs(overlayoffsetx) > w * 0.5 )
-                    viewport_width = (ArtObj["video"].texture_width * 0.5 + abs(overlayoffsetx) )* 2;
-
-                if( (ArtObj["video"].texture_height * 0.5) + abs(overlayoffsety) > h * 0.5 )
-                    viewport_height = (ArtObj["video"].texture_height * 0.5 + abs(overlayoffsety) ) * 2;
             }
 
-            x = x - ( viewport_width  * 0.5 );
-            y = y - ( viewport_height * 0.5 );
-            if( abs(r) < 180 || time <= 0 ){ // center rotation hyperspin anime rotation only if it's greater 180 or lesser -180
-                local mr = PI * r / 180;
-                x += cos( mr ) * (-w * 0.5) - sin( mr ) * (-h * 0.5) + w * 0.5;
-                y += sin( mr ) * (-w * 0.5) + cos( mr ) * (-h * 0.5) + h * 0.5;
-                ArtObj.snap.rotation = r;
-            }else if( r != 0 ){
-                anim_rotate = r;
-            }
-            //video_shader.set_param("angles", -rx, ry, 0); // vertex test
-            video_shader.set_param("scanline", (Ini_settings.themes["crt_scanline"] ? 1.0 : 0.0 ) );
-            video_shader.set_param("offsets",overlayoffsetx, overlayoffsety);
-            video_shader.set_param("snap_coord", w, h, viewport_snap_width, viewport_snap_height);
-            video_shader.set_param("frame_coord", ArtObj["video"].texture_width, ArtObj["video"].texture_height , viewport_width, viewport_height);
+            // hs anim video rotation on any value but only if starting position is set, an animation is set and anim time > 0 !!!!
+            if( abs(artD.r) > 0 && artD.start !="none" && artD.type !="none" && artD.time > 0 ) anim_rotate = artD.r;
 
-            ArtObj.snap.set_pos( (x  * art_mul) + art_offset_x, (y * art_mul_h) + art_offset_y, viewport_width * art_mul, viewport_height * art_mul_h);
-            if(below) ArtObj.artwork1.zorder = ArtObj.snap.zorder + 1;
-            if(type == "fade") type = "video_fade";
+            video_transform((anim_rotate ? false : true));
+
+            if(artD.below) ArtObj.artwork1.zorder = ArtObj.snap.zorder + 1; // only for HS
+
+            if(artD.type == "fade") artD.type = "video_fade"; // OK
+
         }
 
         if(Xtag !="video"){
             if(!prev_def || !availables[Xtag] ){
                 local e = Xtag.slice( Xtag.len() - 1, Xtag.len() ).tointeger();
-                anims[e-1].preset(type)
+                anims[e-1].preset(artD.type)
                 anims[e-1].name(Xtag)
-                anims[e-1].delay(delay)
-                anims[e-1].duration(time)
-                anims[e-1].starting(start)
-                anims[e-1].rest(rest)
+                anims[e-1].delay(artD.delay)
+                anims[e-1].duration(artD.time)
+                anims[e-1].starting(artD.start)
+                anims[e-1].rest(artD.rest)
                 anims[e-1].rotation(anim_rotate)
                 anims[e-1].play();
             }
         }else{
             if(!prev_def ){
-                anim_video.preset(type)
+                anim_video.preset(artD.type)
                 anim_video.name(Xtag)
-                anim_video.delay(delay)
-                anim_video.duration(time)
-                anim_video.starting(start)
-                anim_video.rest(rest)
+                anim_video.delay(artD.delay)
+                anim_video.duration(artD.time)
+                anim_video.starting(artD.start)
+                anim_video.rest(artD.rest)
                 anim_video.rotation(anim_rotate)
                 anim_video.play();
             }else{
@@ -993,6 +854,9 @@ function clean_art(obj){
 function reset_art( bool = false ){ // true if default theme
     if(!bool){
         ArtObj.artwork1.zorder=-9;   //set zorder back to normal for hyperspin zorders switching
+        ArtObj.artwork2.zorder = -4
+        ArtObj.artwork3.zorder = -3
+        ArtObj.artwork4.zorder = -2
         ArtObj.snap.zorder=-7;
         flv_transitions.zorder = -10; // reset back to normal for override videos
 
@@ -1152,6 +1016,7 @@ fe.add_ticks_callback( "conveyor_tick" );
 local custom_overlay = fe.add_surface(flw, flh);
 custom_overlay.visible = false;
 local overlay_background = custom_overlay.add_image("",0, 0, flw, flh);
+overlay_background.zorder=-99
 
 local overlay_anim = PresetAnimation(custom_overlay)
 .auto(true)
@@ -1600,7 +1465,7 @@ fe.add_signal_handler(this, "on_signal")
 function on_signal(str) {
     //print("\n SIGNAL = "+str+ " - "+ last_click +"\n")
     //if(fe.overlay.is_up){
-    if( update_list(str) ) return true;    
+    if( update_list(str) ) return true;
     if(curr_sys == "Main Menu"){ //disable some buttons on main-menu
        	switch ( str )	
         {
@@ -1665,9 +1530,7 @@ function on_signal(str) {
                     surf_menu.visible = false;
                 }else{
                     surf_menu.visible = true;
-                    local main_rows = ["theme","settings","scraper"];
-                    if(curr_sys == "Main Menu") main_rows.pop(); //do not show scraper yet on main menu!
-                    sel_menu.add_rows( {"title":"main", "obj":"main", "rows":main_rows} );
+                    sel_menu.add_rows( {"title":"main", "obj":"main", "rows":main_menu_rows} );
                     surf_menu_title.msg = sel_menu.titles();
                 }
             break;
@@ -1708,76 +1571,6 @@ function global_fade(ttime, target, direction){
 
 
 // Menu
-function video_transform(){ // used for bsize and bcolor (live event)
-    local forceaspect = "none";
-    local overlaybelow = false;
-    local overlayoffsetx = 0;
-    local overlayoffsety = 0;
-    local bshape = false;
-    local bsize=0,bsize2=0,bsize3=0;
-    local bcolor=0,bcolor2=0,bcolor3=0;
-    local nw = flh * (flw / flh);
-    local art_mul = flh / 1080;
-    local art_mul_h = art_mul;
-    local art_offset_x = (flw - nw) * 0.5;
-    local art_offset_y = 0;
-    local x = 0;
-    local y = 0;
-    local w = 0;
-    local h = 0;
-    local r = 0; 
-    local time = 0 ;    
-    
-    local child = xml_root.getChild(sel_menu.obj());
-    try{ x = child.attr["x"].tofloat() } catch (e) {x = 0};
-    try{ y = child.attr["y"].tofloat() } catch (e) {x = 0};
-    try{ w = child.attr["w"].tofloat() } catch (e) {x = 0};
-    try{ h = child.attr["h"].tofloat() } catch (e) {x = 0};
-    try{ r = child.attr["r"].tofloat() } catch (e) {x = 0};
-    
-    try{ bshape = ( child.attr["bshape"] == "round" ? true: false ) } catch ( e ) {}
-    try{ bsize = child.attr["bsize"].tofloat()} catch ( e ) {}
-    try{ bsize2 = child.attr["bsize2"].tofloat()} catch ( e ) {}
-    try{ bsize3 = child.attr["bsize3"].tofloat()} catch ( e ) {} //(v != "" ? v.tointeger() : 0 )
-    try{ bcolor = child.attr["bcolor"].tointeger()} catch ( e ) {}
-    try{ bcolor2 = child.attr["bcolor2"].tointeger()} catch ( e ) {}
-    try{ bcolor3 = child.attr["bcolor3"].tointeger()} catch ( e ) {}
-    try{ forceaspect = child.attr["forceaspect"]} catch ( e ) {}
-
-    if(!availables["video"]){
-        video_shader.set_param("datas", false, overlaybelow);
-        overlayoffsetx = 0; overlayoffsety = 0; // fix if theme contain offset and no frame video is present
-    }
-
-    local borderMax = 0;
-    foreach(v in [bsize * 0.5, bsize2, bsize3] ) if(v > borderMax) borderMax = v;
-    local viewport_snap_width = w;
-    local viewport_snap_height = h;
-    if(borderMax > 0){
-        if(bsize  > 0)video_shader.set_param("border1", bcolor,  bsize, bshape); // + rounded
-        if(bsize2 > 0)video_shader.set_param("border2", bcolor2, bsize2, bshape);
-        if(bsize3 > 0)video_shader.set_param("border3", bcolor3, bsize3, bshape);
-        viewport_snap_width += borderMax * 2;
-        viewport_snap_height += borderMax * 2;
-    }
-    local viewport_width = viewport_snap_width;
-    local viewport_height = viewport_snap_height;
-
-    x = x - ( viewport_width  * 0.5 );
-    y = y - ( viewport_height * 0.5 );
-    if( abs(r) < 180 || time <= 0 ){ // center rotation hyperspin anime rotation only if it's greater 180 or lesser -180
-        local mr = PI * r / 180;
-        x += cos( mr ) * (-w * 0.5) - sin( mr ) * (-h * 0.5) + w * 0.5;
-        y += sin( mr ) * (-w * 0.5) + cos( mr ) * (-h * 0.5) + h * 0.5;
-        ArtObj.snap.rotation = r;
-    }
-
-    video_shader.set_param("scanline", (Ini_settings.themes["crt_scanline"] ? 1.0 : 0.0 ) );
-    video_shader.set_param("offsets", overlayoffsetx, overlayoffsety);
-    video_shader.set_param("snap_coord", w, h, viewport_snap_width, viewport_snap_height);
-    ArtObj.snap.set_pos( (x  * art_mul) + art_offset_x, (y * art_mul_h) + art_offset_y, viewport_width * art_mul, viewport_height * art_mul_h);
-}
-
 function update_list(str) {
 
     if(surf_menu.visible){
@@ -1790,9 +1583,13 @@ function update_list(str) {
         local video_anim_tab = ["none","pump","video_fade","tv","tv zoom out"];
         local borders = ["bshape","bsize","bcolor","bsize2","bcolor2","bsize3","bcolor3"];
         local border_conv = {"bsize":"border1","bsize2":"border2","bsize3":"border3"}
+        local truefalse = ["crt_scanline","keepaspect","override_transitions","overlaybelow"];
+        local cfloat = ["delay","time"];
+        local cinteger = ["zorder"];
+        local inivalue = ["crt_scanline","override_transitions"];
         local child = null;
         switch( str ) {
-            
+
             case "select":
 
                 local selected = sel_menu.select();
@@ -1801,6 +1598,7 @@ function update_list(str) {
                 switch(sel_menu.title()){
                     case "time":
                     case "delay":
+                    case "zorder":
                     case "bshape":
                     case "bcolor":
                     case "bsize":
@@ -1810,7 +1608,7 @@ function update_list(str) {
                     case "bsize3":
                     case "bcolor3":
                         discard = true;
-                    break;    
+                    break;
                 }
 
                 if(sel_menu.title().find("bcolor") != null){
@@ -1820,12 +1618,16 @@ function update_list(str) {
                     actual.addAttr(sel_menu.title(), hex2dec(color));
                     video_transform();
                     local rgbC = dec2rgb(hex2dec(color));
-                    sel_menu._slot[0].set_bg_rgb(rgbC[0], rgbC[1], rgbC[2]);                   
+                    sel_menu._slot[0].set_bg_rgb(rgbC[0], rgbC[1], rgbC[2]);
                 }
 
                 if(discard) break;
-                
-                surf_menu_title.msg = sel_menu.titles() + selected;    
+
+                surf_menu_title.msg = sel_menu.titles() + selected;
+
+                if(selected == "settings"){
+                   sel_menu.add_rows( {"title":selected, "obj":selected, "rows":["ini test"]} );
+                }else
 
                 if(selected == "scraper"){
                    sel_menu.add_rows( {"title":selected, "obj":selected, "rows":["Update Infos","Update Medias","Update Synopsis"]} );
@@ -1834,8 +1636,8 @@ function update_list(str) {
                 if(selected == "theme"){
                     // check if theme is editable (hd, no zip, theme.xml present)
                     if(IS_ARCHIVE(path)){
-                        fe.overlay.edit_dialog("Zip Theme are not editable...","Close")                      
-                        break;    
+                        fe.overlay.edit_dialog("Zip Theme are not editable...","Close")
+                        break;
                     }
                     if( !file_exist(path + "Theme.xml") ){
                         fe.overlay.edit_dialog("No theme xml found, empty one is created", "Close")
@@ -1843,25 +1645,28 @@ function update_list(str) {
                         local raw_xml = "";
                         while ( !f.eos() ) raw_xml += f.read_line();
                         try{ xml_root = xml.load( raw_xml ); } catch ( e ) { }
-                        save_xml(xml_root);
+                        save_xml(xml_root, path);
                         path = ""; // reset path forcing theme reload artworks ( add user_setting() for ini load )
                         trigger_load_theme = true;
-                        save_ini(null, curr_sys);
                         break;
                     }
                     if(!xml_root.getChild("hd")){
-                        fe.overlay.edit_dialog("Only HD are editable...","Close")                      
+                        fe.overlay.edit_dialog("Only HD are editable...","Close")
                         break;
                     }
-                    sel_menu.add_rows( {"title":selected, "obj":selected, "rows":["artwork1","artwork2","artwork3","artwork4","video"]} );
+                    sel_menu.add_rows( {"title":selected, "obj":selected, "rows":["artwork1","artwork2","artwork3","artwork4","video","video overlay"]} );
                 }else
 
                 if(selected.find("artwork") != null){
-                   sel_menu.add_rows( {"title":selected "obj":selected, "rows":["pos/size/rotate","animation","rest","start","time","delay"] });
+                   sel_menu.add_rows( {"title":selected "obj":selected, "rows":["pos/size/rotate","keepaspect","animation","rest","start","time","delay","zorder"] });
                 }else
 
                 if(selected == "video"){
-                    sel_menu.add_rows( {"title":selected, "obj":selected ,"rows": ["pos/size/rotate","video anim","borders","start","time","delay","overlay offset","crt"]} );
+                    sel_menu.add_rows( {"title":selected, "obj":selected ,"rows": ["pos/size/rotate","video anim","borders","start","time","delay","crt_scanline"]} );
+                }else
+
+                if(selected == "video overlay"){
+                    sel_menu.add_rows( {"title":selected, "obj":"video" ,"rows": ["pos/size","overlaybelow"]} );
                 }else
 
                 if(selected == "start"){
@@ -1871,12 +1676,35 @@ function update_list(str) {
                 if(selected == "borders"){
                     sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows": borders} );
                 }else
-                
-                if(selected == "crt"){        
 
+                if(truefalse.find(selected) != null){
+                    sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows": ["true","false"]} );
+                    local posT = null;
+                    if(inivalue.find(selected) != null){
+                        posT = (Ini_settings.themes["crt_scanline"] == "true" ? 0 : 1);
+                    }else{
+                        try{ actual.attr[selected]} catch ( e ) {actual.addAttr(selected, "none")}
+                        posT = (actual.attr[selected] == "true" ? 0 : 1);
+                    }
+                    if(posT != null) sel_menu.set_slot_pos(posT);
                 }else
-                    
-                if(selected == "rest"){        
+
+                if(selected == "true" || selected == "false"){
+                    if(sel_menu.title() == "keepaspect"){
+                        child = xml_root.getChild(sel_menu.obj());
+                        if(child) child.addAttr(sel_menu.title(), selected);
+                        ArtObj[sel_menu.obj()].preserve_aspect_ratio = (selected == "true" ? true : false ) ;
+                    }else if(sel_menu.title() == "overlaybelow"){
+                            local c = xml_root.getChild(sel_menu.obj());
+                            if(c)c.addAttr(sel_menu.title(), selected);
+                            video_transform()
+                    }else{
+                        save_ini( {"obj":sel_menu.title(), "val":selected}, curr_sys);
+                        if(sel_menu.title() == "crt_scanline") video_shader.set_param("scanline", (selected == "true" ? 1.0 : 0.0 ) );
+                    }
+                }else
+
+                if(selected == "rest"){
                     try{ actual.attr["rest"]} catch ( e ) {actual.addAttr("rest", "none")}
                     local posT = rest_tab.find( actual.attr["rest"] );
                     sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows":rest_tab} );
@@ -1896,32 +1724,32 @@ function update_list(str) {
                     sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj() ,"rows": video_anim_tab} );
                     sel_menu.set_slot_pos(posT);
                 }else
-                    
-                if(selected.find("bsize") != null){
+
+                if(cinteger.find(selected) != null || selected.find("bsize") != null){
+                    local valb = 0;
+                    try{ valb = actual.attr[selected]} catch ( e ) {actual.addAttr(selected, 0)}
+                    sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows":[valb]} );
+                }else
+
+                if(cfloat.find(selected) != null){
                     local valb = 0;
                     try{ valb = actual.attr[selected]} catch ( e ) {actual.addAttr(selected, format("%.1f", 0))}
                     sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows":[valb]} );
-                }else                
-                
+                }else
+
                 if(selected.find("bcolor") != null){
                     local valc = 0;
                     try{ valc = actual.attr[selected].tointeger() } catch ( e ) {actual.addAttr(selected, 00000000)}
                     sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows":[""]} );
                     local rgbC = dec2rgb(valc);
                     sel_menu._slot[0].set_bg_rgb(rgbC[0], rgbC[1], rgbC[2]);
-                    
+
                 }else
-                
+
                 if(selected == "bshape"){
                     local rd = "square";
                     try{ rd = actual.attr[selected]} catch ( e ) {actual.addAttr(selected, "square")}
                     sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows":[rd]} );
-                }else
-                    
-                if(selected == "time" || selected == "delay"){
-                    local time = 0;
-                    try{ time = actual.attr[selected]} catch ( e ) {actual.addAttr(selected, format("%.1f", 0))}
-                    sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows":[time]} );
                 }else
 
                 if( (video_anim_tab.find(selected) != null && sel_menu.title() == "video anim") || (anim_tab.find(selected) != null && sel_menu.title() == "animation" ) ){
@@ -1935,17 +1763,15 @@ function update_list(str) {
                 }
 
                 if(child != null){
-                    save_xml(xml_root)
+                    save_xml(xml_root, path)
                     hide_art();
                     trigger_load_theme = true;
                 }
             break;
 
-
             case "prev_game":
             case "up":
                 sel_menu.up();
-                print("UP");
                 if(sel_menu.title().find("bsize") != null){
                     child = xml_root.getChild(sel_menu.obj());
                     if(child){
@@ -1958,9 +1784,9 @@ function update_list(str) {
                         video_transform();
                     }
                 }
-                
+
                 if(sel_menu.title() == "bshape"){
-                   child = xml_root.getChild(sel_menu.obj()); 
+                   child = xml_root.getChild(sel_menu.obj());
                    if(child){
                         local shp = child.attr[sel_menu.title()];
                         shp = (shp == "round" ? "square" : "round")
@@ -1969,19 +1795,37 @@ function update_list(str) {
                         video_transform()
                     }
                 }
-                
-                if(sel_menu.title() == "time" || sel_menu.title() == "delay"){ // increase time value by 0.5
+
+                if( cinteger.find(sel_menu.title()) != null ){ // increase int value
                     child = xml_root.getChild(sel_menu.obj());
                     if(child){
-                        local ntime = child.attr[sel_menu.title()].tofloat();
-                        if(ntime >= 20) break;
-                        ntime+=0.5
-                        child.addAttr(sel_menu.title(), format("%.1f", ntime))
-                        sel_menu.set_text(0,  format("%.1f", ntime))
+                        local valb = child.attr[sel_menu.title()].tointeger();
+                        if(sel_menu.title() == "zorder"){
+                            if(ArtObj[sel_menu.obj()].zorder == 0) break;
+                            valb = ArtObj[sel_menu.obj()].zorder +=1;
+                            ArtObj[sel_menu.obj()].zorder = valb;
+                           surf_menu_info.msg = "a1:" + ArtObj["artwork1"].zorder + " a2:" + ArtObj["artwork2"].zorder + " a3:" + ArtObj["artwork3"].zorder + " a4:" + ArtObj["artwork4"].zorder + " snap:" + ArtObj["snap"].zorder;
+                        }else{
+                            if(valb == 30) break;
+                            valb+=1.0
+                        }
+                        child.addAttr(sel_menu.title(), valb)
+                        sel_menu.set_text(0, valb)
+                    }
+                }
+
+                if( cfloat.find(sel_menu.title()) != null ){ // increase float value
+                    child = xml_root.getChild(sel_menu.obj());
+                    if(child){
+                        local valb = child.attr[sel_menu.title()].tofloat();
+                        if(valb == 30) break;
+                        valb+=0.5
+                        child.addAttr(sel_menu.title(), format("%.1f", valb))
+                        sel_menu.set_text(0,  format("%.1f", valb))
                     }
                 }
             break;
-            
+
             case "next_game":
             case "down":
                 sel_menu.down();
@@ -1997,9 +1841,9 @@ function update_list(str) {
                         video_transform();
                     }
                 }
-                
+
                 if(sel_menu.title() == "bshape"){
-                   child = xml_root.getChild(sel_menu.obj()); 
+                   child = xml_root.getChild(sel_menu.obj());
                    if(child){
                         local shp = child.attr[sel_menu.title()];
                         shp = (shp == "round" ? "square" : "round")
@@ -2008,27 +1852,51 @@ function update_list(str) {
                         video_transform()
                     }
                 }
-                
-                if(sel_menu.title() == "time" || sel_menu.title() == "delay"){ // decrease time value by 0.5
+
+                if( cinteger.find(sel_menu.title()) != null ){ // decrease int value
                     child = xml_root.getChild(sel_menu.obj());
                     if(child){
-                        local ntime = child.attr[sel_menu.title()].tofloat();
-                        if(ntime == 0) break;
-                        ntime-=0.5
-                        child.addAttr(sel_menu.title(), format("%.1f", ntime))
-                        sel_menu.set_text(0,  format("%.1f", ntime))
+                        local valb = child.attr[sel_menu.title()].tointeger();
+                        if(sel_menu.title() == "zorder"){
+                            if(ArtObj[sel_menu.obj()].zorder < -10) break;
+                            valb = ArtObj[sel_menu.obj()].zorder -=1;
+                            ArtObj[sel_menu.obj()].zorder = valb;
+                            surf_menu_info.msg = "a1:" + ArtObj["artwork1"].zorder + " a2:" + ArtObj["artwork2"].zorder + " a3:" + ArtObj["artwork3"].zorder + " a4:" + ArtObj["artwork4"].zorder + " snap:" + ArtObj["snap"].zorder;
+                        }else{
+                            if(valb == 30) break;
+                            valb-=1.0
+                        }
+                        child.addAttr(sel_menu.title(), valb)
+                        sel_menu.set_text(0, valb)
+                    }
+                }
+
+                if( cfloat.find(sel_menu.title()) != null ){ // decrease float value
+                    child = xml_root.getChild(sel_menu.obj());
+                    if(child){
+                        local valb = child.attr[sel_menu.title()].tofloat();
+                        if(valb == 0) break;
+                        valb-=0.5
+                        child.addAttr(sel_menu.title(), format("%.1f", valb))
+                        sel_menu.set_text(0,  format("%.1f", valb))
                     }
                 }
             break;
 
             case "back":
-                if(sel_menu.select() == "pos/size/rotate") save_xml(xml_root);
-                sel_menu.back();
-                surf_menu_title.msg = sel_menu.titles();
+                if( main_menu_rows.find(sel_menu.select()) != null ){ // first menu then exit
+                    save_xml(xml_root, path);
+                    sel_menu.reset();
+                    surf_menu.visible = false;
+                }else{
+                    sel_menu.back();
+                    surf_menu_title.msg = sel_menu.titles();
+                }
             break;
 
-            case my_config["main_menu_key"] : // Extra artworks screen
-                save_xml(xml_root);
+            case my_config["main_menu_key"] : // Save Xml when exiting menu
+                save_xml(xml_root, path);
+                sel_menu.reset();
                 surf_menu.visible = false;
             break;
         }
@@ -2037,69 +1905,7 @@ function update_list(str) {
     return false;
 }
 
-// Edit Theme
-abX <- null;
-abY <- null;
-
-function edit_center_rotate(elem, ro, step){ // set screen direct rotation
-    local r = ArtObj[elem].rotation;
-    local w = ArtObj[elem].width;
-    local h = ArtObj[elem].height;
-    local mr = PI * r / 180;
-    if(abX == null){
-        local mr1 = PI * ArtObj[elem].rotation / 180;
-        abX = ArtObj[elem].x - ( cos( mr ) * (-w * 0.5) - sin( mr ) * (-h * 0.5) + w * 0.5 );
-        abY = ArtObj[elem].y - ( sin( mr ) * (-w * 0.5) + cos( mr ) * (-h * 0.5) + h * 0.5 )
-    }
-    if(ro == "cw") r-=step; else r+=step;
-    mr = PI * r / 180;
-    ArtObj[elem].x = abX + ( cos( mr ) * (-w * 0.5) - sin( mr ) * (-h * 0.5) + w * 0.5 );
-    ArtObj[elem].y = abY + ( sin( mr ) * (-w * 0.5) + cos( mr ) * (-h * 0.5) + h * 0.5 );
-    ArtObj[elem].rotation = r;
-}
-
-function set_ratio (Xtag){ // set Xtag datas before save to xml
-    local nw = flh * (flw / flh);
-    local art_mul = flh / 1080;
-    local art_mul_h = art_mul;
-    local art_offset_x = (flw - nw) * 0.5;
-    local art_offset_y = 0;
-    
-    local x = ArtObj[Xtag].x
-    local y = ArtObj[Xtag].y
-    local w = ArtObj[Xtag].width
-    local h = ArtObj[Xtag].height
-    local r = ArtObj[Xtag].rotation
-    local ctag = (Xtag == "snap" ? "video" : Xtag);
-    local child = xml_root.getChild(ctag);
-    
-    x = (x + ( w * 0.5 ) );
-    y = (y + ( h * 0.5 ) );
- 
-    if(r != 0){ // remove center rotation
-        local mr = PI * r / 180;
-        x -= ( cos( mr ) * (-w * 0.5) - sin( mr ) * (-h * 0.5) + w * 0.5 );
-        y -= ( sin( mr ) * (-w * 0.5) + cos( mr ) * (-h * 0.5) + h * 0.5 );
-    }
-    
-    if(Xtag == "snap"){
-        local bsize,bsize2,bsize3,borderMax;
-        try{ bshape = ( child.attr["bshape"] == "round" ? false: true ) } catch ( e ) {}
-        try{ bsize = child.attr["bsize"].tofloat()} catch ( e ) {}
-        try{ bsize2 = child.attr["bsize2"].tofloat()} catch ( e ) {}
-        try{ bsize3 = child.attr["bsize3"].tofloat()} catch ( e ) {} //(v != "" ? v.tointeger() : 0 )
-        foreach(v in [bsize * 0.5, bsize2, bsize3] ) if(v > borderMax) borderMax = v;
-        w-=borderMax * 2;
-        h-=borderMax * 2;
-    }
-    
-    child.addAttr( "x", (x / art_mul) - art_offset_x );
-    child.addAttr( "y", (y / art_mul_h) - art_offset_y );
-    child.addAttr( "w", w / art_mul );
-    child.addAttr( "h", h / art_mul_h );
-    child.addAttr( "r", r  );
-}
-
+//-- Edit Theme
 
 local step = 0.5;
 function accel(ttime, last_click, sel_menu){
@@ -2108,79 +1914,135 @@ function accel(ttime, last_click, sel_menu){
         step*=1.5;
         sel_menu._last_click = ttime;
     }
-    return step > 2.50 ? 3.0 : step;    
+    return step > 2.50 ? 3.0 : step;
 }
 
 function edit(elem, edit_type, ttime, last_click){ // edit for pos/size/rotate
-    local child = null;
-    abX = null; abY = null; // reset for center rotation
-    if(elem == "video") elem = "snap";
-    if(edit_type == "overlay offset") elem = "video";
-    
-    local inf = "x:" + ArtObj[elem].x + " y:" + ArtObj[elem].y + " w:" + ArtObj[elem].width + " h:" + ArtObj[elem].height + " r:" + ArtObj[elem].rotation;
+    local set = false;
+    local child = xml_root.getChild(elem);
+    if(!child) return;
+
+    local w,h;
+    try{ w = child.attr["w"].tofloat(); } catch(e){ // add var to xml if missing (needed !)
+        child.addAttr( "w", ArtObj[elem].texture_width );
+        w = child.attr["w"].tofloat();
+    }
+    try{ h = child.attr["h"].tofloat(); } catch(e){ // add var to xml if missing (needed !)
+        child.addAttr( "h", ArtObj[elem].texture_height );
+        w = child.attr["h"].tofloat();
+    }
+    local x = child.attr["x"].tofloat();
+    local y = child.attr["y"].tofloat();
+    local r = child.attr["r"].tofloat();
+
+    local inf = "x:" + x + " y:" + y+ " w:" + w + " h:" + h + " r:" + r;
     surf_menu_info.msg = inf;
-    
-    if(fe.get_input_state("Numpad6")){ // right
-        ArtObj[elem].x+=accel(ttime, last_click, sel_menu);
-        set_ratio( elem )
-    }
 
-    if(fe.get_input_state("Numpad4")){ // left
-        ArtObj[elem].x-=accel(ttime, last_click, sel_menu);
-        set_ratio( elem )
-    }
-    
-    if(fe.get_input_state("Numpad8")){ // Up
-        ArtObj[elem].y-=accel(ttime, last_click, sel_menu);
-        set_ratio( elem )
-    }
-    if(fe.get_input_state("Numpad2")){ // Down
-        ArtObj[elem].y+=accel(ttime, last_click, sel_menu);
-        set_ratio( elem )
-    }
+    if(fe.get_input_state("Numpad6")) set = child.addAttr("x", x+=accel(ttime, last_click, sel_menu)); // right
 
-    if(fe.get_input_state("Subtract")){ // rotate cw
-        edit_center_rotate(elem,"cw", step);
-        set_ratio( elem )
-    }
+    if(fe.get_input_state("Numpad4")) set = child.addAttr("x", x-=accel(ttime, last_click, sel_menu)); // left
 
-    if(fe.get_input_state("Add")){ // rotate c
-        edit_center_rotate(elem,"c", step);
-        set_ratio( elem )
-    }
-    
-    if(fe.get_input_state("Numpad7")){ // zoom width +
-        ArtObj[elem].width+=step;
-        set_ratio( elem );
-    }
+    if(fe.get_input_state("Numpad8")) set = child.addAttr("y", y-=accel(ttime, last_click, sel_menu)); // Up
 
-    if(fe.get_input_state("Numpad9")){ // zoom width -
-        ArtObj[elem].width-=step;
-        set_ratio( elem )
-    }
+    if(fe.get_input_state("Numpad2")) set = child.addAttr("y", y+=accel(ttime, last_click, sel_menu)); // Down
 
-    if(fe.get_input_state("Numpad1")){ // zoom height +
-        ArtObj[elem].height+=step;
-        set_ratio( elem )
+    if(fe.get_input_state("Subtract")){
+        if(r < -360) r=0;
+        set = child.addAttr("r", r-=step); // rotate cw
     }
+    if(fe.get_input_state("Add")){
+        if(r > 360) r=0;
+        set = child.addAttr("r", r+=step); // rotate c
+    }
+    if(fe.get_input_state("Numpad7")) set = child.addAttr("w", w+=step); // zoom width +
 
-    if(fe.get_input_state("Numpad3")){ // zoom height -
-        ArtObj[elem].height-=step;
-        set_ratio( elem )
-    }
-    
+    if(fe.get_input_state("Numpad9")) set = child.addAttr("w", w-=step); // zoom width -
+
+    if(fe.get_input_state("Numpad1")) set = child.addAttr("h", h+=step); // zoom height +
+
+    if(fe.get_input_state("Numpad3")) set = child.addAttr("h", h-=step); // zoom height -
+
     if(!fe.get_input_state("Numpad6") && !fe.get_input_state("Numpad4") && !fe.get_input_state("Numpad8") && !fe.get_input_state("Numpad2")) step = 0.5;
-    
+
+    if(set != false) if(elem != "video") artworks_transform(elem) else video_transform();
+
     return;
 }
 
-// Save XMl
-function save_xml(xml_root){
-    if(xml_root == null) return;
-    local fileout = file(path + "Theme.xml", "w");
-    local line = xml_root.toXML();
-    local b = blob( line.len() );
-    for (local i=0; i<line.len(); i++) b.writen( line[i], 'b' );
-    fileout.writeblob( b );
-    return true;
+function overlay_video(_obj, _edit_type, ttime, _last_click){
+    if(!availables["video"]) return;
+    local child = xml_root.getChild("video");
+    local set = false;
+    local overlaywidth, overlayheight;
+    local overlayoffsetx = child.attr["overlayoffsetx"].tofloat();
+    local overlayoffsety = child.attr["overlayoffsety"].tofloat();
+
+    try{ overlaywidth = child.attr["overlaywidth"].tofloat(); } catch(e){ // add var to xml if missing (needed !)
+        child.addAttr( "overlaywidth", ArtObj.video.texture_width );
+        overlaywidth = child.attr["overlaywidth"].tofloat();
+    }
+    try{ overlayheight = child.attr["overlayheight"].tofloat(); } catch(e){ // add var to xml if missing (needed !)
+        child.addAttr( "overlayheight", ArtObj.video.texture_height );
+        overlayheight = child.attr["overlayheight"].tofloat();
+    }
+
+    if(fe.get_input_state("Numpad8")) set = child.addAttr( "overlayoffsety", overlayoffsety-=1.5 ); // Up
+
+    if(fe.get_input_state("Numpad2")) set = child.addAttr( "overlayoffsety", overlayoffsety+=1.5 ); // Down
+
+    if(fe.get_input_state("Numpad6")) set = child.addAttr( "overlayoffsetx", overlayoffsetx+=1.5 ); // right
+
+    if(fe.get_input_state("Numpad4")) set = child.addAttr( "overlayoffsetx", overlayoffsetx-=1.5); // left
+
+    if(fe.get_input_state("Numpad7")) set = child.addAttr( "overlaywidth", overlaywidth+=1.5 ); // zoom width +
+
+    if(fe.get_input_state("Numpad9")) set = child.addAttr( "overlaywidth", overlaywidth-=1.5 ); // zoom width -
+
+    if(fe.get_input_state("Numpad1")) set = child.addAttr( "overlayheight", overlayheight+=1.5 ); // zoom height +
+
+    if(fe.get_input_state("Numpad3")) set = child.addAttr( "overlayheight", overlayheight-=1.5 ); // zoom height -
+
+    if(set != false) video_transform();
+
+    return;
+}
+
+function artworks_transform(Xtag, rotate=true, art=""){
+    local artD = set_art_datas(Xtag);
+    local rt = SRT();
+    if(artD.keepaspect) ArtObj[Xtag].preserve_aspect_ratio = true;
+
+    if( !artD.w || !artD.h ){
+        artD.w = ArtObj[Xtag].texture_width;
+        artD.h = ArtObj[Xtag].texture_height;
+    }
+
+    artD.x -= artD.w * 0.5;
+    artD.y -= artD.h * 0.5;
+
+    if( rotate ){
+        ArtObj[Xtag].rotation = artD.r;
+        local mr = PI * artD.r / 180;
+        artD.x += cos( mr ) * (-artD.w * 0.5) - sin( mr ) * (-artD.h * 0.5) + artD.w * 0.5;
+        artD.y += sin( mr ) * (-artD.w * 0.5) + cos( mr ) * (-artD.h * 0.5) + artD.h * 0.5;
+    }
+
+    if( ext(art).tolower() == "swf" && !hd ){
+        local swf_except = { "Mame" : ["bonzeadv","ironclad"] };// table of system and theme name where the swf fixes should not be applied.
+        local exception = false;
+        if(swf_except.rawin(curr_sys)) if ( swf_except[curr_sys].find(fe.game_info(Info.Name)) != null ) exception = true;
+        if(!exception){
+            // try to fix swf
+            if(artD.x > fe.layout.width ) artD.x = 0;
+            if(artD.y > fe.layout.height) artD.y = 0;
+            if(ArtObj[Xtag].texture_width == 1024) artD.x = 0;
+            if(ArtObj[Xtag].texture_height == 768) artD.y = 0;
+            if (artD.x < 0) artD.x = 0;
+            if (artD.y < 0) artD.y = 0;
+        }
+    }
+
+    ArtObj[Xtag].set_pos( (artD.x * rt.mul) + rt.offset_x, (artD.y * rt.mul_h) + rt.offset_y, artD.w * rt.mul , artD.h * rt.mul_h);
+
+    if(hd) ArtObj[Xtag].zorder = artD.zorder; // zorder only on HD theme
 }

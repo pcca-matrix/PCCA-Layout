@@ -31,10 +31,10 @@ function user_settings(){
 }
 
 
-function get_ini_values(name){
+function get_ini_values(name, load_user=true){
     local f = ReadTextFile( fe.script_dir + "Settings/" + name + ".ini" );
     local entity = null;
-    local map = user_settings();
+    local map = (load_user ? user_settings() : {} );
     while ( !f.eos() )
     {
         local line = strip( f.read_line() );
@@ -130,9 +130,7 @@ function SaveStats(tbl){ // update global systems stats
     local f2 = file( fe.script_dir + "pcca.stats", "w" );
     foreach(k,d in tbl){
         local line = k + ";" + d.cnt + ";" + d.pl + ";" + d.time + "\n";
-        local b = blob( line.len() );
-        for (local i=0; i<line.len(); i++) b.writen( line[i], 'b' );
-        f2.writeblob(b);
+        f2.writeblob(writeB(line));
     }
 }
 
@@ -389,6 +387,208 @@ function hex2dec(hexVal){
     }
     return dec_val;
 }
+
+function writeB(Line){
+    local b = blob( Line.len() );
+    for (local i=0; i<Line.len(); i++) b.writen( Line[i], 'b' );
+    return b;
+}
+
+function merge_table(tb1,tb2){
+    foreach(a,b in tb2)tb1[a]<-b;
+    return tb1;
+}
+
+function SRT(){
+    // Aspect - Center (only for HS theme)
+    local nw = flh * 1.333;
+    local mul = nw / 1024;
+    local mul_h = mul;
+    local offset_x = (flw - nw) * 0.5;
+    local offset_y = 0;
+
+    if( Ini_settings.themes["aspect"] == "stretch"){
+        mul = flw / 1024;
+        mul_h = flh / 768;
+        offset_x = 0;
+        offset_y = 0;
+    }
+    local hd = false;
+    local node = find_theme_node( xml_root );
+    try{ hd = node.getChild("hd") } catch(e) {} // check if hd tag is present
+
+    if(hd){
+        local lw = hd.attr.lw.tofloat();
+        local lh = hd.attr.lh.tofloat();
+        nw = flh * (flw / flh);
+        mul = flw / lw;
+        mul_h = mul;
+        offset_x = 0;
+        offset_y = 0;
+    }
+
+
+    return( {"mul":mul, "mul_h":mul_h, "offset_x":offset_x, "offset_y":offset_y} )
+}
+
+function set_art_datas(Xtag){
+    local artD = {"x":0,"y":0,"w":0,"h":0,"r":0,"time":0,"delay":0,"overlayoffsetx":0,"overlayoffsety":0,"overlaybelow":false,"below":false};
+    artD = merge_table (artD, {"forceaspect":"none","type":"none","start":"none","rest":"none","bsize":0,"bsize2":0,"bsize3":0,"bcolor":0,"bcolor2":0,"bcolor3":0} );
+    artD = merge_table (artD, {"bshape":false,"ry":0,"rx":0,"keepaspect":false,"zorder":0,"overlaywidth":0,"overlayheight":0} );
+
+    local node = find_theme_node( xml_root );
+    local datas = node.getChild(Xtag);
+
+    foreach(k,v in datas.attr){
+        switch(k){
+            case "w": // float
+            case "h":
+            case "x":
+            case "y":
+            case "overlayoffsetx":
+            case "overlayoffsety":
+            case "overlaywidth":
+            case "overlayheight":
+                artD[k] = ( v == "" ? 0.0 : v.tofloat() );
+            break;
+
+            case "r": // int
+            case "bsize":
+            case "bsize2":
+            case "bsize3":
+            case "bcolor":
+            case "bcolor2":
+            case "bcolor3":
+            case "rx":
+            case "ry":
+            case "zorder":
+                artD[k] = ( v == "" ? 0 : v.tointeger() );
+            break;
+
+            case "time": // time value
+            case "delay":
+                artD[k] = ( v == "" ? 0.0 : v.tofloat() * 1000 );
+            break;
+
+            case "overlaybelow": // true/false
+            case "below":
+            case "keepaspect":
+                artD[k] = (v == "true" ?  true : false );
+            break;
+
+            case "forceaspect": // strings with def "none"
+            case "type":
+            case "rest":
+                artD[k] = ( v == "" ? "none" : v.tolower() );
+            break;
+
+            case "start":
+                artD[k] = ( (v.tolower() == "left" || v.tolower() == "right" || v.tolower() == "bottom" || v.tolower() == "top") ?  v.tolower() : "none");
+            break;
+
+            case "bshape":
+                artD[k] =  ( (v == "round" || v == "true") ? true : false );
+            break;
+        }
+    }
+    return artD;
+}
+
+// Save XMl
+function save_xml(xml_root, path){
+    if(xml_root == null) return;
+    local fileout = file(path + "Theme.xml", "w");
+    local line = xml_root.toXML();
+    fileout.writeblob( writeB(line) );
+    return true;
+}
+
+// Save Ini
+function save_ini(datas, name){
+    // if main menu return !!!!! or set main settings at least for crt_scanline !!!!
+    local map = get_ini_values(name, false);
+    local fileout = file(fe.script_dir + "Settings/" + name + ".ini", "w");
+    local line = "";
+    if(!map.len()){
+        map = {};
+        map ["themes"] <- {}
+        map ["themes"][datas.obj] <- {}
+        map ["themes"][datas.obj] = datas.val;
+    }
+    foreach(ke, va in map){
+        line="";
+        line += "["+ke+"]\n";
+        fileout.writeblob( writeB(line) );
+        line="";
+        foreach(k,v in va){line+=k+"="+v+"\n"}
+        fileout.writeblob( writeB(line) );
+    }
+    Ini_settings["themes"][datas.obj] = datas.val;
+    return true;
+}
+
+function video_transform(rotate=true){
+    local artD = set_art_datas("video");
+    local rt = SRT();
+    local f_w = artD.overlaywidth;
+    local f_h = artD.overlayheight;
+
+    if((f_w == 0 || f_h == 0) && availables["video"]){
+        f_w = ArtObj["video"].texture_width;
+        f_h = ArtObj["video"].texture_height;
+    }
+
+    if(!hd){ // only for HS themes
+        if(ArtObj.snap.texture_width > ArtObj.snap.texture_height){ // landscape video
+            if(artD.forceaspect == "vertical" || artD.forceaspect == "none" ) artD.h = artD.w / ( ArtObj.snap.texture_width.tofloat() / ArtObj.snap.texture_height.tofloat() );
+        }
+
+        if(ArtObj.snap.texture_width < ArtObj.snap.texture_height){ // portrait video
+            if(artD.forceaspect == "horizontal" || artD.forceaspect == "none") artD.w = artD.h * ( ArtObj.snap.texture_width.tofloat() / ArtObj.snap.texture_height.tofloat() );
+        }
+    }
+
+    local borderMax = 0;
+    foreach(v in [artD.bsize * 0.5, artD.bsize2, artD.bsize3] ) if(v > borderMax) borderMax = v;
+    local viewport_snap_width = artD.w;
+    local viewport_snap_height = artD.h;
+    if(borderMax > 0){
+        if(artD.bsize  > 0)video_shader.set_param("border1", artD.bcolor,  artD.bsize, artD.bshape); // + rounded
+        if(artD.bsize2 > 0)video_shader.set_param("border2", artD.bcolor2, artD.bsize2, artD.bshape);
+        if(artD.bsize3 > 0)video_shader.set_param("border3", artD.bcolor3, artD.bsize3, artD.bshape);
+        viewport_snap_width += borderMax * 2;
+        viewport_snap_height += borderMax * 2;
+    }
+
+    local viewport_width = viewport_snap_width;
+    local viewport_height = viewport_snap_height;
+
+    if(availables["video"]){ // if video overlay available
+        video_shader.set_param("datas",true, artD.overlaybelow);
+        if( f_w + abs(artD.overlayoffsetx) > artD.w  ) viewport_width = f_w + (abs(artD.overlayoffsetx) * 2 );
+        if( f_h + abs(artD.overlayoffsety) > artD.h  ) viewport_height = f_h + (abs(artD.overlayoffsety) * 2 );
+    }else{
+        video_shader.set_param("datas", false, artD.overlaybelow);
+        artD.overlayoffsetx = 0; artD.overlayoffsety = 0; // fix if theme contain offset and no frame video is present
+    }
+    artD.x -= viewport_width  * 0.5;
+    artD.y -= viewport_height * 0.5;
+
+    if( rotate ){
+        ArtObj.snap.rotation = artD.r;
+        local mr = PI * artD.r / 180;
+        artD.x += cos( mr ) * (-viewport_width * 0.5) - sin( mr ) * (-viewport_height * 0.5) + viewport_width * 0.5;
+        artD.y += sin( mr ) * (-viewport_width * 0.5) + cos( mr ) * (-viewport_height * 0.5) + viewport_height * 0.5;
+    }
+
+    video_shader.set_param("scanline", (Ini_settings.themes["crt_scanline"] ? 1.0 : 0.0 ) );
+    video_shader.set_param("offsets",artD.overlayoffsetx, artD.overlayoffsety);
+    video_shader.set_param("snap_coord", artD.w, artD.h, viewport_snap_width, viewport_snap_height);
+    video_shader.set_param("frame_coord", f_w, f_h , viewport_width, viewport_height);
+
+    ArtObj.snap.set_pos( (artD.x  * rt.mul) + rt.offset_x, (artD.y * rt.mul_h) + rt.offset_y, viewport_width * rt.mul, viewport_height * rt.mul_h);
+}
+
 /* DEBUG */
 
 //Convert a squirrel table to a string

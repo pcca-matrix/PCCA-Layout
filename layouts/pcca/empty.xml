@@ -24,8 +24,8 @@
            type="none"
            start="none"
            rest="none"/>
-    <artwork1 x="100" y="100" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none"/>
-    <artwork2 x="100" y="500" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none"/>
-    <artwork3 x="800" y="100" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none"/>
-    <artwork4 x="800" y="500" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none"/>
+    <artwork1 x="100" y="100" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="true" zorder="0"/>
+    <artwork2 x="100" y="500" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="true" zorder="0"/>
+    <artwork3 x="800" y="100" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="true" zorder="0"/>
+    <artwork4 x="800" y="500" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="true" zorder="0"/>
 </Theme>
