@@ -799,9 +799,6 @@ function load_theme(name, theme_content, prev_def){
             video_transform((anim_rotate ? false : true));
 
             if(artD.below) ArtObj.artwork1.zorder = ArtObj.snap.zorder + 1; // only for HS
-
-            if(artD.type == "fade") artD.type = "video_fade"; // OK
-
         }
 
         if(Xtag !="video"){
@@ -1565,11 +1562,11 @@ function global_fade(ttime, target, direction){
 
 // Menu
 local anim_tab = ["none","linear","ease","elastic","elastic bounce","flip","fade","bounce","blur","pixelate","zoom out","pixelate zoom out","chase","sweep left"];
-anim_tab.extend( ["sweep right","strobe","grow","grow blur","grow x","grow y","grow center shrink","scroll","flag","pendulum","stripes","stripes 2","arc grow"] );
+anim_tab.extend( ["sweep right","strobe","grow","grow blur","grow bounce","grow x","grow y","grow center shrink","scroll","flag","pendulum","stripes","stripes 2","arc grow"] );
 anim_tab.extend( ["arc shrink","bounce random","rain float","bounce around 3d","zoom","unzoom","fade out","expl"] );
 local rest_tab = ["none","shake","rock","rock fast","squeeze","pusle","spin slow","spin fast","hover","hover vertical","hover horizontal"];
 local start_tab = ["none","Top","Bottom","Left","Right"];
-local video_anim_tab = ["none","pump","video_fade","tv","tv zoom out"];
+local video_anim_tab = ["none","pump","fade","tv","tv zoom out","ease","bounce","grow","grow x","grow y","grow bounce"];
 local borders = ["bshape","bsize","bcolor","bsize2","bcolor2","bsize3","bcolor3"];
 local border_conv = {"bsize":"border1","bsize2":"border2","bsize3":"border3"}
 local truefalse = ["crt_scanline","keepaspect","override_transitions","overlaybelow"];

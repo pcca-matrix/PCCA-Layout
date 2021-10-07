@@ -235,6 +235,7 @@ class PresetAnimation extends Animation {
         states["current"] <- collect_state( opts.target );
         state( "start", clone(states["current"]) );
 
+        if(opts.preset == "fade" && opts.name == "video") opts.preset = "video_fade";
         if (  opts.preset && opts.preset_load ) {
             try {
                 local t = PresetA[opts.preset];
