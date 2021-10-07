@@ -496,7 +496,7 @@ function set_art_datas(Xtag){
 
 // Save XMl
 function save_xml(xml_root, path){
-    if(xml_root == null) return;
+    if( xml_root == null || IS_ARCHIVE(path) ) return; // don't save xml if it's a zip or xml_root is empty
     local fileout = file(path + "Theme.xml", "w");
     local line = xml_root.toXML();
     fileout.writeblob( writeB(line) );

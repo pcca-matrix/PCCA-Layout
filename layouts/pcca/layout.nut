@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.01
+// PCCA v2.03
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -35,6 +35,7 @@ class UserConfig {
     </ label="Video scanline", help="Add crt scanlines effect to video snap ", options="Yes, No", order=M_order++ /> themes_crt_scanline = "No"
     </ label="Extra Artworks Key", help="Choose the key to initiate extra artworks overlay", options="custom1,custom2,custom3,custom4,custom5,custom6,none", order=M_order++ />extra_artworks_key="custom2";
     </ label="Settings/Edit Key", help="Choose the key to initiate settings/edit overlay", options="custom1,custom2,custom3,custom4,custom5,custom6,none", order=M_order++ />main_menu_key="custom4";
+    </ label="HD theme resolution", help="Choose the resolution you want when creating new theme ex : (1920x1080)", options="", order=M_order++ />theme_resolution="1920x1080";
 
     </ label="Media Path", help="Path of HyperSpin media, if empty, media is considered inside layout folder", options="", order=M_order++ /> medias_path=""
     </ label="Low GPU", help="'Yes' = Low GPU (Intel HD,.. less backgrounds transition), 'No' = Recent GPU", options="Yes, No", order=M_order++ /> LowGPU="No"
@@ -684,6 +685,7 @@ function background_transitions(anim, File){
 }
 
 function load_theme(name, theme_content, prev_def){
+    xml_root = null;
     if(theme_content.len() <= 0){  // If there is no theme file, return (unified theme)
         hd = true;
         if(file_exist(medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4")){
@@ -710,7 +712,6 @@ function load_theme(name, theme_content, prev_def){
     raw_xml = replace( raw_xml, "start=\"bottom\"/>rest=", "start=\"bottom\"rest=" );
     raw_xml = replace( raw_xml, "start=\"right\"/>rest=", "start=\"right\"rest=" );
 
-    xml_root = null;
     try{ xml_root = xml.load( raw_xml ); } catch ( e ) { };
 
     local theme_node = find_theme_node( xml_root );
@@ -1464,8 +1465,6 @@ local last_click = 0;
 fe.add_signal_handler(this, "on_signal")
 function on_signal(str) {
     //print("\n SIGNAL = "+str+ " - "+ last_click +"\n")
-    //if(fe.overlay.is_up){
-    if( update_list(str) ) return true;
     if(curr_sys == "Main Menu"){ //disable some buttons on main-menu
        	switch ( str )	
         {
@@ -1482,7 +1481,7 @@ function on_signal(str) {
             return true;
         }
     }
-    //}else{
+
         switch( str ) {
             case "prev_page":
             case "next_page":
@@ -1526,18 +1525,12 @@ function on_signal(str) {
             break;
 
             case my_config["main_menu_key"] : // Main menu Key
-                if(surf_menu.visible){
-                    surf_menu.visible = false;
-                }else{
-                    surf_menu.visible = true;
-                    sel_menu.add_rows( {"title":"main", "obj":"main", "rows":main_menu_rows} );
-                    surf_menu_title.msg = sel_menu.titles();
-                }
+                surf_menu.visible = true;
+                sel_menu.add_rows( {"title":"main", "obj":"main", "rows":main_menu_rows} );
+                surf_menu_title.msg = sel_menu.titles();
+                sel_menu.signal("list");
             break;
-
         }
-    //}
-
     return false
 }
 
@@ -1571,30 +1564,30 @@ function global_fade(ttime, target, direction){
 
 
 // Menu
-function update_list(str) {
+local anim_tab = ["none","linear","ease","elastic","elastic bounce","flip","fade","bounce","blur","pixelate","zoom out","pixelate zoom out","chase","sweep left"];
+anim_tab.extend( ["sweep right","strobe","grow","grow blur","grow x","grow y","grow center shrink","scroll","flag","pendulum","stripes","stripes 2","arc grow"] );
+anim_tab.extend( ["arc shrink","bounce random","rain float","bounce around 3d","zoom","unzoom","fade out","expl"] );
+local rest_tab = ["none","shake","rock","rock fast","squeeze","pusle","spin slow","spin fast","hover","hover vertical","hover horizontal"];
+local start_tab = ["none","Top","Bottom","Left","Right"];
+local video_anim_tab = ["none","pump","video_fade","tv","tv zoom out"];
+local borders = ["bshape","bsize","bcolor","bsize2","bcolor2","bsize3","bcolor3"];
+local border_conv = {"bsize":"border1","bsize2":"border2","bsize3":"border3"}
+local truefalse = ["crt_scanline","keepaspect","override_transitions","overlaybelow"];
+local cfloat = ["delay","time"];
+local cinteger = ["zorder"];
+local inivalue = ["crt_scanline","override_transitions"];
 
-    if(surf_menu.visible){
+function update_list(str) {
         local upd_res = 0;
-        local anim_tab = ["none","linear","ease","elastic","elastic bounce","flip","fade","bounce","blur","pixelate","zoom out","pixelate zoom out","chase","sweep left"];
-        anim_tab.extend(["sweep right","strobe","grow","grow blur","grow x","grow y","grow center shrink","scroll","flag","pendulum","stripes","stripes 2","arc grow"]);
-        anim_tab.extend(["arc shrink","bounce random","rain float","bounce around 3d","zoom","unzoom","fade out","expl"]);
-        local rest_tab = ["none","shake","rock","rock fast","squeeze","pusle","spin slow","spin fast","hover","hover vertical","hover horizontal"];
-        local start_tab = ["none","Top","Bottom","Left","Right"];
-        local video_anim_tab = ["none","pump","video_fade","tv","tv zoom out"];
-        local borders = ["bshape","bsize","bcolor","bsize2","bcolor2","bsize3","bcolor3"];
-        local border_conv = {"bsize":"border1","bsize2":"border2","bsize3":"border3"}
-        local truefalse = ["crt_scanline","keepaspect","override_transitions","overlaybelow"];
-        local cfloat = ["delay","time"];
-        local cinteger = ["zorder"];
-        local inivalue = ["crt_scanline","override_transitions"];
         local child = null;
+
         switch( str ) {
 
             case "select":
-
+                local discard = false;
                 local selected = sel_menu.select();
                 local actual = xml_root.getChild(sel_menu.obj());
-                local discard = false;
+
                 switch(sel_menu.title()){
                     case "time":
                     case "delay":
@@ -1611,6 +1604,7 @@ function update_list(str) {
                     break;
                 }
 
+                // borders color
                 if(sel_menu.title().find("bcolor") != null){
                     local color = fe.overlay.edit_dialog("Enter color in HEX","").toupper();
                     if(color == "") break;
@@ -1620,6 +1614,8 @@ function update_list(str) {
                     local rgbC = dec2rgb(hex2dec(color));
                     sel_menu._slot[0].set_bg_rgb(rgbC[0], rgbC[1], rgbC[2]);
                 }
+
+                if(selected == "pos/size/rotate" || selected == "pos/size") sel_menu.signal("pos_rot");
 
                 if(discard) break;
 
@@ -1640,21 +1636,30 @@ function update_list(str) {
                         break;
                     }
                     if( !file_exist(path + "Theme.xml") ){
-                        fe.overlay.edit_dialog("No theme xml found, empty one is created", "Close")
+                        fe.overlay.edit_dialog("No theme xml found, empty one is created for your resolution", "Close")
                         local f = ReadTextFile( fe.script_dir, "empty.xml" );
                         local raw_xml = "";
                         while ( !f.eos() ) raw_xml += f.read_line();
                         try{ xml_root = xml.load( raw_xml ); } catch ( e ) { }
+                        local res_c = split( my_config["theme_resolution"].tolower(), "x");
+                        xml_root.getChild("hd").addAttr("lw", res_c[0]);
+                        xml_root.getChild("hd").addAttr("lh", res_c[1]);
                         save_xml(xml_root, path);
-                        path = ""; // reset path forcing theme reload artworks ( add user_setting() for ini load )
+                        path = ""; // reset path forcing the theme reload artworks ( add user_setting() for ini load )
                         trigger_load_theme = true;
                         break;
                     }
+
                     if(!xml_root.getChild("hd")){
                         fe.overlay.edit_dialog("Only HD are editable...","Close")
                         break;
                     }
-                    sel_menu.add_rows( {"title":selected, "obj":selected, "rows":["artwork1","artwork2","artwork3","artwork4","video","video overlay"]} );
+
+                    // display only available artworks
+                    local art_av = ["video"];
+                    foreach(a,b in availables) if(b) art_av.push( (a == "video" ? "video overlay" : a ) );
+                    art_av.sort();
+                    sel_menu.add_rows( {"title":selected, "obj":selected, "rows":art_av} );
                 }else
 
                 if(selected.find("artwork") != null){
@@ -1886,6 +1891,7 @@ function update_list(str) {
             case "back":
                 if( main_menu_rows.find(sel_menu.select()) != null ){ // first menu then exit
                     save_xml(xml_root, path);
+                    sel_menu.signal("default");
                     sel_menu.reset();
                     surf_menu.visible = false;
                 }else{
@@ -1896,16 +1902,31 @@ function update_list(str) {
 
             case my_config["main_menu_key"] : // Save Xml when exiting menu
                 save_xml(xml_root, path);
+                sel_menu.signal("default");
                 sel_menu.reset();
                 surf_menu.visible = false;
             break;
         }
         return true;
-    }
-    return false;
 }
 
-//-- Edit Theme
+function g_input(inp){
+    local ar = {};
+    ar.Right <- ["Joy0 Right", "Right"];
+    ar.Left  <- ["Joy0 Left", "Left"];
+    ar.Up    <- ["Joy0 Up", "Up"];
+    ar.Down  <- ["Joy0 Down", "Down"];
+    ar.C     <- ["Joy0 Button7", "Add"];
+    ar.CW    <- ["Joy0 Button6", "Subtract"];
+    ar.ZWP   <- ["Joy0 Zpos", "Numpad7"];
+    ar.ZWM   <- ["Joy0 Zneg", "Numpad9"];
+    ar.ZHP   <- ["Joy0 Rneg", "Numpad1"];
+    ar.ZHM   <- ["Joy0 Rpos", "Numpad3"];
+
+    foreach(a,b in ar[inp]) if(fe.get_input_state(b) != false) return true;
+
+    return false;
+}
 
 local step = 0.5;
 function accel(ttime, last_click, sel_menu){
@@ -1914,62 +1935,77 @@ function accel(ttime, last_click, sel_menu){
         step*=1.5;
         sel_menu._last_click = ttime;
     }
-    return step > 2.50 ? 3.0 : step;
+    return step > 3.00 ? 3.5 : step;
 }
 
-function edit(elem, edit_type, ttime, last_click){ // edit for pos/size/rotate
+function fake_sig(str){
+    return true;
+}
+
+function edit(elem, ttime, last_click){ // edit for pos/size/rotat
+
+    if(fe.get_input_state("back")){
+        sel_menu.signal("list");
+        return true;
+    }
     local set = false;
     local child = xml_root.getChild(elem);
     if(!child) return;
 
-    local w,h;
+    local w,h,r;
     try{ w = child.attr["w"].tofloat(); } catch(e){ // add var to xml if missing (needed !)
         child.addAttr( "w", ArtObj[elem].texture_width );
         w = child.attr["w"].tofloat();
     }
     try{ h = child.attr["h"].tofloat(); } catch(e){ // add var to xml if missing (needed !)
         child.addAttr( "h", ArtObj[elem].texture_height );
-        w = child.attr["h"].tofloat();
+        h = child.attr["h"].tofloat();
     }
     local x = child.attr["x"].tofloat();
     local y = child.attr["y"].tofloat();
-    local r = child.attr["r"].tofloat();
+    try{ r = child.attr["r"].tofloat(); } catch(e){ r = 0.0 }
 
-    local inf = "x:" + x + " y:" + y+ " w:" + w + " h:" + h + " r:" + r;
+    local inf = "x:" + format("%.1f", x) + " y:" + format("%.1f", y) + " w:" + format("%.1f", w) + " h:" + format("%.1f", h) + " r:" + format("%.1f", r);
     surf_menu_info.msg = inf;
 
-    if(fe.get_input_state("Numpad6")) set = child.addAttr("x", x+=accel(ttime, last_click, sel_menu)); // right
+    if( g_input("Right") ) set = child.addAttr("x", x+=accel(ttime, last_click, sel_menu));
 
-    if(fe.get_input_state("Numpad4")) set = child.addAttr("x", x-=accel(ttime, last_click, sel_menu)); // left
+    if( g_input("Left") ) set = child.addAttr("x", x-=accel(ttime, last_click, sel_menu));
 
-    if(fe.get_input_state("Numpad8")) set = child.addAttr("y", y-=accel(ttime, last_click, sel_menu)); // Up
+    if( g_input("Up") ) set = child.addAttr("y", y-=accel(ttime, last_click, sel_menu));
 
-    if(fe.get_input_state("Numpad2")) set = child.addAttr("y", y+=accel(ttime, last_click, sel_menu)); // Down
+    if( g_input("Down") ) set = child.addAttr("y", y+=accel(ttime, last_click, sel_menu));
 
-    if(fe.get_input_state("Subtract")){
-        if(r < -360) r=0;
+    if( g_input("CW") ){
+        if(r < -360) r = 0.0;
         set = child.addAttr("r", r-=step); // rotate cw
     }
-    if(fe.get_input_state("Add")){
-        if(r > 360) r=0;
+
+    if( g_input("C") ){
+        if(r > 360) r = 0.0;
         set = child.addAttr("r", r+=step); // rotate c
     }
-    if(fe.get_input_state("Numpad7")) set = child.addAttr("w", w+=step); // zoom width +
+    if( g_input("ZWP") ) set = child.addAttr("w", w+=step); // zoom width +
 
-    if(fe.get_input_state("Numpad9")) set = child.addAttr("w", w-=step); // zoom width -
+    if( g_input("ZWM") ) set = child.addAttr("w", w-=step); // zoom width -
 
-    if(fe.get_input_state("Numpad1")) set = child.addAttr("h", h+=step); // zoom height +
+    if( g_input("ZHP") ) set = child.addAttr("h", h+=step); // zoom height +
 
-    if(fe.get_input_state("Numpad3")) set = child.addAttr("h", h-=step); // zoom height -
+    if( g_input("ZHM") ) set = child.addAttr("h", h-=step); // zoom height -
 
-    if(!fe.get_input_state("Numpad6") && !fe.get_input_state("Numpad4") && !fe.get_input_state("Numpad8") && !fe.get_input_state("Numpad2")) step = 0.5;
+    if( !g_input("Right") && !g_input("Left") && !g_input("Up") && !g_input("Down") ) step = 0.5;
 
     if(set != false) if(elem != "video") artworks_transform(elem) else video_transform();
 
     return;
 }
 
-function overlay_video(_obj, _edit_type, ttime, _last_click){
+function overlay_video(){
+    if(fe.get_input_state("back")){
+        sel_menu.signal("list");
+        return;
+    }
+
     if(!availables["video"]) return;
     local child = xml_root.getChild("video");
     local set = false;
@@ -1986,21 +2022,21 @@ function overlay_video(_obj, _edit_type, ttime, _last_click){
         overlayheight = child.attr["overlayheight"].tofloat();
     }
 
-    if(fe.get_input_state("Numpad8")) set = child.addAttr( "overlayoffsety", overlayoffsety-=1.5 ); // Up
+    if( g_input("Up") ) set = child.addAttr( "overlayoffsety", overlayoffsety-=1.5 ); // Up
 
-    if(fe.get_input_state("Numpad2")) set = child.addAttr( "overlayoffsety", overlayoffsety+=1.5 ); // Down
+    if( g_input("Down") ) set = child.addAttr( "overlayoffsety", overlayoffsety+=1.5 ); // Down
 
-    if(fe.get_input_state("Numpad6")) set = child.addAttr( "overlayoffsetx", overlayoffsetx+=1.5 ); // right
+    if( g_input("Right") ) set = child.addAttr( "overlayoffsetx", overlayoffsetx+=1.5 ); // right
 
-    if(fe.get_input_state("Numpad4")) set = child.addAttr( "overlayoffsetx", overlayoffsetx-=1.5); // left
+    if( g_input("Left") ) set = child.addAttr( "overlayoffsetx", overlayoffsetx-=1.5); // left
 
-    if(fe.get_input_state("Numpad7")) set = child.addAttr( "overlaywidth", overlaywidth+=1.5 ); // zoom width +
+    if( g_input("ZWP") ) set = child.addAttr( "overlaywidth", overlaywidth+=1.5 ); // zoom width +
 
-    if(fe.get_input_state("Numpad9")) set = child.addAttr( "overlaywidth", overlaywidth-=1.5 ); // zoom width -
+    if( g_input("ZWM") ) set = child.addAttr( "overlaywidth", overlaywidth-=1.5 ); // zoom width -
 
-    if(fe.get_input_state("Numpad1")) set = child.addAttr( "overlayheight", overlayheight+=1.5 ); // zoom height +
+    if( g_input("ZHP") ) set = child.addAttr( "overlayheight", overlayheight+=1.5 ); // zoom height +
 
-    if(fe.get_input_state("Numpad3")) set = child.addAttr( "overlayheight", overlayheight-=1.5 ); // zoom height -
+    if( g_input("ZHM") ) set = child.addAttr( "overlayheight", overlayheight-=1.5 ); // zoom height -
 
     if(set != false) video_transform();
 
@@ -2010,7 +2046,7 @@ function overlay_video(_obj, _edit_type, ttime, _last_click){
 function artworks_transform(Xtag, rotate=true, art=""){
     local artD = set_art_datas(Xtag);
     local rt = SRT();
-    if(artD.keepaspect) ArtObj[Xtag].preserve_aspect_ratio = true;
+    if(artD.keepaspect || !hd) ArtObj[Xtag].preserve_aspect_ratio = true;
 
     if( !artD.w || !artD.h ){
         artD.w = ArtObj[Xtag].texture_width;

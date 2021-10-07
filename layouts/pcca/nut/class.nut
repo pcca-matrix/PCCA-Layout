@@ -62,12 +62,11 @@ class OutlinedText
 
 class SelMenu
 {
-    constructor( s , row_space)
+    constructor( surface , row_space)
     {
-        _surface = s;
         _slot = [];
         for ( i=0; i < 35; i++){
-          _slot.push(_surface.add_text( "", flw * 0.005, flw * 0.020 + (row_space * i), flw * 0.20, flh * 0.022 ));
+          _slot.push(surface.add_text( "", flw * 0.005, flw * 0.020 + (row_space * i), flw * 0.20, flh * 0.022 ));
           _slot[i].set_bg_rgb(100,100,100);
           _slot[i].bg_alpha=0;
         }
@@ -125,19 +124,19 @@ class SelMenu
     function title(){ return _menu_tables.top().title; }
 
     function titles(){
-        _tmp1 = "";
-        foreach(a,v in _title) _tmp1+=v + "->";
-        return _tmp1;
+        local tmp = "";
+        foreach(a,v in _title) tmp+=v + "->";
+        return tmp;
     }
 
-    function up (){
+    function up(){
         _slot[_slot_pos].bg_alpha=0;
         if(!_slot_pos) _slot_pos =_menu_tables[_menu_tables.len()-1].rows.len();
         _slot[_slot_pos-1].bg_alpha=255;
         _slot_pos--;
     }
 
-    function down (){
+    function down(){
         _slot[_slot_pos].bg_alpha=0;
         if(_slot_pos == _menu_tables[_menu_tables.len()-1].rows.len()-1) _slot_pos=-1;
         _slot[_slot_pos+1].bg_alpha=255;
@@ -150,22 +149,48 @@ class SelMenu
         return _edit_type;
     }
 
+    function signal(s) sig = s;
+
     function on_tick(ttime) {
-        if(_edit_type == null) return;
-        if(_edit_type == "pos/size") overlay_video(_obj, _edit_type, ttime, _last_click);
-        if(_edit_type == "pos/size/rotate") edit(_obj, _edit_type, ttime, _last_click);
+        if(sig){
+            fe.remove_signal_handler("on_signal")
+
+            switch (sig){
+              case "list":
+                fe.remove_signal_handler("fake_sig");
+                fe.add_signal_handler("update_list");
+                _edit_type = null;
+              break;
+
+              case "pos_rot":
+              case "pos":
+                fe.remove_signal_handler("update_list")
+                fe.add_signal_handler("fake_sig");
+              break;
+
+              case "default":
+                fe.remove_signal_handler("update_list")
+                fe.remove_signal_handler("fake_sig");
+                fe.add_signal_handler("on_signal");
+              break;
+            }
+
+            sig = null;
+            return false;
+        }
+
+        if(_edit_type == "pos/size") overlay_video();
+        if(_edit_type == "pos/size/rotate") edit(_obj, ttime, _last_click);
     }
 
-
+    sig = null;
     i=0;
     _last_click = 0;
-    _tmp1 = "";
     _obj = "";
-    _edit_type = false;
+    _edit_type = null;
     _title = [];
     _menu_tables = [];
     _slot = [];
     _slot_pos = 0;
-    _surface = null;
 }
 

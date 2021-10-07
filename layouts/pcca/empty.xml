@@ -8,6 +8,7 @@
            rx="0"
            ry="0"
            below="false"
+           crt="false"
            overlaybelow="false"
            overlayoffsetx="0"
            overlayoffsety="0"
