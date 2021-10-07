@@ -1417,7 +1417,7 @@ function hs_tick( ttime )
                 }
             }
 
-            if( prev_path == path ){ // if previous and current theme is equal.
+            if( prev_path == path && surf_menu.visible == false ){ // if previous and current theme is equal ( and we are not in edit mode ).
                 reset_art(true);
                 load_theme(path, theme_content, true);
                 foreach(a,b in ["artwork1", "artwork2", "artwork3", "artwork4"] ) if( availables[b] == false ) anims[a].restart(); // not needed aymore (fot list wihhout xml) ???
