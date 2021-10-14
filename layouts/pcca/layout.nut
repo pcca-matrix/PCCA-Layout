@@ -103,7 +103,13 @@ try { wheel_offset = Ini_settings.wheel["offset"].tofloat(); } catch ( e ) { whe
 
 ArtObj <- {};
 snap_is_playing <- false;
-availables <- { artwork1 = false, artwork2 = false, artwork3 = false, artwork4 = false, video = false }; // artworks available in theme zip
+local artwork_list = ["artwork1", "artwork2", "artwork3","artwork4","artwork5","artwork6"]; //  artworks list for the theme
+local artwork_list_full = clone(artwork_list); 
+artwork_list_full.push("video"); // full artwork_list must contain video (frame)
+
+availables <- {}
+foreach(a,b in artwork_list_full) availables[b] <- false;
+
 local path = "";
 local curr_theme = "";
 local curr_sys = "";
@@ -129,13 +135,9 @@ ArtObj.background2.visible = false;
 ArtObj.bezel <- fe.add_image("",0,0,flw,flh);
 ArtObj.bezel.visible = false;
 
-// Themes Artworks
-ArtObj.artwork1 <- fe.add_image("",-1000,-1000,0.1,0.1);
-ArtObj.artwork2 <- fe.add_image("",-1000,-1000,0.1,0.1);
-ArtObj.artwork3 <- fe.add_image("",-1000,-1000,0.1,0.1);
-ArtObj.artwork4 <- fe.add_image("",-1000,-1000,0.1,0.1);
+// create all artworks img obj
+foreach(a,b in artwork_list_full) ArtObj[b] <- fe.add_image("",-1000,-1000,0.1,0.1);
 ArtObj.snap <- fe.add_image("",-1000,-1000,0.1,0.1);
-ArtObj.video <- fe.add_image("",-1000,-1000,0.1,0.1);
 
 // Particles medias clones Array
 ArtArray <- [];
@@ -166,37 +168,24 @@ ArtObj.bezel.zorder = -1
 ArtObj.background.zorder = -10
 flv_transitions.zorder = -10 // or -6 for some theme with video overlay on background ? test
 start_background.zorder=-11
+ArtObj.artwork5.zorder = -9
+ArtObj.artwork6.zorder = -9
 
-// Shaders
+// Artworks Shaders and Animations
 artwork_shader <- [];
-artwork_shader.push( fe.add_shader( Shader.VertexAndFragment, "shaders/main.vert", "shaders/artworks.frag" ) );
-artwork_shader.push( fe.add_shader( Shader.VertexAndFragment, "shaders/main.vert", "shaders/artworks.frag" ) );
-artwork_shader.push( fe.add_shader( Shader.VertexAndFragment, "shaders/main.vert", "shaders/artworks.frag" ) );
-artwork_shader.push( fe.add_shader( Shader.VertexAndFragment, "shaders/main.vert", "shaders/artworks.frag" ) );
-video_shader <- fe.add_shader( Shader.Fragment, "shaders/vframe.frag" );
+anims_shader <- [];
+anims <- [];
+foreach(k,v in artwork_list ){
+    artwork_shader.push( fe.add_shader( Shader.VertexAndFragment, "shaders/main.vert", "shaders/artworks.frag" ) );
+    ArtObj[v].shader = artwork_shader[k];
+    anims_shader.push( ShaderAnimation( artwork_shader[k] ) );
+    anims.push( PresetAnimation(ArtObj[v]).name(v).auto(true) );
+}
 
-ArtObj.snap.shader = video_shader;
-video_shader.set_texture_param("tex_f", ArtObj.video);
-video_shader.set_texture_param("tex_s", ArtObj.snap);
-local scanline = fe.add_image("images/scanline-640.png",-1000,-1000,0.1,0.1);
-scanline.visible = false;
-video_shader.set_texture_param("tex_crt", scanline);
-
-ArtObj.artwork1.shader = artwork_shader[0];
-ArtObj.artwork2.shader = artwork_shader[1];
-ArtObj.artwork3.shader = artwork_shader[2];
-ArtObj.artwork4.shader = artwork_shader[3];
 foreach(k,v in artwork_shader){
     v.set_texture_param("Tex0");
     v.set_param("datas",0,0,0,0);
 }
-
-anims_shader <- [];
-anims_shader.push( ShaderAnimation(artwork_shader[0] ) );
-anims_shader.push( ShaderAnimation(artwork_shader[1] ) );
-anims_shader.push( ShaderAnimation(artwork_shader[2] ) );
-anims_shader.push( ShaderAnimation(artwork_shader[3] ) );
-
 foreach(k,v in anims_shader){
     v.name("artwork" + (k+1) );
     v.param("progress");
@@ -205,23 +194,16 @@ foreach(k,v in anims_shader){
     v.to([1.0]);
 }
 
-anim_video_shader <- ShaderAnimation( video_shader );
-anim_video_shader.auto(true);
-anim_video_shader.name("video_shader");
-
-anims <- [];
-anims.push(PresetAnimation(ArtObj.artwork1));
-anims.push(PresetAnimation(ArtObj.artwork2));
-anims.push(PresetAnimation(ArtObj.artwork3));
-anims.push(PresetAnimation(ArtObj.artwork4));
-foreach(k,v in anims){
-    v.name("artwork"+(k+1));
-    v.auto(true);
-}
-
-anim_video <- PresetAnimation(ArtObj.snap);
-anim_video.name("video");
-anim_video.auto(true);
+// video Shaders and Animations
+video_shader <- fe.add_shader( Shader.Fragment, "shaders/vframe.frag" );
+ArtObj.snap.shader = video_shader;
+video_shader.set_texture_param("tex_f", ArtObj.video);
+video_shader.set_texture_param("tex_s", ArtObj.snap);
+local scanline = fe.add_image("images/scanline-640.png",-1000,-1000,0.1,0.1);
+scanline.visible = false;
+video_shader.set_texture_param("tex_crt", scanline);
+anim_video_shader <- ShaderAnimation( video_shader ).name("video_shader").auto(true);
+anim_video <- PresetAnimation(ArtObj.snap).name("video").auto(true);
 
 if( my_config["LowGPU"] == "Yes" ) Trans_shader <- fe.add_shader( Shader.Fragment, "shaders/effect_low_gpu.frag" ); else Trans_shader <- fe.add_shader( Shader.Fragment, "shaders/effect.frag" );
 
@@ -426,10 +408,13 @@ favo.align = Align.Left;
 favo.set_rgb( 255, 170, 0 );
 
 /* Main SettingsOverlay */
-local surf_menu = fe.add_surface(flw * 0.25, flh);
+local surf_menu = fe.add_surface(flw * 0.24, flh);
 surf_menu.zorder = 2;
 local surf_menu_bck = surf_menu.add_image("images/Backgrounds/faded.png", 0, 0, flw, flh );
-//local surf_menu_img = surf_menu.add_image("", 0, 0, 0, flh * 0.82 );
+surf_menu_bck.alpha = 80;
+local surf_menu_img = surf_menu.add_image("", flw*0.044, flh * 0.82, flw * 0.16, flh * 0.17 );
+surf_menu_img.visible = false;
+surf_menu_img.preserve_aspect_ratio = true;
 local surf_menu_title = surf_menu.add_text("", flw * 0.008, flh*0.002, flw * 0.24, flw * 0.009 );
 surf_menu_title.align = Align.Left;
 local surf_menu_info = surf_menu.add_text("", flw * 0.005, flh - (flh * 0.046), flw * 0.25, flw * 0.011 );
@@ -716,7 +701,7 @@ function load_theme(name, theme_content, prev_def){
 
     local theme_node = find_theme_node( xml_root );
     try{ theme_node.children } catch ( e ) { return; }; // return if no xml
-    availables = { artwork1 = false, artwork2 = false, artwork3 = false, artwork4 = false, video = false };
+    foreach(a,b in artwork_list_full) availables[b] <- false; // reset full artworks availability
     local anim_rotate;
 
     try{ hd = xml_root.getChild("hd") } catch(e) {}   // check if it's a real HD theme
@@ -770,7 +755,7 @@ function load_theme(name, theme_content, prev_def){
         }
         local artD = set_art_datas(Xtag);
 
-        if( Xtag == "artwork1" || Xtag == "artwork2" || Xtag == "artwork3" || Xtag == "artwork4" ){
+        if( artwork_list.find(Xtag) != null ){
             if( prev_def && availables[Xtag] ) continue;
 
             if(availables[Xtag]){
@@ -878,7 +863,7 @@ function reset_art( bool = false ){ // true if default theme
         }
     }
 
-    foreach(k,obj in ["artwork1", "artwork2", "artwork3", "artwork4"] ){
+    foreach(k,obj in artwork_list ){
         if( !bool || !availables["artwork"+(k+1)] ) clean_art(obj);
     }
 
@@ -895,7 +880,7 @@ function reset_art( bool = false ){ // true if default theme
 function hide_art(){
     local random = ["unzoom", "zoom", "fade out", "expl"];
      //--if default theme , we hide only artwork not availables in them zip
-        foreach(a,b in ["artwork1", "artwork2", "artwork3", "artwork4"] ){
+        foreach(a,b in artwork_list ){
            if(curr_theme != "Default" || availables[b] == false ){
                 anims[a].preset( random[ rndint(random.len()) ] )
                 anims[a].on("stop",function(anim){
@@ -1353,7 +1338,7 @@ function hs_tick( ttime )
     glob_time=ttime;
     // set all artwork and video visible after x ms next to triggerload except those who have width set to 0.1 (unhided later in animation preset)
     if( (glob_time - rtime > glob_delay + 150) && visi == false){
-        foreach(obj in ["artwork1", "artwork2", "artwork3", "artwork4", "video", "snap"] ) if(ArtObj[obj].width > 0.1) ArtObj[obj].visible = true;
+        foreach(obj in ["artwork1", "artwork2", "artwork3", "artwork4", "artwork5", "artwork6", "video", "snap"] ) if(ArtObj[obj].width > 0.1) ArtObj[obj].visible = true;
         visi = true;
     }
     if(!snap_is_playing && anim_video.elapsed > anim_video.opts.delay ){ // start playing video snap after animation delay
@@ -1420,8 +1405,7 @@ function hs_tick( ttime )
             if( prev_path == path && surf_menu.visible == false ){ // if previous and current theme is equal ( and we are not in edit mode ).
                 reset_art(true);
                 load_theme(path, theme_content, true);
-                foreach(a,b in ["artwork1", "artwork2", "artwork3", "artwork4"] ) if( availables[b] == false ) anims[a].restart(); // not needed aymore (fot list wihhout xml) ???
-
+                foreach(a,b in artwork_list ) if( availables[b] == false ) anims[a].restart(); // not needed aymore (fot list without xml) ???
             }else{
                 reset_art();
                 load_theme(path, theme_content, false);
@@ -1523,7 +1507,9 @@ function on_signal(str) {
 
             case my_config["main_menu_key"] : // Main menu Key
                 surf_menu.visible = true;
-                sel_menu.add_rows( {"title":"main", "obj":"main", "rows":main_menu_rows} );
+                local MMenu = main_menu_rows;
+                if(curr_sys == "Main Menu") MMenu = ["theme","settings"];
+                sel_menu.add_rows( {"title":"main", "obj":"main", "rows":MMenu} );
                 surf_menu_title.msg = sel_menu.titles();
                 sel_menu.signal("list");
             break;
@@ -1539,7 +1525,7 @@ function global_fade(ttime, target, direction){
    if(direction){ // show
         foreach(obj in objlist) obj.alpha = ttime * (255.0 / target);
         video_shader.set_param("alpha", (ttime / target) );
-        foreach(k, obj in ["artwork1", "artwork2", "artwork3", "artwork4"] ) artwork_shader[k].set_param("alpha", (ttime / target) );
+        foreach(k, obj in artwork_list ) artwork_shader[k].set_param("alpha", (ttime / target) );
         Trans_shader.set_param("alpha", ttime / target);
         ArtObj.SpecialA.shader.set_param("alpha", ttime / target);
         ArtObj.SpecialB.shader.set_param("alpha", ttime / target);
@@ -1549,7 +1535,7 @@ function global_fade(ttime, target, direction){
         flv_transitions.video_playing = false; // stop playing ovveride video during fade
         foreach(obj in objlist) obj.alpha = 255.0 - ttime * (255.0 / target);
         video_shader.set_param("alpha", 1.0 - (ttime / target) );
-        foreach(k, obj in ["artwork1", "artwork2", "artwork3", "artwork4"] ) artwork_shader[k].set_param("alpha", 1.0 - (ttime / target) );
+        foreach(k, obj in artwork_list ) artwork_shader[k].set_param("alpha", 1.0 - (ttime / target) );
         Trans_shader.set_param("alpha",1.0 - (ttime / target) );
         ArtObj.SpecialA.shader.set_param("alpha",1.0 - (ttime / target) );
         ArtObj.SpecialB.shader.set_param("alpha",1.0 - (ttime / target) );
@@ -1623,7 +1609,7 @@ function update_list(str) {
                 }else
 
                 if(selected == "scraper"){
-                   sel_menu.add_rows( {"title":selected, "obj":selected, "rows":["Update Infos","Update Medias","Update Synopsis"]} );
+                   sel_menu.add_rows( {"title":selected, "obj":selected, "rows":["Update Romlist","Update Infos","Update Medias","Update Synopsis"]} );
                 }else
 
                 if(selected == "theme"){
@@ -1657,6 +1643,7 @@ function update_list(str) {
                     foreach(a,b in availables) if(b) art_av.push( (a == "video" ? "video overlay" : a ) );
                     art_av.sort();
                     sel_menu.add_rows( {"title":selected, "obj":selected, "rows":art_av} );
+                    show_menu_artwork( sel_menu.select(), surf_menu_img, artwork_list );
                 }else
 
                 if(selected.find("artwork") != null){
@@ -1774,6 +1761,7 @@ function update_list(str) {
             case "prev_game":
             case "up":
                 sel_menu.up();
+                show_menu_artwork( sel_menu.select(), surf_menu_img, artwork_list );
                 if(sel_menu.title().find("bsize") != null){
                     child = xml_root.getChild(sel_menu.obj());
                     if(child){
@@ -1806,7 +1794,7 @@ function update_list(str) {
                             if(ArtObj[sel_menu.obj()].zorder == 0) break;
                             valb = ArtObj[sel_menu.obj()].zorder +=1;
                             ArtObj[sel_menu.obj()].zorder = valb;
-                           surf_menu_info.msg = "a1:" + ArtObj["artwork1"].zorder + " a2:" + ArtObj["artwork2"].zorder + " a3:" + ArtObj["artwork3"].zorder + " a4:" + ArtObj["artwork4"].zorder + " snap:" + ArtObj["snap"].zorder;
+                            zorder_list();
                         }else{
                             if(valb == 30) break;
                             valb+=1.0
@@ -1831,6 +1819,7 @@ function update_list(str) {
             case "next_game":
             case "down":
                 sel_menu.down();
+                show_menu_artwork( sel_menu.select(), surf_menu_img, artwork_list );
                 if(sel_menu.title().find("bsize") != null){
                     child = xml_root.getChild(sel_menu.obj());
                     if(child){
@@ -1863,7 +1852,7 @@ function update_list(str) {
                             if(ArtObj[sel_menu.obj()].zorder < -10) break;
                             valb = ArtObj[sel_menu.obj()].zorder -=1;
                             ArtObj[sel_menu.obj()].zorder = valb;
-                            surf_menu_info.msg = "a1:" + ArtObj["artwork1"].zorder + " a2:" + ArtObj["artwork2"].zorder + " a3:" + ArtObj["artwork3"].zorder + " a4:" + ArtObj["artwork4"].zorder + " snap:" + ArtObj["snap"].zorder;
+                            zorder_list();
                         }else{
                             if(valb == 30) break;
                             valb-=1.0
@@ -1887,10 +1876,7 @@ function update_list(str) {
 
             case "back":
                 if( main_menu_rows.find(sel_menu.select()) != null ){ // first menu then exit
-                    save_xml(xml_root, path);
-                    sel_menu.signal("default");
-                    sel_menu.reset();
-                    surf_menu.visible = false;
+                    close_menu()
                 }else{
                     sel_menu.back();
                     surf_menu_title.msg = sel_menu.titles();
@@ -1898,13 +1884,22 @@ function update_list(str) {
             break;
 
             case my_config["main_menu_key"] : // Save Xml when exiting menu
-                save_xml(xml_root, path);
-                sel_menu.signal("default");
-                sel_menu.reset();
-                surf_menu.visible = false;
+                close_menu();
             break;
         }
         return true;
+}
+
+function zorder_list(){
+    surf_menu_info.msg = "a1:" + ArtObj["artwork1"].zorder + " a2:" + ArtObj["artwork2"].zorder + " a3:" + ArtObj["artwork3"].zorder;
+    surf_menu_info.msg += "a4:" + ArtObj["artwork4"].zorder + " a5:" + ArtObj["artwork5"].zorder + " a6:" + ArtObj["artwork6"].zorder + " snap:" + ArtObj["snap"].zorder;
+}
+
+function close_menu(save=true){
+    if(save) save_xml(xml_root, path);
+    sel_menu.signal("default");
+    sel_menu.reset();
+    surf_menu.visible = false;
 }
 
 function g_input(inp){
@@ -1958,6 +1953,7 @@ function edit(elem, ttime, last_click){ // edit for pos/size/rotat
         child.addAttr( "h", ArtObj[elem].texture_height );
         h = child.attr["h"].tofloat();
     }
+
     local x = child.attr["x"].tofloat();
     local y = child.attr["y"].tofloat();
     try{ r = child.attr["r"].tofloat(); } catch(e){ r = 0.0 }
@@ -1982,13 +1978,22 @@ function edit(elem, ttime, last_click){ // edit for pos/size/rotat
         if(r > 360) r = 0.0;
         set = child.addAttr("r", r+=step); // rotate c
     }
-    if( g_input("ZWP") ) set = child.addAttr("w", w+=step); // zoom width +
-
-    if( g_input("ZWM") ) set = child.addAttr("w", w-=step); // zoom width -
-
-    if( g_input("ZHP") ) set = child.addAttr("h", h+=step); // zoom height +
-
-    if( g_input("ZHM") ) set = child.addAttr("h", h-=step); // zoom height -
+    if( g_input("ZWP") ){
+        set = child.addAttr("w", w+=step); // zoom width +
+        if(child.attr["keepaspect"] == "true") child.addAttr("h", h+=step);
+    }
+    if( g_input("ZWM") ){
+        set = child.addAttr("w", w-=step); // zoom width -
+        if(child.attr["keepaspect"] == "true") child.addAttr("h", h-=step);
+    }
+    if( g_input("ZHP") ){
+        set = child.addAttr("h", h+=step); // zoom height +
+        if(child.attr["keepaspect"] == "true") child.addAttr("w", h+=step);
+    }
+    if( g_input("ZHM") ){
+        set = child.addAttr("h", h-=step); // zoom height -
+        if(child.attr["keepaspect"] == "true") child.addAttr("w", w-=step);
+    }
 
     if( !g_input("Right") && !g_input("Left") && !g_input("Up") && !g_input("Down") ) step = 0.5;
 

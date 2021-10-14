@@ -144,6 +144,7 @@ class SelMenu
     }
 
     function select(){
+        if(!_menu_tables.len()) return null;
         _obj = _menu_tables.top().obj;
         _edit_type = _menu_tables[_menu_tables.len()-1].rows[_slot_pos];
         return _edit_type;

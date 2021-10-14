@@ -399,6 +399,16 @@ function merge_table(tb1,tb2){
     return tb1;
 }
 
+function show_menu_artwork(hover, surf_menu_img, artwork_list){
+    local ff = artwork_list.find(hover);
+    if(ff != null) {
+        surf_menu_img.file_name = ArtObj[artwork_list[ff]].file_name;
+        surf_menu_img.visible = true;
+    }else{
+      surf_menu_img.visible = false;  
+    }
+}
+
 function SRT(){
     // Aspect - Center (only for HS theme)
     local nw = flh * 1.333;
