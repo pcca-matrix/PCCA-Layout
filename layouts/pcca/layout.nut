@@ -104,7 +104,7 @@ try { wheel_offset = Ini_settings.wheel["offset"].tofloat(); } catch ( e ) { whe
 ArtObj <- {};
 snap_is_playing <- false;
 local artwork_list = ["artwork1", "artwork2", "artwork3","artwork4","artwork5","artwork6"]; //  artworks list for the theme
-local artwork_list_full = clone(artwork_list); 
+local artwork_list_full = clone(artwork_list);
 artwork_list_full.push("video"); // full artwork_list must contain video (frame)
 
 availables <- {}
@@ -167,9 +167,9 @@ ArtObj.artwork1.zorder = -9
 ArtObj.bezel.zorder = -1
 ArtObj.background.zorder = -10
 flv_transitions.zorder = -10 // or -6 for some theme with video overlay on background ? test
-start_background.zorder=-11
-ArtObj.artwork5.zorder = -9
-ArtObj.artwork6.zorder = -9
+start_background.zorder = -11
+ArtObj.artwork5.zorder = 0
+ArtObj.artwork6.zorder = 0
 
 // Artworks Shaders and Animations
 artwork_shader <- [];
@@ -475,7 +475,7 @@ local extraArtworks = {
 
 Lang <- {};
 local lng_x = flw*0.110;
-for ( local i = 1; i < 18; i++ ) {
+for ( local i = 0; i < 17; i++ ) {
     lng_x += flw*0.0230;
     Lang[i] <- surf_ginfos.add_image("", lng_x, flh*0.049, flw*0.0200, flh*0.0300 );
 }
@@ -836,11 +836,13 @@ function clean_art(obj){
 
 function reset_art( bool = false ){ // true if default theme
     if(!bool){
-        ArtObj.artwork1.zorder=-9;   //set zorder back to normal for hyperspin zorders switching
+        ArtObj.artwork1.zorder = -9;   //set zorder back to normal for hyperspin zorders switching
         ArtObj.artwork2.zorder = -4
         ArtObj.artwork3.zorder = -3
         ArtObj.artwork4.zorder = -2
-        ArtObj.snap.zorder=-7;
+        ArtObj.artwork5.zorder = 0
+        ArtObj.artwork6.zorder = 0
+        ArtObj.snap.zorder = -7;
         flv_transitions.zorder = -10; // reset back to normal for override videos
 
         // reset frame shaders
@@ -1880,6 +1882,7 @@ function update_list(str) {
                 }else{
                     sel_menu.back();
                     surf_menu_title.msg = sel_menu.titles();
+                    surf_menu_img.visible = false;
                 }
             break;
 
@@ -1900,6 +1903,7 @@ function close_menu(save=true){
     sel_menu.signal("default");
     sel_menu.reset();
     surf_menu.visible = false;
+    surf_menu_img.visible = false;
 }
 
 function g_input(inp){
@@ -1952,6 +1956,9 @@ function edit(elem, ttime, last_click){ // edit for pos/size/rotat
     try{ h = child.attr["h"].tofloat(); } catch(e){ // add var to xml if missing (needed !)
         child.addAttr( "h", ArtObj[elem].texture_height );
         h = child.attr["h"].tofloat();
+    }
+    try{ child.attr["keepaspect"] } catch(e){ // add var to xml if missing (needed !)
+        child.addAttr( "keepaspect", "false" );
     }
 
     local x = child.attr["x"].tofloat();

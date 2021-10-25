@@ -258,16 +258,7 @@ function ext( name )
 //Return filename without ext
 function strip_ext( name )
 {
-    local s = split( name, "." );
-    if ( s.len() == 1 )
-        return name;
-    else
-    {
-        local retval;
-        retval = s[0];
-        for ( local i=1; i<s.len()-1; i++ ) retval = retval + "." + s[i];
-        return retval;
-    }
+    return replace (name, "." + split(name, ".").pop(), "")
 }
 
 function find_theme_node( node )
@@ -290,10 +281,10 @@ function find_theme_node( node )
 
 function Langue( offset = 0 ){
    local lng = fe.game_info(Info.Language, offset);
-    for ( local i = 1; i < 18; i++ ) Lang[i].file_name = "";
+    for ( local i = 0; i < 17; i++ ) Lang[i].file_name = "";
     if( lng.len() > 0 ){
         local g_c = split( lng, ",");
-        for ( local i = 1; i < g_c.len(); i++ ) Lang[i].file_name = "images/flags/lang/" + g_c[i] + ".png";
+        for ( local i = 0; i < g_c.len(); i++ ) Lang[i].file_name = "images/flags/lang/" + g_c[i] + ".png";
     }
 }
 
