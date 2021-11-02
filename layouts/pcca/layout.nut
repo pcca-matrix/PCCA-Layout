@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.03
+// PCCA v2.05
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -35,6 +35,7 @@ class UserConfig {
     </ label="Video scanline", help="Add crt scanlines effect to video snap ", options="Yes, No", order=M_order++ /> themes_crt_scanline = "No"
     </ label="Extra Artworks Key", help="Choose the key to initiate extra artworks overlay", options="custom1,custom2,custom3,custom4,custom5,custom6,none", order=M_order++ />extra_artworks_key="custom2";
     </ label="Settings/Edit Key", help="Choose the key to initiate settings/edit overlay", options="custom1,custom2,custom3,custom4,custom5,custom6,none", order=M_order++ />main_menu_key="custom4";
+    </ label="Gamepad library", help="Choose the gamedpad library to use for the edit theme function", options="Xinput,Dinput", order=M_order++ />JoyType="Dinput";
     </ label="HD theme resolution", help="Choose the resolution you want when creating new theme ex : (1920x1080)", options="", order=M_order++ />theme_resolution="1920x1080";
 
     </ label="Media Path", help="Path of HyperSpin media, if empty, media is considered inside layout folder", options="", order=M_order++ /> medias_path=""
@@ -799,7 +800,16 @@ function load_theme(name, theme_content, prev_def){
                 anims[e-1].play();
             }
         }else{
-            if(!prev_def ){
+            anim_video.preset(artD.type)
+            anim_video.name(Xtag)
+            anim_video.delay(artD.delay)
+            anim_video.duration(artD.time)
+            anim_video.starting(artD.start)
+            anim_video.rest(artD.rest)
+            anim_video.rotation(anim_rotate)
+            anim_video.play();
+            
+            /*if(!prev_def ){
                 anim_video.preset(artD.type)
                 anim_video.name(Xtag)
                 anim_video.delay(artD.delay)
@@ -812,6 +822,7 @@ function load_theme(name, theme_content, prev_def){
                 ArtObj.snap.visible = false; // avoid clipping when game change in default theme
                 anim_video.play();
             }
+            */
         }
     }
 }
@@ -1661,7 +1672,10 @@ function update_list(str) {
                 }else
 
                 if(selected == "start"){
+                    try{ actual.attr["start"]} catch ( e ) {actual.addAttr("start", "none")}
+                    local posT = start_tab.map( function(value) {return value.tolower()} ).find( actual.attr["start"] );
                     sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows": start_tab} );
+                    sel_menu.set_slot_pos(posT);
                 }else
 
                 if(selected == "borders"){
@@ -1730,7 +1744,7 @@ function update_list(str) {
 
                 if(selected.find("bcolor") != null){
                     local valc = 0;
-                    try{ valc = actual.attr[selected].tointeger() } catch ( e ) {actual.addAttr(selected, 00000000)}
+                    try{ valc = actual.attr[selected].tointeger() } catch ( e ) {actual.addAttr(selected, "00000000")}
                     sel_menu.add_rows( {"title":selected, "obj":sel_menu.prev_obj(), "rows":[""]} );
                     local rgbC = dec2rgb(valc);
                     sel_menu._slot[0].set_bg_rgb(rgbC[0], rgbC[1], rgbC[2]);
@@ -1912,13 +1926,21 @@ function g_input(inp){
     ar.Left  <- ["Joy0 Left", "Left"];
     ar.Up    <- ["Joy0 Up", "Up"];
     ar.Down  <- ["Joy0 Down", "Down"];
-    ar.C     <- ["Joy0 Button7", "Add"];
-    ar.CW    <- ["Joy0 Button6", "Subtract"];
-    ar.ZWP   <- ["Joy0 Zpos", "Numpad7"];
-    ar.ZWM   <- ["Joy0 Zneg", "Numpad9"];
-    ar.ZHP   <- ["Joy0 Rneg", "Numpad1"];
-    ar.ZHM   <- ["Joy0 Rpos", "Numpad3"];
-
+    if( my_config["JoyType"]  == "Dinput"){
+        ar.C     <- ["Joy0 Button7", "Add"];
+        ar.CW    <- ["Joy0 Button6", "Subtract"];
+        ar.ZWP   <- ["Joy0 Zpos", "Numpad7"];
+        ar.ZWM   <- ["Joy0 Zneg", "Numpad9"];
+        ar.ZHP   <- ["Joy0 Rneg", "Numpad1"];
+        ar.ZHM   <- ["Joy0 Rpos", "Numpad3"];
+    }else{
+        ar.C     <- ["Joy0 Zneg", "Add"];
+        ar.CW    <- ["Joy0 Zpos", "Subtract"];
+        ar.ZWP   <- ["Joy0 Upos", "Numpad7"];
+        ar.ZWM   <- ["Joy0 Uneg", "Numpad9"];
+        ar.ZHP   <- ["Joy0 Vneg", "Numpad1"];
+        ar.ZHM   <- ["Joy0 Vpos", "Numpad3"];
+    }
     foreach(a,b in ar[inp]) if(fe.get_input_state(b) != false) return true;
 
     return false;
