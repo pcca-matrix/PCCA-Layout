@@ -490,7 +490,7 @@ class PresetAnimation extends Animation {
         "ease": //OK
         function( obj )
         {
-            if(opts.starting == "none") return;
+            //if(opts.starting == "none") return;
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
             opts.to = { x=states["origin"].x,  y=states["origin"].y  };
             opts.interpolator = CubicBezierInterpolator("ease")
@@ -499,7 +499,7 @@ class PresetAnimation extends Animation {
         "elastic": // OK (can be better)
         function( obj )
         {
-            if(opts.starting == "none") return;
+            //if(opts.starting == "none") return;
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
             opts.to = { x=states["origin"].x,  y=states["origin"].y  };
             opts.interpolator = PennerInterpolator("ease-out-elastic")
@@ -508,7 +508,7 @@ class PresetAnimation extends Animation {
         "elastic bounce": // OK (can be better)
         function( obj )
         {
-            if(opts.starting == "none") return;
+            //if(opts.starting == "none") return;
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
             opts.to = { x=states["origin"].x,  y=states["origin"].y  };
             opts.interpolator = PennerInterpolator("ease-out-elastic");
@@ -542,7 +542,7 @@ class PresetAnimation extends Animation {
 
         "bounce": // OK
         function( obj ){
-            if(opts.starting == null) return;
+            //if(opts.starting == null) return;
             opts.interpolator = PennerInterpolator("ease-out-bounce")
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
             opts.to = { x=states["origin"].x,  y=states["origin"].y };
