@@ -458,7 +458,8 @@ local extraArtworks = {
     function setImage( act=0 ){
         if( !lists.len() ){
             surf_img.file_name = "";
-            surf_arrow.visible = false
+            surf_arrow.visible = false;
+            surf_txt.msg = "";
             return false;
         }
         if(lists.len() > 1) surf_arrow.visible = true; else surf_arrow.visible = false;
@@ -470,7 +471,7 @@ local extraArtworks = {
         surf_img.x = flw * 0.5 - (surf_img.texture_width / ratio * 0.5);
         surf_img.y = flh * 0.5 - (flh * 0.82 * 0.5);
         local title = strip_ext(lists[num]);
-        if( title.len() )surf_txt.msg = title.slice( 0, 1 ).toupper() + title.slice( 1, title.len() );// caps first char
+        if( title.len() ) surf_txt.msg = title.slice( 0, 1 ).toupper() + title.slice( 1, title.len() ); // caps first char
     }
 }
 
@@ -771,7 +772,10 @@ function load_theme(name, theme_content, prev_def){
             artworks_transform(Xtag, (anim_rotate ? false : true), art);
 
         }else if( Xtag == "video" ){
-
+            // Temporary fix for the video datas does not reset !! (see prev_def commented below)
+            clean_art("snap");
+            clean_art("video");
+            
             ArtObj.snap.file_name = ret_snap();
             ArtObj.snap.video_playing = false; // do not start playing snap now , wait delay from animation
             snap_is_playing = false;
@@ -779,8 +783,8 @@ function load_theme(name, theme_content, prev_def){
                 ArtObj["video"].file_name = name + "|" + art;
             }
 
-            // hs anim video rotation on any value but only if starting position is set, an animation is set and anim time > 0 !!!!
-            if( abs(artD.r) > 0 && artD.start !="none" && artD.type !="none" && artD.time > 0 ) anim_rotate = artD.r;
+            // hs anim video rotation on any value but only if starting position is set, animation is set and anim time > 0 !!!!
+            if( abs(artD.r) > 0 && artD.start != "none" && artD.type != "none" && artD.time > 0 ) anim_rotate = artD.r;
 
             video_transform((anim_rotate ? false : true));
 
@@ -1315,7 +1319,8 @@ function hs_transition( ttype, var, ttime )
 
                 case Overlay.Exit: // = 22
                     ArtObj.snap.video_flags = Vid.NoAudio; // stop snap sound on exit screen show (AM cannot pause video ?)
-                    overlay_background.file_name = medias_path + "Frontend/Images/Menu_Exit_Background.png";
+                    overlay_background.file_name = medias_path + "Frontend/Images/Menu_Exit_Background_" + my_config["user_lang"] + ".png";
+                    if(overlay_background.file_name == "") overlay_background.file_name = medias_path + "Frontend/Images/Menu_Exit_Background.png"; // if hyperspin default exit screen
                     overlay_background.set_pos(0,0,flw, flh);
                     overlay_list.rows = 3;
                     overlay_list.charsize  = flw*0.052;
