@@ -10,6 +10,7 @@ Hypertheme can be used to build new themes or you can build your own with a high
 
 ## Restrictions
 It is MANDATORY to set in Attract-Mode options: General->Startup Mode to 'Show Display Menu' and Displays->'Display Menu Options->'Allow Exit from 'Display Menu' to 'No'.
+PCCA theme has its own screensaver timer method, to avoid conflict set in the attractmode settings menu the screensaver timer to 0.
 
 
 ## Theme.xml

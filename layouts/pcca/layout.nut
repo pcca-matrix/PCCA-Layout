@@ -18,6 +18,7 @@ class UserConfig {
     //</ label="Select wheel type", help="Switch between a vertical, round, horizontal, and pin wheel", options="Rounded,Vertical,Horizontal,Pin", order=M_order++ /> wheel_type="rounded"
     </ label="Select wheel type", help="Switch between a vertical or rounded wheel", options="Rounded,Vertical", order=M_order++ /> wheel_type="Rounded"
     </ label="Wheel Offset", help="X Wheel Offset", options="", order=M_order++ /> wheel_offset="0"
+    </ label="Screensaver Timer", help="Amount of time in secs to wait before starting the screensaver. (0 to disable)", options="", order=M_order++ /> screen_saver_timer="55"
     //</ label="Wheel image large", help="Center wheel width in pixels (0 = auto)", options="",order=M_order++ /> wheel_large="0";
     //</ label="Wheel image small", help="Others wheel width in pixels (0 = auto)", options="",order=M_order++ /> wheel_small="0";
 
@@ -53,6 +54,7 @@ class UserConfig {
     </ label="Keyboard Layout", help="Choose the keyboard layout", options="qwerty,azerty,alpha", order=M_order++ />keyboard_layout="alpha";
 }
 
+local Stimer = fe.layout.time;
 flw <- fe.layout.width.tofloat();
 flh <- fe.layout.height.tofloat();
 fe.layout.font = "ArialCEMTBlack";
@@ -1357,6 +1359,16 @@ fe.add_ticks_callback( "hs_tick" );
 function hs_tick( ttime )
 {
     glob_time=ttime;
+
+    // screensaver
+    if(my_config["screen_saver_timer"].tointeger() > 0){
+        if( (fe.layout.time-Stimer) >= my_config["screen_saver_timer"].tointeger() * 1000 ){
+            fe.signal("screen_saver")
+            Stimer=fe.layout.time;
+        }
+        if(surf_menu.visible) Stimer = fe.layout.time;
+    }
+
     // set all artwork and video visible after x ms next to triggerload except those who have width set to 0.1 (unhided later in animation preset)
     if( (glob_time - rtime > glob_delay + 150) && visi == false){
         foreach(obj in ["artwork1", "artwork2", "artwork3", "artwork4", "artwork5", "artwork6", "video", "snap"] ) if(ArtObj[obj].width > 0.1) ArtObj[obj].visible = true;
@@ -1466,6 +1478,7 @@ function hs_tick( ttime )
 local last_click = 0;
 fe.add_signal_handler(this, "on_signal")
 function on_signal(str) {
+    Stimer=fe.layout.time;
     //print("\n SIGNAL = "+str+ " - "+ last_click +"\n")
     if(curr_sys == "Main Menu"){ //disable some buttons on main-menu
        	switch ( str )	
