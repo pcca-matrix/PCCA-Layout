@@ -123,6 +123,8 @@ class SelMenu
 
     function title(){ return _menu_tables.top().title; }
 
+    function selection() return  _menu_tables[_menu_tables.len()-1].rows[_slot_pos];
+
     function titles(){
         local tmp = "";
         foreach(a,v in _title) tmp+=v + "->";
@@ -155,7 +157,6 @@ class SelMenu
     function on_tick(ttime) {
         if(sig){
             fe.remove_signal_handler("on_signal")
-
             switch (sig){
               case "list":
                 fe.remove_signal_handler("fake_sig");

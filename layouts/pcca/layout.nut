@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.05
+// PCCA v2.06
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -418,8 +418,11 @@ surf_menu_img.visible = false;
 surf_menu_img.preserve_aspect_ratio = true;
 local surf_menu_title = surf_menu.add_text("", flw * 0.008, flh*0.002, flw * 0.24, flw * 0.009 );
 surf_menu_title.align = Align.Left;
-local surf_menu_info = surf_menu.add_text("", flw * 0.005, flh - (flh * 0.046), flw * 0.25, flw * 0.011 );
+local surf_menu_info = surf_menu.add_text("", flw * 0.005, flh - (flh * 0.046), flw * 0.26, flw * 0.012 );
 surf_menu_info.align = Align.Left;
+surf_menu_info.set_bg_rgb(62,62,62);
+surf_menu_info.alpha = 200;
+surf_menu_info.visible = false;
 surf_menu.visible = false;
 local sel_menu = SelMenu(surf_menu, flh * 0.025);
 
@@ -775,7 +778,7 @@ function load_theme(name, theme_content, prev_def){
             // Temporary fix for the video datas does not reset !! (see prev_def commented below)
             clean_art("snap");
             clean_art("video");
-            
+
             ArtObj.snap.file_name = ret_snap();
             ArtObj.snap.video_playing = false; // do not start playing snap now , wait delay from animation
             snap_is_playing = false;
@@ -812,7 +815,7 @@ function load_theme(name, theme_content, prev_def){
             anim_video.rest(artD.rest)
             anim_video.rotation(anim_rotate)
             anim_video.play();
-            
+
             /*if(!prev_def ){
                 anim_video.preset(artD.type)
                 anim_video.name(Xtag)
@@ -1568,7 +1571,7 @@ function global_fade(ttime, target, direction){
 local anim_tab = ["none","linear","ease","elastic","elastic bounce","flip","fade","bounce","blur","pixelate","zoom out","pixelate zoom out","chase","sweep left"];
 anim_tab.extend( ["sweep right","strobe","grow","grow blur","grow bounce","grow x","grow y","grow center shrink","scroll","flag","pendulum","stripes","stripes 2","arc grow"] );
 anim_tab.extend( ["arc shrink","bounce random","rain float","bounce around 3d","zoom","unzoom","fade out","expl"] );
-local rest_tab = ["none","shake","rock","rock fast","squeeze","pusle","spin slow","spin fast","hover","hover vertical","hover horizontal"];
+local rest_tab = ["none","shake","rock","rock fast","squeeze","pulse","spin slow","spin fast","hover","hover vertical","hover horizontal"];
 local start_tab = ["none","Top","Bottom","Left","Right"];
 local video_anim_tab = ["none","pump","fade","tv","tv zoom out","ease","bounce","grow","grow x","grow y","grow bounce"];
 local borders = ["bshape","bsize","bcolor","bsize2","bcolor2","bsize3","bcolor3"];
@@ -1661,7 +1664,7 @@ function update_list(str) {
                     foreach(a,b in availables) if(b) art_av.push( (a == "video" ? "video overlay" : a ) );
                     art_av.sort();
                     sel_menu.add_rows( {"title":selected, "obj":selected, "rows":art_av} );
-                    show_menu_artwork( sel_menu.select(), surf_menu_img, artwork_list );
+                    show_menu_artwork( sel_menu, surf_menu_img, artwork_list );
                 }else
 
                 if(selected.find("artwork") != null){
@@ -1782,7 +1785,7 @@ function update_list(str) {
             case "prev_game":
             case "up":
                 sel_menu.up();
-                show_menu_artwork( sel_menu.select(), surf_menu_img, artwork_list );
+                show_menu_artwork( sel_menu, surf_menu_img, artwork_list );
                 if(sel_menu.title().find("bsize") != null){
                     child = xml_root.getChild(sel_menu.obj());
                     if(child){
@@ -1840,7 +1843,7 @@ function update_list(str) {
             case "next_game":
             case "down":
                 sel_menu.down();
-                show_menu_artwork( sel_menu.select(), surf_menu_img, artwork_list );
+                show_menu_artwork( sel_menu, surf_menu_img, artwork_list );
                 if(sel_menu.title().find("bsize") != null){
                     child = xml_root.getChild(sel_menu.obj());
                     if(child){
@@ -1897,11 +1900,12 @@ function update_list(str) {
 
             case "back":
                 if( main_menu_rows.find(sel_menu.select()) != null ){ // first menu then exit
+                    surf_menu_img.visible = false;
                     close_menu()
                 }else{
                     sel_menu.back();
                     surf_menu_title.msg = sel_menu.titles();
-                    surf_menu_img.visible = false;
+                    surf_menu_info.visible = false;
                 }
             break;
 
@@ -1915,6 +1919,7 @@ function update_list(str) {
 function zorder_list(){
     surf_menu_info.msg = "a1:" + ArtObj["artwork1"].zorder + " a2:" + ArtObj["artwork2"].zorder + " a3:" + ArtObj["artwork3"].zorder;
     surf_menu_info.msg += "a4:" + ArtObj["artwork4"].zorder + " a5:" + ArtObj["artwork5"].zorder + " a6:" + ArtObj["artwork6"].zorder + " snap:" + ArtObj["snap"].zorder;
+    surf_menu_info.visible = true;
 }
 
 function close_menu(save=true){
@@ -1926,11 +1931,14 @@ function close_menu(save=true){
 }
 
 function g_input(inp){
+
     local ar = {};
     ar.Right <- ["Joy0 Right", "Right"];
     ar.Left  <- ["Joy0 Left", "Left"];
     ar.Up    <- ["Joy0 Up", "Up"];
     ar.Down  <- ["Joy0 Down", "Down"];
+    ar.HC    <- ["Joy0 Button5", "H"]; // horizontal center
+    ar.VC    <- ["Joy0 Button4", "V"]; // vertical center
     if( my_config["JoyType"]  == "Dinput"){
         ar.C     <- ["Joy0 Button7", "Add"];
         ar.CW    <- ["Joy0 Button6", "Subtract"];
@@ -1994,6 +2002,7 @@ function edit(elem, ttime, last_click){ // edit for pos/size/rotat
 
     local inf = "x:" + format("%.1f", x) + " y:" + format("%.1f", y) + " w:" + format("%.1f", w) + " h:" + format("%.1f", h) + " r:" + format("%.1f", r);
     surf_menu_info.msg = inf;
+    surf_menu_info.visible = true;
 
     if( g_input("Right") ) set = child.addAttr("x", x+=accel(ttime, last_click, sel_menu));
 
@@ -2029,6 +2038,9 @@ function edit(elem, ttime, last_click){ // edit for pos/size/rotat
         if(child.attr["keepaspect"] == "true") child.addAttr("w", w-=step);
     }
 
+    if( g_input("HC") ) set = child.addAttr("x", x = xml_root.getChild("hd").attr.lw.tofloat() * 0.5);
+    if( g_input("VC") ) set = child.addAttr("y", y = xml_root.getChild("hd").attr.lh.tofloat() * 0.5);
+
     if( !g_input("Right") && !g_input("Left") && !g_input("Up") && !g_input("Down") ) step = 0.5;
 
     if(set != false) if(elem != "video") artworks_transform(elem) else video_transform();
@@ -2045,12 +2057,19 @@ function overlay_video(){
     if(!availables["video"]) return;
     local child = xml_root.getChild("video");
     local set = false;
-    local overlaywidth, overlayheight;
-    local overlayoffsetx = child.attr["overlayoffsetx"].tofloat();
-    local overlayoffsety = child.attr["overlayoffsety"].tofloat();
+    local overlaywidth, overlayheight, overlayoffsetx, overlayoffsety;
+
+    try{ overlayoffsetx = child.attr["overlayoffsetx"].tofloat(); } catch(e){ // add var to xml if missing (needed !)
+        child.addAttr( "overlayoffsetx", ArtObj.video.texture_width );
+        overlayoffsetx = child.attr["overlayoffsetx"].tofloat();
+    }
+    try{ overlayoffsety = child.attr["overlayoffsety"].tofloat(); } catch(e){ // add var to xml if missing (needed !)
+        child.addAttr( "overlayoffsety", 0.0 );
+        overlayoffsety = child.attr["overlayoffsety"].tofloat();
+    }
 
     try{ overlaywidth = child.attr["overlaywidth"].tofloat(); } catch(e){ // add var to xml if missing (needed !)
-        child.addAttr( "overlaywidth", ArtObj.video.texture_width );
+        child.addAttr( "overlaywidth", 0.0 );
         overlaywidth = child.attr["overlaywidth"].tofloat();
     }
     try{ overlayheight = child.attr["overlayheight"].tofloat(); } catch(e){ // add var to xml if missing (needed !)
@@ -2058,22 +2077,29 @@ function overlay_video(){
         overlayheight = child.attr["overlayheight"].tofloat();
     }
 
-    if( g_input("Up") ) set = child.addAttr( "overlayoffsety", overlayoffsety-=1.5 ); // Up
+    if( g_input("Up") ) set = child.addAttr( "overlayoffsety", overlayoffsety-=0.5 ); // Up
 
-    if( g_input("Down") ) set = child.addAttr( "overlayoffsety", overlayoffsety+=1.5 ); // Down
+    if( g_input("Down") ) set = child.addAttr( "overlayoffsety", overlayoffsety+=0.5 ); // Down
 
-    if( g_input("Right") ) set = child.addAttr( "overlayoffsetx", overlayoffsetx+=1.5 ); // right
+    if( g_input("Right") ) set = child.addAttr( "overlayoffsetx", overlayoffsetx+=0.5 ); // right
 
-    if( g_input("Left") ) set = child.addAttr( "overlayoffsetx", overlayoffsetx-=1.5); // left
+    if( g_input("Left") ) set = child.addAttr( "overlayoffsetx", overlayoffsetx-=0.5); // left
 
-    if( g_input("ZWP") ) set = child.addAttr( "overlaywidth", overlaywidth+=1.5 ); // zoom width +
+    if( g_input("ZWP") ) set = child.addAttr( "overlaywidth", overlaywidth+=0.5 ); // zoom width +
 
-    if( g_input("ZWM") ) set = child.addAttr( "overlaywidth", overlaywidth-=1.5 ); // zoom width -
+    if( g_input("ZWM") ) set = child.addAttr( "overlaywidth", overlaywidth-=0.5 ); // zoom width -
 
-    if( g_input("ZHP") ) set = child.addAttr( "overlayheight", overlayheight+=1.5 ); // zoom height +
+    if( g_input("ZHP") ) set = child.addAttr( "overlayheight", overlayheight+=0.5 ); // zoom height +
 
-    if( g_input("ZHM") ) set = child.addAttr( "overlayheight", overlayheight-=1.5 ); // zoom height -
+    if( g_input("ZHM") ) set = child.addAttr( "overlayheight", overlayheight-=0.5 ); // zoom height -
 
+    if( g_input("HC") ) set = child.addAttr("overlayoffsetx", overlayoffsetx = 0.0); // horizontal center
+
+    if( g_input("VC") ) set = child.addAttr("overlayoffsety", overlayoffsety = 0.0); // vertical center
+
+    local inf = "offsetx:" + format("%.1f", overlayoffsetx) + " offsety:" + format("%.1f", overlayoffsety) + " w:" + format("%.1f", overlaywidth) + " h:" + format("%.1f", overlayheight);
+    surf_menu_info.msg = inf;
+    surf_menu_info.visible = true;
     if(set != false) video_transform();
 
     return;
