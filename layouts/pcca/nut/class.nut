@@ -156,12 +156,24 @@ class SelMenu
 
     function on_tick(ttime) {
         if(sig){
+            local anum = -1;
+            if(_obj.find("artwork") != null) anum = _obj.slice( _obj.len() - 1, _obj.len() ).tointeger()-1; // artwork index for anims array
+
             fe.remove_signal_handler("on_signal")
             switch (sig){
               case "list":
                 fe.remove_signal_handler("fake_sig");
                 fe.add_signal_handler("update_list");
                 _edit_type = null;
+                globals_temp.menu_return = true;
+                if(_obj.find("artwork") != null){
+                    if(anims[anum].opts.rest){
+                        /*save_xml(xml_root, path)
+                        hide_art();
+                        trigger_load_theme = true; // reload theme to force restart resting animation if set
+                        */
+                    }
+                }
               break;
 
               case "pos_rot":
