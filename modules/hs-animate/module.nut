@@ -352,7 +352,7 @@ class Animation {
         running = false;
         progress = 1.0;
         if(state == "origin" ){
-            yoyoing = false; 
+            yoyoing = false;
             opts.reverse = false;
         }
         set_state(state);

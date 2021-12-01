@@ -242,10 +242,6 @@ trying to fix AM crash with swf, misalignment and strange behavior...
 
 trying to implement video snap z-axis rotation with pinch and skew property.
 
-new outlined font for displaying game informations
-
-glyph for category
-
 particles animations
 
 
@@ -254,4 +250,5 @@ particles animations
 # Donations
 * XMR: `44ZD1s12j8M6upWXGUS1R2YzXKiKpVmTzYKbrLYSp6pDWvW7C4ALfQ2VNyg6pt2tvA94Tu5kbcDLcLbTvjJBYk6zLFYmWM3`
 * BTC: `1F2UpGsQETpyCCnMEBLFc5whDFAhgXJVU1`
+* DOGE:`D7CosCAHu4RaMj1An1tSACW4cTicsWP6Go`
 

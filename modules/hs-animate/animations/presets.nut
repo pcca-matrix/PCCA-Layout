@@ -225,7 +225,7 @@ class PresetAnimation extends Animation {
             break;
         }
 
-        resting_progress = clamp( resting_progress + ( opts.smoothing * speed ), 0, 1);
+        resting_progress = clamp( resting_progress + ( opts.smoothing * speed ), 0.0, 1.0);
 
         base.anim_rest();
     }
