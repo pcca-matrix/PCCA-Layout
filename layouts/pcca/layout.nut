@@ -1140,6 +1140,7 @@ function hs_transition( ttype, var, ttime )
     switch ( ttype )
     {
         case Transition.FromGame:
+            Stimer = fe.layout.time;
             if ( ttime <= 500  ) {
                 global_fade( ttime, 500, true);
                 return true;
@@ -1481,7 +1482,7 @@ fe.add_signal_handler(this, "on_signal")
 function on_signal(str) {
     Stimer = fe.layout.time;
     //print("\n SIGNAL = "+str+ " - "+ last_click +"\n")
-    if(curr_sys == "Main Menu"){ //disable some buttons on main-menu
+    if(curr_sys == "Main Menu" || surf_inf.visible){ //disable some buttons on main-menu and on special artwork screen
        	switch ( str )	
         {
             case my_config["keyboard_search_key"]:
@@ -1541,6 +1542,7 @@ function on_signal(str) {
             break;
 
             case my_config["main_menu_key"] : // Main menu Key
+                if(surf_inf.visible) return true; // do not show menu if special artwork screen is up
                 surf_menu.visible = true;
                 local MMenu = main_menu_rows;
                 if(curr_sys == "Main Menu") MMenu = ["theme","settings"];
