@@ -1640,8 +1640,11 @@ function update_list(str) {
                 sel_menu._slot[0].set_bg_rgb(rgbC[0], rgbC[1], rgbC[2]);
             }
 
-            if(selected == "pos/size/rotate" || selected == "pos/size") sel_menu.signal("pos_rot");
-
+            if(selected == "pos/size/rotate" || selected == "pos/size") { 
+                sel_menu._slot[0].set_bg_rgb(30, 240, 40);
+                sel_menu.signal("pos_rot"); 
+            }
+            
             if(discard) break;
 
             surf_menu_title.msg = sel_menu.titles() + selected;
@@ -2009,6 +2012,7 @@ function fake_sig(str){
 function edit(elem, ttime, last_click){ // edit for pos/size/rotat
 
     if(fe.get_input_state("back")){
+        _slot[0].set_bg_rgb(150,100,100); // restore cell color
         sel_menu.signal("list");
         return true;
     }
@@ -2083,6 +2087,7 @@ function edit(elem, ttime, last_click){ // edit for pos/size/rotat
 
 function overlay_video(){
     if(fe.get_input_state("back")){
+        _slot[0].set_bg_rgb(150,100,100); // restore cell color
         sel_menu.signal("list");
         return;
     }
