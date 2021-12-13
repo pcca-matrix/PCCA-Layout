@@ -11,7 +11,7 @@
 ////////////////////////////////////////////////////////////////////
 local M_order = 0;
 globals_temp <- {"menu_return":false}; // global temporary vars
-trigger_load_theme <- false;
+
 class UserConfig {
     </ label="Wheel transition time", help="Time in milliseconds for wheel spin", options="1,25,50,75,100,125,150,175,200,400", order=M_order++ /> wheel_transition_ms="25"
     </ label="Wheel fade time", help="Time in seconds for wheel fade out (-1 disable fading)", options="-1,0,0.5,1.0,1.5,2.0,2.5,3.5", order=M_order++ /> wheel_fade_time="2.5"
@@ -87,7 +87,9 @@ local prev_back = {}; // previous background table infos ( transitions )
 
 // Globals
 xml_root <- [];
+path <- "";
 local main_menu_rows = ["theme","settings","scraper"];
+trigger_load_theme <- false;
 
 // Aspect - Center (only for HS theme)
 local nw = flh * 1.333;
@@ -115,7 +117,6 @@ artwork_list_full.push("video"); // full artwork_list must contain video (frame)
 availables <- {}
 foreach(a,b in artwork_list_full) availables[b] <- false;
 
-local path = "";
 local curr_theme = "";
 local curr_sys = "";
 local prev_path = "";

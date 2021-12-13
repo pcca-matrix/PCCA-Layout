@@ -155,9 +155,9 @@ class SelMenu
     function signal(s) sig = s;
 
     function on_tick(ttime) {
+        local anum = -1;
         if(sig){
-            local anum = -1;
-            if(_obj.find("artwork") != null) anum = _obj.slice( _obj.len() - 1, _obj.len() ).tointeger()-1; // artwork index for anims array
+            if(_obj.find("artwork") != null) anum = _obj.slice( _obj.len() - 1, _obj.len() ).tointeger()-1; // get the artwork index for anims array
 
             fe.remove_signal_handler("on_signal")
             switch (sig){
@@ -168,10 +168,8 @@ class SelMenu
                 globals_temp.menu_return = true;
                 if(_obj.find("artwork") != null){
                     if(anims[anum].opts.rest){
-                        /*save_xml(xml_root, path)
-                        hide_art();
-                        trigger_load_theme = true; // reload theme to force restart resting animation if set
-                        */
+                        save_xml(xml_root, path)
+                        trigger_load_theme = true; // can't restart animation otherwise new xml coord are not used by the anim class
                     }
                 }
               break;
@@ -189,6 +187,27 @@ class SelMenu
               break;
             }
 
+            if(_edit_type == "pos/size/rotate"){
+
+                if(_obj.find("artwork") != null){
+                    anims[anum].cancel(); // cancel all artwork animation
+                    artwork_shader[anum].set_param("alpha",1.0); // reset artwork shader to alpha 255
+                    artwork_shader[anum].set_param("datas",0,0,0,0); // reset artwork shader to no effect
+                    if(anims[anum].opts.rest && anum > -1) anims[anum].resting = false; // disable resting animation if enabled
+                    artworks_transform(_obj); // place the artwork in final fixed position
+                    //flipx(ArtObj[_obj]); // we must first know the flip status of the artwork
+                    ArtObj[_obj].pinch_x = 0;
+                    ArtObj[_obj].pinch_y = 0;
+                }else{
+                    anim_video.cancel();
+                    anim_video.resting = false;
+                    video_shader.set_param("alpha", 1.0);
+                    video_shader.set_param("progress", 1.0);
+                    video_transform();
+                    ArtObj.snap.pinch_x = 0;
+                    ArtObj.snap.pinch_y = 0;
+                }
+            }
             sig = null;
             return false;
         }
