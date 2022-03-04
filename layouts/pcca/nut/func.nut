@@ -298,40 +298,43 @@ function copyright( index_offset ) {
     return d;
 }
 
-function rating( offset ){
-   local input = fe.game_info(Info.Rating, offset);
-   if( input.len() > 0 ) return input;
-   return "Other - NR (Not Rated)";
-}
-
 function region( offset ){
    local input = fe.game_info(Info.Region, offset);
    if( input.len() > 0 ) return input;
    return "Unknow";
 }
 
+function periph( offset ){
+    local ctsp = split(fe.game_info(Info.Control, offset), "," );
+    if ( ctsp.len() <= 1 )
+        return "images/controller/" + fe.list.name + "/" + fe.game_info(Info.Control, offset);
+    else
+        return "images/controller/" + fe.list.name + "/" + ctsp[0];
+}
+
+function periph2( offset ){
+    local ctsp = split(fe.game_info(Info.Control, offset), "," );
+    if ( ctsp.len() < 2 )
+        return "";
+    else
+        return "images/controller/" + fe.list.name + "/" + ctsp[1];
+}
+
 function category( offset ){
-   local input = fe.game_info(Info.Category, offset);
-   local a = split(input, "-");
-   if( a.len() > 1 ) return a[1];
-   return input;
+    local ctsp = split(fe.game_info(Info.Category, offset), "," );
+    print(fe.game_info(Info.Category, offset)+"\n");
+    if ( ctsp.len() <= 1 )
+        return "images/category/" + fe.game_info(Info.Category, offset);
+    else
+        return "images/category/" + ctsp[0];
 }
 
-function font_ctrl( offset ){
-   local input = fe.game_info(Info.Control, offset);
-    switch(input){
-        case "pad":
-            return "e";
-        break;
-    }
-    return "e";
-}
-
-function font_pl( offset ){
-   local input = fe.game_info(Info.Players,offset);
-    if(input == "1" || input == "")return "b";
-    if(input == "2")return "c";
-    if(input != "")return "f";
+function category2( offset ){
+    local ctsp = split(fe.game_info(Info.Category, offset), "," );
+    if ( ctsp.len() < 2 )
+        return "";
+    else
+        return "images/category/" + ctsp[1];
 }
 
 function ret_wheel( offset ){

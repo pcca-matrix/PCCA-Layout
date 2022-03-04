@@ -6,7 +6,7 @@
 // This program comes with NO WARRANTY.  It is licensed under
 // the terms of the GNU General Public License, version 3 or later.
 //
-// PCCA-Matrix 2021
+// PCCA-Matrix 2022
 //
 ////////////////////////////////////////////////////////////////////
 local M_order = 0;
@@ -374,43 +374,51 @@ function dialog_datas(type){
 
 // Game Infos surface
 local surf_ginfos = fe.add_surface(flw, flh*0.22);
-
 local ttfont = "ArialCEMTBlack";
-local Title = OutlinedText(surf_ginfos, "[Title]", {"color":[255,255,255], "x":flw*0.0195, "y":flh*0.077, "w": flw*0.9375 , "size":flh*0.037}, 1.5);
-Title.set("align" , Align.Left);
-Title.set("font" , ttfont);
 
-local list_entry = OutlinedText(surf_ginfos, "[ListEntry]/[ListSize] " + LnG.display + ": [FilterName]", {"color":[255,255,255], "x":flw*0.027, "y":flh*0.135, "w": flw*0.3125 , "size":flh*0.021}, 1.5);
-list_entry.set("align" , Align.Left);
-list_entry.set("font" , ttfont);
+surf_ginfos.add_image("[!get_media_tag]", flw*0.006, 0, flw*0.063, flh*0.036)
 
-local Copy =  OutlinedText(surf_ginfos, "[!copyright]", {"color":[255,255,150], "x":flw*0.023, "y":flh*0.111, "w": flw*0.9375 , "size":flh*0.025}, 1.5);
-Copy.set("align" , Align.Left);
-Copy.set("font" , ttfont);
-
-local PCount = OutlinedText(surf_ginfos, LnG.counter + " [PlayedCount] / " + LnG.playedtime + " [PlayedTime]", {"color":[255,255,255], "x":flw*0.027, "y":flh*0.152, "w": flw*0.3325 , "size":flh*0.021} , 1.5);
-PCount.set("align" , Align.Left);
-PCount.set("font" , ttfont);
-
-local flags = surf_ginfos.add_image("images/flags/[!region]", flw*0.007, flh*0.077, flw*0.0213, flh*0.037);
-local rating = surf_ginfos.add_image("images/rating/[!rating]", flw*0.007, flh*0.120, flw*0.0213, flh*0.051 );
-
-local pl = surf_ginfos.add_text( "[!font_pl]", -flw*0.006, flh*0.032, flw*0.510, flh*0.0462 );
-pl.font = "fontello.ttf";
-pl.align = Align.Left;
-
-local Ctrl = surf_ginfos.add_text( "[!font_ctrl]", flw*0.035, flh*0.035, flw*0.030, flh*0.046 );
-Ctrl.font = "fontello.ttf";
-Ctrl.align = Align.Left;
-
-local Category = surf_ginfos.add_text( "[!category]", flw*0.070, flh*0.050, flw*0.078, flh*0.020 );
-Category.align = Align.Left;
-Category.style = Style.Bold;
-
-local favo = surf_ginfos.add_text( "[Favourite]", flw*0.071, flh*0.004, flw*0.058, flh*0.045 );
+local favo = surf_ginfos.add_text( "[Favourite]", flw*0.004, flh*0.000, flw*0.050, flh*0.035 );
 favo.font = "fontello.ttf";
 favo.align = Align.Left;
 favo.set_rgb( 255, 170, 0 );
+
+local pl_i = surf_ginfos.add_image( "images/players.png", flw*0.007, flh*0.040, flw*0.027, flh*0.042 ); //51.84*44.28
+local pl_t = surf_ginfos.add_text( "[Players]", -flw*0.001, flh*0.061, flw*0.0415 , flh*0.0160);
+pl_t.align = Align.Centre;
+pl_t.set_rgb( 100,100,100 );
+
+local Ctrl = surf_ginfos.add_image( "[!periph]", flw*0.037, flh*0.040, flw*0.027, flh*0.042 );
+local Ctrl2 = surf_ginfos.add_image( "[!periph2]", flw*0.067, flh*0.040, flw*0.027, flh*0.042 );
+local cate =  surf_ginfos.add_image("[!category]", flw*0.097, flh*0.040, flw*0.027, flh*0.042 );
+local cate2 =  surf_ginfos.add_image("[!category2]", flw*0.127, flh*0.040, flw*0.027, flh*0.042 );
+
+Lang <- {};
+local lng_x = flw*0.134;
+for ( local i = 0; i < 17; i++ ) {
+    lng_x += flw*0.0230;
+    Lang[i] <- surf_ginfos.add_image("", lng_x, flh*0.045, flw*0.0220, flh*0.0350 );
+}
+
+local Title = OutlinedText(surf_ginfos, "[Title]", {"color":[255,255,255], "x":flw*0.0232, "y":flh*0.077, "w": flw*0.9375 , "size":flh*0.037}, 1.5);
+Title.set("align" , Align.Left);
+Title.set("font" , ttfont);
+
+local list_entry = OutlinedText(surf_ginfos, "[ListEntry]/[ListSize] " + LnG.display + ": [FilterName]", {"color":[255,255,255], "x":flw*0.030, "y":flh*0.134, "w": flw*0.3125 , "size":flh*0.021}, 1.0);
+list_entry.set("align" , Align.Left);
+list_entry.set("font" , ttfont);
+
+local Copy =  OutlinedText(surf_ginfos, "[!copyright]", {"color":[255,255,150], "x":flw*0.028, "y":flh*0.111, "w": flw*0.9375 , "size":flh*0.025}, 1.1);
+Copy.set("align" , Align.Left);
+Copy.set("font" , ttfont);
+Copy.set("visible", Ini_settings["game text"]["show_year"]);
+
+local PCount = OutlinedText(surf_ginfos, LnG.counter + " [PlayedCount] / " + LnG.playedtime + " [PlayedTime]", {"color":[255,255,255], "x":flw*0.030, "y":flh*0.152, "w": flw*0.3325 , "size":flh*0.021} , 1.0);
+PCount.set("align" , Align.Left);
+PCount.set("font" , ttfont);
+
+local flags = surf_ginfos.add_image("images/flags/[!region]", flw*0.007, flh*0.081, flw*0.0240, flh*0.036);
+local rating = surf_ginfos.add_image("images/rating/[Rating]", flw*0.007, flh*0.119, flw*0.0240, flh*0.053 );
 
 /* Main SettingsOverlay */
 local surf_menu = fe.add_surface(flw * 0.24, flh);
@@ -482,12 +490,6 @@ local extraArtworks = {
     }
 }
 
-Lang <- {};
-local lng_x = flw*0.110;
-for ( local i = 0; i < 17; i++ ) {
-    lng_x += flw*0.0230;
-    Lang[i] <- surf_ginfos.add_image("", lng_x, flh*0.049, flw*0.0200, flh*0.0300 );
-}
 // Main Menu Infos
 main_infos <- {};
 game_elapse <- 0;
@@ -518,8 +520,6 @@ function stats_text_update( sys ){
     }
 }
 
-// add tags
-surf_ginfos.add_image("[!get_media_tag]", flw*0.006, 0, flw*0.063, flh*0.036)
 
 // Synopsis
 syno <- ScrollingText.add( "", offset_x, flh*0.976, fe.layout.width - (offset_x * 2) , flh*0.022, ScrollType.HORIZONTAL_LEFT );
