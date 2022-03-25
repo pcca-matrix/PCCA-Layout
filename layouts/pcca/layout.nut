@@ -411,7 +411,6 @@ list_entry.set("font" , ttfont);
 local Copy =  OutlinedText(surf_ginfos, "[!copyright]", {"color":[255,255,150], "x":flw*0.028, "y":flh*0.111, "w": flw*0.9375 , "size":flh*0.025}, 1.1);
 Copy.set("align" , Align.Left);
 Copy.set("font" , ttfont);
-Copy.set("visible", Ini_settings["game text"]["show_year"]);
 
 local PCount = OutlinedText(surf_ginfos, LnG.counter + " [PlayedCount] / " + LnG.playedtime + " [PlayedTime]", {"color":[255,255,255], "x":flw*0.030, "y":flh*0.152, "w": flw*0.3325 , "size":flh*0.021} , 1.0);
 PCount.set("align" , Align.Left);
