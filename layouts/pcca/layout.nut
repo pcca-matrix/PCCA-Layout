@@ -135,7 +135,7 @@ point.alpha = 255;
 
 point_animation <- PresetAnimation(point)
 .name("pointer")
-.from({x=0,y=0})
+.from({x=flw,y=0})
 .to({x=0,y=0})
 .duration( 200 )
 .yoyo()
@@ -701,7 +701,6 @@ function load_theme(name, theme_content, prev_def){
             reset_art();
             //flv_transitions.zorder = -6; // put override video on top of video snap
             background_transitions(null, medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4");
-            set_custom_value(Ini_settings);
         }
         return false;
     }
@@ -1425,6 +1424,7 @@ function hs_tick( ttime )
             if(file_exist(medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4")){ // if mp4 is found assume it's unified video theme
                 path = medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4";
                 theme_content = [];
+                ArtObj.bezel.file_name = fe.script_dir + "images/Bezels/Bezel_trans.png";
             }else{ //if no video is found assume it's system default theme
                 path = medias_path + fe.list.name + "/Themes/Default/";
                 theme_content = zip_get_dir( path );
