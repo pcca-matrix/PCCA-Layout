@@ -1,40 +1,62 @@
-function user_settings(){
-    foreach(v, value in my_config){
-        if(v.find("_")){
-            value = value.tolower();
-            local temp = split(v, "_" );
-            local valr = v.slice(v.find("_") + 1);
-            local key = strip(temp[0]);
-            if(!Ini_settings.rawin(key)) Ini_settings[ key ] <- {};
-            if(!Ini_settings[ key ].rawin(valr)) Ini_settings[ key ][ valr ] <- {};
-            if(value == "no")value = false; if(value == "yes")value = true;
-            Ini_settings[ key ][ valr ] <- value;
-        }else{
-            Ini_settings[v] <- my_config[v];
-        }
+function global_default_settings(){
+    local Ini_settings = {}
+    Ini_settings["themes"] <- {}
+    Ini_settings["themes"]["aspect"] <- "center";
+    Ini_settings["themes"]["background_stretch"] <- false;
+    Ini_settings["themes"]["bezels"] <- true;
+    Ini_settings["themes"]["bezels_on_top"] <- false;
+    Ini_settings["themes"]["reload_backgrounds"] <- false;
+    Ini_settings["themes"]["animated_backgrounds"] <- true;
+    Ini_settings["themes"]["override_transitions"] <- true;
+    Ini_settings["themes"]["synopsis"] <- true;
 
-    }
+    Ini_settings["wheel"] <- {}
+    Ini_settings["wheel"]["transition_ms"] <- 50;
+    Ini_settings["wheel"]["fade_time"] <- 3.0;
+    Ini_settings["wheel"]["alpha"] <- 0.0;
+    Ini_settings["wheel"]["slots"] <- 10;
+    Ini_settings["wheel"]["type"] <- "rounded"; // rounded
+    Ini_settings["wheel"]["offset"] <- "0.0,0.0,0"; // in %
+    Ini_settings["wheel"]["text_color1"] <- "FFFFFF";
+    Ini_settings["wheel"]["text_stroke_color"] <- "000000";
+    Ini_settings["wheel"]["system stats"] <- "0.780,0.531,0"; // in %
 
-  /* Special artworks */
-    foreach( n in ["a","b"] ){
+    Ini_settings["game text"] <- {}
+    Ini_settings["game text"]["game_text_active"] <- true;
+    Ini_settings["game text"]["show_year"] <- true;
+    Ini_settings["game text"]["show_manf"] <- true;
+    Ini_settings["game text"]["show_description"] <- true;
+    Ini_settings["game text"]["coord"] <- "0,0.805,0"; // in %
+    Ini_settings["game text"]["text_color"] <- "FFFFFF";
+    Ini_settings["game text"]["stroke_color"] <- "000000";
+    //text_font=Style1
+    //text1_textsize=26
+    Ini_settings["sounds"] <- {}
+    Ini_settings["sounds"]["game_sounds"] <- true;
+    Ini_settings["sounds"]["wheel_click"] <- true;
+
+    Ini_settings["pointer"] <- {}
+    Ini_settings["pointer"]["animated"] <- true;
+    Ini_settings["pointer"]["coord"] <- "0.910,0.401,0.100,0.200,0"; //(animation to) x,y,w,h in % and rotation
+
+   /* Special artworks */
+    foreach( n in ["a","b","c"] ){
         Ini_settings["special art " + n] <- {
             "nbr":"", "cnt": 1, "in": 0.5, "out": 0.5, "length": 3, "delay": 0.1, "type": "linear", "start": "bottom",
-            "active" : 1, "default" : 0, "w": 0, "h": 0, "x": 0 , "y": 0, "syst" : "", "sys_global" : 0
+            "active" : true, "default" : true, "w": 0.0, "h": 0.0, "x": 0.0 , "y": 0.0, "r":0.0,  "syst" : "", "sys_global" : 0
         }
         if( n == "b" ){
             Ini_settings["special art " + n].type = "fade";
             Ini_settings["special art " + n].start = "none";
         }
     }
-
-   return Ini_settings;
+    return Ini_settings;
 }
 
-
-function get_ini_values(name, load_user=true){
+function get_ini_values(name){
+    local map = global_default_settings();
     local f = ReadTextFile( fe.script_dir + "Settings/" + name + ".ini" );
     local entity = null;
-    local map = (load_user ? user_settings() : {} );
     while ( !f.eos() )
     {
         local line = strip( f.read_line() );
@@ -48,13 +70,13 @@ function get_ini_values(name, load_user=true){
             if(!line.find("=")) continue;
             local temp = split( line, "=" );
             local v = ( temp.len() > 1 ) ? strip( temp[1] ).tolower() : "";
-            if(v == "true")v = true; if(v == "false") v = false;
             local key = strip(temp[0]).tolower();
+            try{map[ entity ][ key ]} catch( e ){ continue; }
+            v = set_type(v, map[ entity ][ key ]); // set var types
             if ( entity ) map[ entity ][ key ] <- v;
             else map[ key ] <- v;
         }
     }
-
     return map;
 }
 
@@ -89,8 +111,8 @@ function refresh_stats(system = "") {
     // Get Stats for each System
     dirs = DirectoryListing( FeConfigDirectory + "stats", false );
     foreach(subdir in dirs.results){
+        if( !datas.rawin(subdir) ) continue; // assume only systems listed by fe.display is used
         local files = DirectoryListing( FeConfigDirectory + "stats\\" + subdir, false );
-        if( !datas.rawin(subdir) ) datas[subdir] <- {"cnt":0, "pl":0, "time":0};
         foreach(file in files.results){
             if ( ext(file) == "stat" ){
                 local f_stat = ReadTextFile(FeConfigDirectory + "stats\\" + subdir + "\\" + file);
@@ -109,8 +131,6 @@ function refresh_stats(system = "") {
             }
         }
     }
-
-    datas["Main Menu"] <-{"cnt":g_cnt, "pl":g_played, "time":g_time};
     SaveStats(datas); // Save stats to file
     return datas;
 }
@@ -118,7 +138,7 @@ function refresh_stats(system = "") {
 function LoadStats(){
     local tabl = {};
     local f = ReadTextFile( fe.script_dir, "pcca.stats" );
-    if( f._f.len() < 10 ) refresh_stats(); // if file is empty or too small to be complete (10 must be ok)
+    if( f._f.len() < 10 ) refresh_stats(); // if file is empty or too small to be complete (10 should be ok)
     while ( !f.eos() ) {
         local l = split( f.read_line(), ";");
         if( l.len() ) tabl[ l[0] ] <- {"cnt":l[1].tointeger(), "pl":l[2].tointeger(), "time":l[3].tointeger()}
@@ -188,7 +208,7 @@ function file_exist(path)
 //Round Number as decimal
 function round(nbr, dec){
     local f = pow(10, dec) * 1.0;
-    local newNbr = nbr * f;
+    local newNbr = nbr.tofloat() * f;
     newNbr = floor(newNbr + 0.5)
     newNbr = (newNbr * 1.0) / f;
     return newNbr;
@@ -203,7 +223,7 @@ function rndint(max) {
 //get random index in a table
 function get_random_table(tb){
     local i=0;
-    local sel = rand()%tb.len();
+    local sel = rndint(tb.len());
     foreach( key, val in tb ){
         if(i == sel) return val
         i++;
@@ -215,7 +235,7 @@ function get_random_table(tb){
 function get_random_file(dir){
     local fname = "";
     local tmp = zip_get_dir( dir );
-    if( tmp.len() > 0 ) fname = dir + "/" + tmp[ rand()%tmp.len() ];
+    if( tmp.len() > 0 ) fname = dir + "/" + tmp[ rndint(tmp.len()) ];
     return fname;
 }
 
@@ -243,7 +263,6 @@ function replace (string, original, replacement)
 //Flip Effect
 function flipy( img ) { img.subimg_height = -1 * img.texture_height; img.subimg_y = img.texture_height; }
 function flipx( img ) { img.subimg_width = -1 * img.texture_width; img.subimg_x = img.texture_width; }
-
 
 //Return file ext
 function ext( name )
@@ -276,10 +295,7 @@ function find_theme_node( node )
     return null;
 }
 
-
-
 /* Magic tokens Functions */
-
 function Langue( offset = 0 ){
    local lng = fe.game_info(Info.Language, offset);
     for ( local i = 0; i < 17; i++ ) Lang[i].file_name = "";
@@ -322,7 +338,6 @@ function periph2( offset ){
 
 function category( offset ){
     local ctsp = split(fe.game_info(Info.Category, offset), "," );
-    print(fe.game_info(Info.Category, offset)+"\n");
     if ( ctsp.len() <= 1 )
         return "images/category/" + fe.game_info(Info.Category, offset);
     else
@@ -395,109 +410,56 @@ function merge_table(tb1,tb2){
 }
 
 function show_menu_artwork(sel_menu, surf_menu_img, artwork_list){
-    if(sel_menu.title() != "theme") return true;
-    local ff = artwork_list.find(sel_menu.selection());
-    if(ff != null) {
-        surf_menu_img.file_name = ArtObj[artwork_list[ff]].file_name;
+    local artwork = sel_menu._current_list.rows[sel_menu._slot_pos].title;
+    if(artwork_list.find( artwork ) != null){
+        surf_menu_img.file_name = ArtObj[artwork].file_name;
         surf_menu_img.visible = true;
-    }else{
-      surf_menu_img.visible = false;
     }
+    return true;
 }
 
-function SRT(){
-    // Aspect - Center (only for HS theme)
-    local nw = flh * 1.333;
-    local mul = nw / 1024;
-    local mul_h = mul;
-    local offset_x = (flw - nw) * 0.5;
-    local offset_y = 0;
-
-    if( Ini_settings.themes["aspect"] == "stretch"){
-        mul = flw / 1024;
-        mul_h = flh / 768;
-        offset_x = 0;
-        offset_y = 0;
+function set_type(val, ref){
+    switch(typeof(ref)){
+        case "float":
+            try{ val = val.tofloat() } catch(e){val = 0.0}
+        break;
+        case "integer":
+            try{ val = val.tointeger() } catch(e){val = 0}
+        break;
+        case "bool":
+            val = (val == "true" ? true : false);
+        break;
     }
-    local hd = false;
-    local node = find_theme_node( xml_root );
-    try{ hd = node.getChild("hd") } catch(e) {} // check if hd tag is present
-
-    if(hd){
-        local lw = hd.attr.lw.tofloat();
-        local lh = hd.attr.lh.tofloat();
-        nw = flh * (flw / flh);
-        mul = flw / lw;
-        mul_h = mul;
-        offset_x = 0;
-        offset_y = 0;
-    }
-
-
-    return( {"mul":mul, "mul_h":mul_h, "offset_x":offset_x, "offset_y":offset_y} )
+    return val;
 }
 
-function set_art_datas(Xtag){
-    local artD = {"x":0,"y":0,"w":0,"h":0,"r":0,"time":0,"delay":0,"overlayoffsetx":0,"overlayoffsety":0,"overlaybelow":false,"below":false};
-    artD = merge_table (artD, {"forceaspect":"none","type":"none","start":"none","rest":"none","bsize":0,"bsize2":0,"bsize3":0,"bcolor":0,"bcolor2":0,"bcolor3":0} );
-    artD = merge_table (artD, {"bshape":false,"ry":0,"rx":0,"keepaspect":false,"zorder":0,"overlaywidth":0,"overlayheight":0} );
 
+function set_xml_datas(){
+    local common = {"x":0.0,"y":0.0,"w":0.0,"h":0.0,"r":0.0,"time":0.0,"delay":0.0,"type":"none","start":"none","rest":"none","zorder":0,"ry":0.0,"rx":0.0,"keepaspect":true};
+    local video = merge_table (clone(common), {"bsize":0,"bsize2":0,"bsize3":0,"bcolor":0,"bcolor2":0,"bcolor3":0,"overlayoffsetx":0.0,"overlayoffsety":0.0,"overlaybelow":false,
+    "bshape":"square", "overlaywidth":0.0, "overlayheight":0.0, "below":false, "forceaspect":"none", "crt_scanline":false} );
+    video.rawdelete("keepaspect");
     local node = find_theme_node( xml_root );
-    local datas = node.getChild(Xtag);
-
-    foreach(k,v in datas.attr){
-        switch(k){
-            case "w": // float
-            case "h":
-            case "x":
-            case "y":
-            case "overlayoffsetx":
-            case "overlayoffsety":
-            case "overlaywidth":
-            case "overlayheight":
-                artD[k] = ( v == "" ? 0.0 : v.tofloat() );
+    foreach ( child in node.children )
+    {
+        local datas = node.getChild(child.tag);
+        switch(child.tag){
+            case "video":
+                foreach(k,v in video){
+                    datas.addAttr( k, (!(k in datas.attr) ? v : set_type(datas.attr[k], v)) );
+                }
             break;
 
-            case "r": // int
-            case "bsize":
-            case "bsize2":
-            case "bsize3":
-            case "bcolor":
-            case "bcolor2":
-            case "bcolor3":
-            case "rx":
-            case "ry":
-            case "zorder":
-                artD[k] = ( v == "" ? 0 : v.tointeger() );
-            break;
-
-            case "time": // time value
-            case "delay":
-                artD[k] = ( v == "" ? 0.0 : v.tofloat() * 1000 );
-            break;
-
-            case "overlaybelow": // true/false
-            case "below":
-            case "keepaspect":
-                artD[k] = (v == "true" ?  true : false );
-            break;
-
-            case "forceaspect": // strings with def "none"
-            case "type":
-            case "rest":
-                artD[k] = ( v == "" ? "none" : v.tolower() );
-            break;
-
-            case "start":
-                artD[k] = ( (v.tolower() == "left" || v.tolower() == "right" || v.tolower() == "bottom" || v.tolower() == "top") ?  v.tolower() : "none");
-            break;
-
-            case "bshape":
-                artD[k] =  ( (v == "round" || v == "true") ? true : false );
+            case "artwork1":
+            case "artwork2":
+            case "artwork3":
+            case "artwork4":
+            case "artwork5":
+            case "artwork6":
+                foreach(k,v in common) datas.addAttr( k, (!(k in datas.attr) ? v : set_type(datas.attr[k], v)) );
             break;
         }
     }
-    return artD;
 }
 
 // Save XMl
@@ -510,32 +472,25 @@ function save_xml(xml_root, path){
 }
 
 // Save Ini
-function save_ini(datas, name){
-    // if main menu return !!!!! or set main settings at least for crt_scanline !!!!
-    local map = get_ini_values(name, false);
-    local fileout = file(fe.script_dir + "Settings/" + name + ".ini", "w");
+function save_ini(filename=false){
+    if(!filename) filename = curr_sys;
+    local fileout = file(fe.script_dir + "Settings/" + filename + ".ini", "w");
     local line = "";
-    if(!map.len()){
-        map = {};
-        map ["themes"] <- {}
-        map ["themes"][datas.obj] <- {}
-        map ["themes"][datas.obj] = datas.val;
-    }
-    foreach(ke, va in map){
+    foreach(ke, va in Ini_settings){
         line="";
         line += "["+ke+"]\n";
         fileout.writeblob( writeB(line) );
         line="";
-        foreach(k,v in va){line+=k+"="+v+"\n"}
+        foreach(k,v in va){
+           if( ["cnt","syst","nbr"].find(k) == null ) line+=k+"="+v+"\n" // do not save counter for the array of keys (special artworks)
+        }
         fileout.writeblob( writeB(line) );
     }
-    Ini_settings["themes"][datas.obj] = datas.val;
     return true;
 }
 
 function video_transform(rotate=true){
-    local artD = set_art_datas("video");
-    local rt = SRT();
+    local artD = clone(xml_root.getChild("video").attr);
     local f_w = artD.overlaywidth;
     local f_h = artD.overlayheight;
 
@@ -552,6 +507,9 @@ function video_transform(rotate=true){
         if(ArtObj.snap.texture_width < ArtObj.snap.texture_height){ // portrait video
             if(artD.forceaspect == "horizontal" || artD.forceaspect == "none") artD.w = artD.h * ( ArtObj.snap.texture_width.tofloat() / ArtObj.snap.texture_height.tofloat() );
         }
+    }else{
+        if(artD.forceaspect == "true") artD.h = artD.w / ( ArtObj.snap.texture_width.tofloat() / ArtObj.snap.texture_height.tofloat() );
+        //if(artD.forceaspect == "true")  ArtObj.snap.preserve_aspect_ratio = true;
     }
 
     local borderMax = 0;
@@ -559,6 +517,7 @@ function video_transform(rotate=true){
     local viewport_snap_width = artD.w;
     local viewport_snap_height = artD.h;
     if(borderMax > 0){
+        artD.bshape = (artD.bshape == "round" || artD.bshape == "true" ? true : false)
         if(artD.bsize  > 0)video_shader.set_param("border1", artD.bcolor,  artD.bsize, artD.bshape); // + rounded
         if(artD.bsize2 > 0)video_shader.set_param("border2", artD.bcolor2, artD.bsize2, artD.bshape);
         if(artD.bsize3 > 0)video_shader.set_param("border3", artD.bcolor3, artD.bsize3, artD.bshape);
@@ -570,7 +529,7 @@ function video_transform(rotate=true){
     local viewport_height = viewport_snap_height;
 
     if(availables["video"]){ // if video overlay available
-        video_shader.set_param("datas",true, artD.overlaybelow);
+        video_shader.set_param("datas", true, artD.overlaybelow);
         if( f_w + abs(artD.overlayoffsetx) > artD.w  ) viewport_width = f_w + (abs(artD.overlayoffsetx) * 2 );
         if( f_h + abs(artD.overlayoffsety) > artD.h  ) viewport_height = f_h + (abs(artD.overlayoffsety) * 2 );
     }else{
@@ -587,12 +546,12 @@ function video_transform(rotate=true){
         artD.y += sin( mr ) * (-viewport_width * 0.5) + cos( mr ) * (-viewport_height * 0.5) + viewport_height * 0.5;
     }
 
-    video_shader.set_param("scanline", (Ini_settings.themes["crt_scanline"] ? 1.0 : 0.0 ) );
-    video_shader.set_param("offsets",artD.overlayoffsetx, artD.overlayoffsety);
+    video_shader.set_param("scanline", artD.crt_scanline);
+    video_shader.set_param("offsets", artD.overlayoffsetx, artD.overlayoffsety);
     video_shader.set_param("snap_coord", artD.w, artD.h, viewport_snap_width, viewport_snap_height);
     video_shader.set_param("frame_coord", f_w, f_h , viewport_width, viewport_height);
 
-    ArtObj.snap.set_pos( (artD.x  * rt.mul) + rt.offset_x, (artD.y * rt.mul_h) + rt.offset_y, viewport_width * rt.mul, viewport_height * rt.mul_h);
+    ArtObj.snap.set_pos( (artD.x  * mul) + offset_x, (artD.y * mul_h) + offset_y, viewport_width * mul, viewport_height * mul_h);
 }
 
 /* DEBUG */
@@ -613,15 +572,15 @@ function table_as_string( table )
 
 // named transitions
 debug_array <- [];
-		debug_array.push("StartLayout")// 0
-		debug_array.push("EndLayout") //1
-		debug_array.push("ToNewSelection") //2
-		debug_array.push("FromOldSelection")//3
-		debug_array.push("ToGame") //4
-		debug_array.push("FromGame") //5
-		debug_array.push("ToNewList") //6
-		debug_array.push("EndNavigation") //7
-		debug_array.push("ShowOverlay") //8
-		debug_array.push("HideOverlay") //9
-		debug_array.push("NewSelOverlay") //10
-		debug_array.push("ChangedTag") //11
+debug_array.push("StartLayout")// 0
+debug_array.push("EndLayout") //1
+debug_array.push("ToNewSelection") //2
+debug_array.push("FromOldSelection")//3
+debug_array.push("ToGame") //4
+debug_array.push("FromGame") //5
+debug_array.push("ToNewList") //6
+debug_array.push("EndNavigation") //7
+debug_array.push("ShowOverlay") //8
+debug_array.push("HideOverlay") //9
+debug_array.push("NewSelOverlay") //10
+debug_array.push("ChangedTag") //11

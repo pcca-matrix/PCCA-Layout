@@ -4,7 +4,7 @@ Tickness: 1.0-5.0
 msg: text
 data: {x, y, w, h, font-size}
 set : set any of the add_text properties : ("align" , Align.Left)
-thick_rgb : thick_rgb( [0,0,255] )
+stroke_rgb : thick_rgb( [0,0,255] )
 */
 class OutlinedText
 {
@@ -46,6 +46,10 @@ class OutlinedText
        _title_u.set_rgb( tbl[0], tbl[1], tbl[2] );
     }
 
+    function text_color(tbl){
+       _title.set_rgb( tbl[0], tbl[1], tbl[2] );
+    }
+
     outl = null;
     x_offset = null;
     y_offset = null;
@@ -57,54 +61,140 @@ class OutlinedText
     _title_r = null;
 }
 
-
-/* Menu Class */
-
+/* Menu Class  */
 class SelMenu
 {
-    constructor( surface , row_space)
+    constructor(menu, surface , row_space)
     {
         _slot = [];
-        for ( i=0; i < 35; i++){
-          _slot.push(surface.add_text( "", flw * 0.005, flw * 0.020 + (row_space * i), flw * 0.20, flh * 0.022 ));
+        for ( local i = 0; i < 38; i++){
+          _slot.push(surface.add_text( "", flw * 0.006, flh * 0.041 + (row_space * i), flw * 0.17, flh * 0.022 ));
+          _slot[i].align = Align.Left;
           _slot[i].set_bg_rgb(100,100,100);
           _slot[i].bg_alpha=0;
         }
+        _list_title = surface.add_text("", flw * 0.008, flh * 0.002, flw * 0.24, flw * 0.008 );
+        _list_title.align = Align.Left;
+        _list_info = surface.add_text("", flw * 0.008, flh * 0.022, flw * 0.24, flw * 0.0085 );
+        _list_info.align = Align.Left;
+        _list_info.style = Style.Italic
+        _list_info.set_rgb( 230, 230, 200 );
+        _menus = menu
+
         fe.add_ticks_callback( this, "on_tick" );
     }
 
-    function add_rows(tbl, add=true){
-        if(add){
-            _menu_tables.push(tbl);
-            _title.push(_menu_tables.top().title);
+    function get_by_id( str ){
+        foreach(k,v in _menus){ if(v.id == str) return clone(v); }
+        return false;
+    }
+
+    function set_list(value){
+        if(typeof(value) == "table" ) _current_list = clone(value); else _current_list = get_by_id( value );
+        if(!_current_list) return false;
+        if(!_current_list.rawin("slot_pos"))_current_list.slot_pos <- 0 // set the current list position slot
+
+        _current_list.rows = clone(_current_list.rows); // stop delegation
+        for (local i = _current_list.rows.len() - 1; i >= 0; i--){ // remove array item if hide
+            if(_current_list.rows[i].rawin("hide")){
+                if(_current_list.rows[i].hide.slice(0,1) == "!"){
+                    if(_current_list.rows[i].hide.slice(1) != curr_sys) _current_list.rows.remove(i);
+                }else{
+                    if(_current_list.rows[i].hide == curr_sys) _current_list.rows.remove(i);
+                }
+            }
         }
-        for ( i=0; i < 35; i++){
-            if(i < tbl.rows.len()){
-                _slot[i].msg = tbl.rows[i];
+
+        for ( local i = 0; i < 38; i++){
+            if(i < _current_list.rows.len() ){
+                _slot[i].msg = _current_list.rows[i].title;
             }else{
                 _slot[i].msg = "";
             }
             _slot[i].set_bg_rgb(150,100,100);
             _slot[i].bg_alpha=0;
         }
-        _slot[0].bg_alpha = 255;
-        _slot_pos = 0;
-    }
+        _slot_pos = _current_list.slot_pos;
+        _slot[_slot_pos].bg_alpha = 255;
+        _list_info.msg = "";
+        if(_current_list.rows[_slot_pos].rawin("infos"))  _list_info.msg = _current_list.rows[_slot_pos].infos;
 
-    function reset(){
-        _edit_type = null;
-        _menu_tables = [];
-        _title = [];
+        titles();
     }
 
     function back(){
-        if( _menu_tables.len() > 1 ){
-            _menu_tables.pop();
-            _title.pop();
+        if( !_lists.len()) return false;
+        if( _current_list.rawin("onback") && typeof(_current_list.onback) == "function"){
+            local onback = _current_list.onback;
+            onback(_selected_row , _current_list);
         }
-        add_rows( _menu_tables.top(), false );
-        _edit_type = null;
+
+        set_list( _lists.top() );
+        _lists.pop();
+        titles();
+        _selected_row.clear(); // clear the table
         return true;
+    }
+
+    function titles(){
+        local tmp = "";
+        foreach(a,v in _lists) if(a>0) tmp+=v.title + "->"; // by passe first elem (main)
+        if(_lists.len() > 0) tmp+=_current_list.title;
+        _list_title.msg = tmp;
+    }
+
+    function select(){
+        if(_selected_row.rawin("type")){ // reload theme if select pressed on rows that have type attr
+            trigger_load_theme = true;
+        }
+
+        if(_selected_row.rawin("type") || _edit_type != null) return false; // do not enter if we are on these item (prevent changing menu selected_row)
+        _list_info.msg = "";
+        _current_list.slot_pos = _slot_pos; // set the current list position
+        local prev_list = _current_list;
+        _selected_row = clone(_current_list.rows[_slot_pos]);
+        local onselect = false;
+        if(_current_list.rawin("onselect") ) onselect = _current_list.onselect;
+        if(_selected_row.rawin("onselect") ) onselect = _selected_row.onselect;
+        if(typeof(onselect) == "function" ){
+            if( !onselect(_current_list, _selected_row) ) return false;
+        }
+
+        if(_selected_row.rawin("target")){
+            local get_list = get_by_id(_selected_row.target); // check if the list exist in the menu
+            if(get_list) _current_list = get_list;
+        }
+
+        set_list(_current_list);
+        _lists.push(prev_list);
+        titles();
+
+        if( _current_list.rawin("afterload") && typeof(_current_list.afterload) == "function"){ // after load the newlist , use this function
+            local afterload = _current_list.afterload; // need to be in var to have acces to the class prop (ex _pos)
+            afterload(_current_list, _selected_row);
+        }
+    }
+
+    function up(){
+        _slot[_slot_pos].bg_alpha=0;
+        if(!_slot_pos) _slot_pos =_current_list.rows.len();
+        _list_info.msg = "";
+        if(_current_list.rows[_slot_pos-1].rawin("infos")){
+          _list_info.msg = _current_list.rows[_slot_pos-1].infos;
+        }
+        _slot[_slot_pos-1].bg_alpha=255;
+        _slot_pos--;
+    }
+
+    function down(){
+        _slot[_slot_pos].bg_alpha=0;
+        if( _slot_pos == _current_list.rows.len()-1 ) _slot_pos=-1;
+        _list_info.msg = "";
+        if(_current_list.rows[_slot_pos+1].rawin("infos")){
+          _list_info.msg = _current_list.rows[_slot_pos+1].infos;
+        }
+        _slot[_slot_pos+1].bg_alpha=255;
+        _slot_pos++;
     }
 
     function set_text(pos, msg){
@@ -112,118 +202,66 @@ class SelMenu
         return true;
     }
 
-    function obj() return _obj;
-    function prev_obj(){ return _menu_tables[_menu_tables.len()-1].obj }
-    function set_slot_pos(pos){
-        _slot_pos = pos;
-        _slot[pos].bg_alpha = 255;
-        _slot[pos].set_bg_rgb(150,100,100);
-        if(pos)_slot[0].bg_alpha = 0;
+    function get_input(){ // keys monitoring
+        foreach(a,b in controls){
+            foreach(k, v in b){
+                if(fe.get_input_state(v) != false) return a;
+            }
+        }
+        return false;
     }
-
-    function title(){ return _menu_tables.top().title; }
-
-    function selection() return  _menu_tables[_menu_tables.len()-1].rows[_slot_pos];
-
-    function titles(){
-        local tmp = "";
-        foreach(a,v in _title) tmp+=v + "->";
-        return tmp;
-    }
-
-    function up(){
-        _slot[_slot_pos].bg_alpha=0;
-        if(!_slot_pos) _slot_pos =_menu_tables[_menu_tables.len()-1].rows.len();
-        _slot[_slot_pos-1].bg_alpha=255;
-        _slot_pos--;
-    }
-
-    function down(){
-        _slot[_slot_pos].bg_alpha=0;
-        if(_slot_pos == _menu_tables[_menu_tables.len()-1].rows.len()-1) _slot_pos=-1;
-        _slot[_slot_pos+1].bg_alpha=255;
-        _slot_pos++;
-    }
-
-    function select(){
-        if(!_menu_tables.len()) return null;
-        _obj = _menu_tables.top().obj;
-        _edit_type = _menu_tables[_menu_tables.len()-1].rows[_slot_pos];
-        return _edit_type;
-    }
-
-    function signal(s) sig = s;
 
     function on_tick(ttime) {
-        local anum = -1;
-        if(sig){
-            if(_obj.find("artwork") != null) anum = _obj.slice( _obj.len() - 1, _obj.len() ).tointeger()-1; // get the artwork index for anims array
-
-            fe.remove_signal_handler("on_signal")
-            switch (sig){
-              case "list":
-                fe.remove_signal_handler("fake_sig");
-                fe.add_signal_handler("update_list");
-                _edit_type = null;
-                globals_temp.menu_return = true;
-                if(_obj.find("artwork") != null){
-                    if(anims[anum].opts.rest){
-                        save_xml(xml_root, path)
-                        trigger_load_theme = true; // can't restart animation otherwise new xml coord are not used by the anim class
-                    }
-                }
-              break;
-
-              case "pos_rot":
-              case "pos":
-                fe.remove_signal_handler("update_list")
-                fe.add_signal_handler("fake_sig");
-              break;
-
-              case "default":
-                fe.remove_signal_handler("update_list")
-                fe.remove_signal_handler("fake_sig");
-                fe.add_signal_handler("on_signal");
-              break;
-            }
-
-            if(_edit_type == "pos/size/rotate"){
-
-                if(_obj.find("artwork") != null){
-                    anims[anum].cancel(); // cancel all artwork animation
-                    artwork_shader[anum].set_param("alpha",1.0); // reset artwork shader to alpha 255
-                    artwork_shader[anum].set_param("datas",0,0,0,0); // reset artwork shader to no effect
-                    if(anims[anum].opts.rest && anum > -1) anims[anum].resting = false; // disable resting animation if enabled
-                    artworks_transform(_obj); // place the artwork in final fixed position
-                    //flipx(ArtObj[_obj]); // we must first know the flip status of the artwork
-                    ArtObj[_obj].pinch_x = 0;
-                    ArtObj[_obj].pinch_y = 0;
-                }else{
-                    anim_video.cancel();
-                    anim_video.resting = false;
-                    video_shader.set_param("alpha", 1.0);
-                    video_shader.set_param("progress", 1.0);
-                    video_transform();
-                    ArtObj.snap.pinch_x = 0;
-                    ArtObj.snap.pinch_y = 0;
-                }
-            }
-            sig = null;
-            return false;
+        if(globs.signal == "default_sig"){
+            globs.hold = null;
+            return true;
         }
+        globs.hold = get_input();
 
-        if(_edit_type == "pos/size") overlay_video();
-        if(_edit_type == "pos/size/rotate") edit(_obj, ttime, _last_click);
+        if(globs.hold){
+            if(globs.keyhold % 10 == 1 && globs.keyhold > 1){
+                fe.signal ( globs.hold.tolower() );
+            }
+            globs.keyhold = (globs.keyhold > 50 ? globs.keyhold+5 : globs.keyhold+1);
+        }else{
+            globs.hold = null;
+            globs.keyhold = -1;
+        }
+        switch(_edit_type){
+            case "pos/size/rotate":
+                // hide special on edit mode
+                ArtObj.SpecialA.visible = false;
+                ArtObj.SpecialB.visible = false;
+                ArtObj.SpecialC.visible = false;
+                edit_artworks(_current_list.object);
+            break;
+            case "pos/size":
+                overlay_video();
+            break;
+            case "edit_obj":
+                edit_obj(_current_list.object, _edit_datas);
+            break;
+        }
     }
 
-    sig = null;
-    i=0;
-    _last_click = 0;
-    _obj = "";
-    _edit_type = null;
-    _title = [];
-    _menu_tables = [];
-    _slot = [];
-    _slot_pos = 0;
-}
+    function reset(){
+       _edit_type = null;
+       _current_list.clear();
+       _selected_row.clear();
+       _lists.clear();
+       _slot_pos = 0;
+       _edit_datas.clear();
+    }
 
+    _edit_datas = {}; // addoitional datas for edit_obj
+    _selected_row = {};
+    _edit_type = null;
+    _current_list = {};
+    _lists = [];
+    _slot_pos = 0;
+
+    _slot = null;
+    _menus = null;
+    _list_title = null;
+    _list_info = null;
+}

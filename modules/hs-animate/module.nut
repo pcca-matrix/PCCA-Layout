@@ -16,26 +16,24 @@
 ////////////////////////////////////
 
 Screen <- {
-    center = { x = fe.layout.width / 2, y = fe.layout.height / 2 }
+    center = { x = fe.layout.width * 0.5, y = fe.layout.height * 0.5 }
 }
 
 OFFSET <- fe.layout.width * 0.10;
 
 POSITIONS <- {
-    top = function(o) { return  { y = -(o.height + OFFSET), x=o.x } },
-    bottom = function(o) { return { y=fe.layout.height + OFFSET, x=o.x } },
+    top = function(o) { return  { y = -(o.height + o.height * 0.5 + OFFSET), x=o.x } },
+    bottom = function(o) { return { y=fe.layout.height + o.height * 0.5 + OFFSET, x=o.x } },
     left = function(o) { return  { x=-(o.width + OFFSET), y=o.y } },
-    right = function(o) { return { x=fe.layout.width + OFFSET, y=o.y } },
+    right = function(o) { return { x=fe.layout.width + o.width + OFFSET, y=o.y } },
     none = function(o) {return {x=o.x, y=o.y} }
 }
 
 class Interpolator {
     constructor(arg = null) {
-
     }
 
     function interpolate( from, to, progress ) {
-
     }
 }
 
@@ -43,8 +41,6 @@ fe.do_nut(FeConfigDirectory + "modules/hs-animate/interpolators/cubicbezier.nut"
 fe.do_nut(FeConfigDirectory + "modules/hs-animate/interpolators/penner.nut");
 
 class Animation {
-
-    Panimations = [];              //array for on-demand animations
     resting = false;               //resting animation
     resting_progress = 0;          //resting progress, 0 to 1
     running = false;               //is the animation running
@@ -56,7 +52,6 @@ class Animation {
     opts = null;                   //the current animation options
     _from = null;                  //values we are animating from
     _to = null;                    //values we are animating to
-
     states = null;                 //predefined states
     callbacks = null;              //registered callbacks for animation events
     yoyoing = false;               //is animation yoyoing
@@ -69,7 +64,7 @@ class Animation {
         to = null,                  //state (values) we will animate to
         triggers = [],              //array of transitions that will trigger the animation
         trigger_restart = true,     //when a trigger occurs, the animation is restarted
-        default_state = "current"   //default state if no 'from' or 'to' is specified
+        default_state = "current",  //default state if no 'from' or 'to' is specified
         then = null,                //a function or state that is applied at the end of the animation
         duration = 0,               //duration of animation (if timed)
         speed = 1,                  //speed multiplier of animation
@@ -81,8 +76,7 @@ class Animation {
         loops_delay_from = true,    //delay setting 'from' values until the loop delay finishes
         yoyo = false,               //bounce back and forth the 'from' and 'to' states
         reverse = false,            //reverse the animation
-        interpolator = CubicBezierInterpolator("linear"),
-        auto = true                // use internal ticks on external
+        interpolator = CubicBezierInterpolator("linear")
     }
 
     constructor(...) {
@@ -90,6 +84,8 @@ class Animation {
         states = {};
         key_interpolator = {};
         defaults(vargv);
+        fe.add_ticks_callback( this, "on_tick" );
+        fe.add_transition_callback( this, "on_transition" );
         init();
     }
 
@@ -135,11 +131,8 @@ class Animation {
                         //use time
                         progress =  clamp( progress + (tick / opts.duration) ,0 ,1);
                     }
-                    update();
-                } else {
-                    //delay
-                    update();
                 }
+                update();
             }
         }else if( resting && progress == 1 ){
             anim_rest();
@@ -180,18 +173,6 @@ class Animation {
     function state( name, state ) { states[name] <- state; return this }
     function default_state( state ) { opts.default_state = state; return this; }
     function easing( e ) { if ( e.find("elastic") != null || e.find("bounce") != null ) return interpolator( PennerInterpolator(e) ); else return interpolator( CubicBezierInterpolator(e) ); }
-    function auto( bool = false ){
-        if(bool){
-            //add callbacks
-            fe.add_ticks_callback( this, "on_tick" );
-            fe.add_transition_callback( this, "on_transition" );
-        }else{
-            Panimations.push(this);
-        }
-        opts.auto = bool
-        return this;
-    }
-
     function key_interpolator( key, interpolator ) { key_interpolator[key] <- interpolator; return this }
     function loops_delay( delay ) { opts.loops_delay = delay; return this; }
 
@@ -245,7 +226,6 @@ class Animation {
     function start() {
         _from = ( "from" in states ) ? states["from"] : opts.from;
         _to = ( "to" in states ) ? states["to"] : opts.to;
-
         //reverse from and to if reverse is enabled
         do_reverse();
         //update times
@@ -288,7 +268,7 @@ class Animation {
         run_callback( "pause", this );
     }
 
-    //unpause the animation
+    //resume the animation
     function unpause() {
         running = true;
         run_callback( "unpause", this );
@@ -348,7 +328,6 @@ class Animation {
 
     //cancel animation, set key to specified state (origin, start, from or to, current)
     function cancel( state = "current" ) {
-        //print("\nAnimation canceled" + this + "\n");
         running = false;
         progress = 1.0;
         if(state == "origin" ){
@@ -415,46 +394,9 @@ class Animation {
             else
                 str += name + ": " + value + " \n"
 
-        //logs.write_line(str);
         return str
     }
 }
-
-local Panimations = Animation().Panimations;
-
-fe.add_ticks_callback( "animate_tick" );
-function animate_tick( ttime )
-{
-    // Animation ticks_callback
-    foreach(anim in Panimations){
-
-        if ( anim.running ) {
-            if ( anim.progress == 1 ) {
-                anim.stop();
-            } else {
-                anim.tick = ::clock() * 1000 - anim.last_update;
-                anim.elapsed += anim.tick;
-                anim.last_update = ::clock() * 1000;
-                //anim.update();
-                if ( anim.elapsed >=anim.opts.delay ) {
-                    //increase progress
-                    if ( anim.opts.duration <= 0 ) {
-                        anim.progress = anim.clamp( anim.progress + ( anim.opts.smoothing * anim.opts.speed ), 0, 1);
-                    } else {
-                        //use time
-                        anim.progress = anim.clamp( anim.progress + (anim.tick / (anim.opts.duration) ) ,0 ,1);
-                    }
-                   anim.update();
-                }else{
-                   anim.update();
-                }
-
-            }
-        }
-    }
-}
-
-
 
 fe.do_nut(FeConfigDirectory + "modules/hs-animate/animations/shader.nut");
 fe.do_nut(FeConfigDirectory + "modules/hs-animate/animations/presets.nut");

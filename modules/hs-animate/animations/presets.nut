@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////
 //
 // HyperSpin Animations for pcca layout
-// PCCA-Matrix 2020
+// PCCA-Matrix 2022
 //
 ///////////////////////////////////////////////////
 
@@ -13,6 +13,7 @@ class PresetAnimation extends Animation {
     _move_direction_y = -1;
     move_speed_x = 0.4;
     move_speed_y = 0.4;
+    ParticlesArray = null; // Particles medias clones Array
 
     function defaults(params){
         base.defaults(params);
@@ -25,6 +26,8 @@ class PresetAnimation extends Animation {
             rotation = null,
             datas = {}
         }, opts);
+
+        ParticlesArray = []
 
         return this;
     }
@@ -64,7 +67,6 @@ class PresetAnimation extends Animation {
         opts.preset = null
         opts.rotation = null
         opts.datas.clear()
-        opts.preset_load = true;
         opts.then = null;
         opts.reverse = false;
         opts.yoyo = false;
@@ -74,15 +76,20 @@ class PresetAnimation extends Animation {
         opts.speed = 1;
         opts.delay_from = 0;
         opts.interpolator = CubicBezierInterpolator("linear");
-        side = 0;
-        way = 0;
+        hide_particles();
         return;
+    }
+
+    function hide_particles(){
+        foreach(a,b in ParticlesArray) ParticlesArray[a].file_name = "";
     }
 
     function preset( str , opt = false){
         reset();
+        unset_rotation(opts.target.rotation, opts.target);
+        //if(opts.target.rotation) unset_rotation(opts.target.rotation, opts.target);
         state( "origin", collect_state(opts.target) );
-        if(opt) pr_opt = opt;
+        pr_opt = opt;
         (str != "none"  ? opts.preset <- str : opts.preset <- "linear");
         opts.preset_load = true;
         return this;
@@ -94,107 +101,122 @@ class PresetAnimation extends Animation {
     function datas( val ) { opts.datas <- val; return this; }
     function rest( str ) { opts.rest = ( str != "none" ?  str : null ); return this; }
 
-    side = 0; way = 0;
+    function stop(){
+        state( "finish", collect_state(opts.target) ); // maybe just clone state origin
+        if(!states.rawin("finish") && states.to){
+            foreach(k,v in states.to){
+               states["finish"][k] = v;
+            }
+        }
+        base.stop();
+    }
+
     function anim_rest(){
         local speed = 1.0;
         local obj = opts.target;
+        unset_rotation(obj.rotation , obj);
         switch(opts.rest){
-            case "shake": // best easing ?
-                    speed = 0.9
-                    local itr = CubicBezierInterpolator("ease-in-out-back");
-                    if(resting_progress < 0.5){
-                        obj.x = itr.interpolate(states["origin"].x, states["origin"].x+40, normalize(resting_progress, 0.0, 0.50) );
-                        obj.y = itr.interpolate(states["origin"].y, states["origin"].y-40, normalize(resting_progress, 0.0, 0.50) );
-                    }else{
-                        obj.x = itr.interpolate(states["origin"].x+40, states["origin"].x, normalize(resting_progress, 0.50, 1.0) );
-                        obj.y = itr.interpolate(states["origin"].y-40, states["origin"].y, normalize(resting_progress, 0.50, 1.0) );
-                    }
-                    if(resting_progress == 1.0) resting = false;
+            case "shake": // must be redone !!
+                set_rotation(obj.rotation , obj);
+                speed = 1.5
+                local itr = CubicBezierInterpolator("ease-out-back");
+                if(resting_progress <= 0.5){
+                    obj.x = itr.interpolate(states["finish"].x, states["finish"].x+(flw * 0.02), normalize(resting_progress, 0.0, 0.50) );
+                    obj.y = itr.interpolate(states["finish"].y, states["finish"].y-(flw * 0.02), normalize(resting_progress, 0.0, 0.50) );
+                }else{
+                    obj.x = itr.interpolate(states["finish"].x+(flw * 0.02), states["finish"].x, normalize(resting_progress, 0.50, 1.0) );
+                    obj.y = itr.interpolate(states["finish"].y-(flw * 0.02), states["finish"].y, normalize(resting_progress, 0.50, 1.0) );
+                }
+                if(resting_progress == 1.0) resting = false;
+                unset_rotation(obj.rotation , obj);
             break;
 
             case "rock":
-            case "rock fast":
-                if(opts.rest == "rock fast") speed = 1.25; else speed = 0.8;
-                if(!way){
-                    side+=speed;
-                    if(side <= 10){
-                        obj.rotation+=speed;
-                        set_rotation( side, obj, true );
-                    }
-                    if(side > 30){
-                        side = 10;
-                        way = 1;
-                    }
-                }else{
-                    side-=speed;
-                    if(side >= -8){
-                        obj.rotation-=speed;
-                        set_rotation( side, obj, true );
-                    }
-                    if(side < -28 ){
-                        side = -8;
-                        way = 0;
-                    }
+            case "rock fast": // must be redone !!
+                if( !("cnt" in opts.datas) ){
+                    opts.datas.cnt <- 0;
+                    opts.datas.r <- obj.rotation;
+                }
+                if(opts.rest == "rock fast") speed = 0.80; else speed = 0.45;
+                local itr = "ease-in-quart";
+                local rt = 0;
+                local angle = 25;
+                switch(opts.datas.cnt){
+                    case 0:
+                        speed*=2
+                        rt = PennerInterpolator(itr).interpolate(opts.datas.r, opts.datas.r - angle, resting_progress);
+                    break;
+
+                    case 1:
+                        rt = PennerInterpolator(itr).interpolate(opts.datas.r - angle, opts.datas.r + angle, resting_progress);
+                    break;
+
+                    case 2:
+                        rt = PennerInterpolator(itr).interpolate(opts.datas.r + angle, opts.datas.r - angle, resting_progress);
+                    break;
                 }
 
-                if(resting_progress == 1.0) resting_progress = 0;
+                if(rt) obj.rotation = rt
+
+                if(resting_progress >= 1.0){
+                    opts.datas.cnt = (opts.datas.cnt > 1 ? 1 : opts.datas.cnt+=1);
+                    resting_progress = 0.0
+                }
             break;
 
-
             case "squeeze": // OK
-                speed = 2.0
+                speed = 2.4;
                 local nw,nh;
-                local ow = states["origin"].width;
-                local oh = states["origin"].height;
+                local ow = states["finish"].width;
+                local oh = states["finish"].height;
                 if(resting_progress <= 0.3){
-                    nw = CubicBezierInterpolator("linear").interpolate(ow, ow * 1.4 , normalize(resting_progress, 0, 0.3) );
-                    nh = CubicBezierInterpolator("linear").interpolate(oh, oh * 0.2, normalize(resting_progress, 0, 0.3) );
-                    obj.width = nw;
-                    obj.height = nh;
-                    obj.x = states["origin"].x + ( (ow - nw) * 0.5 );
-                    obj.y = states["origin"].y + ( (oh - nh) * 0.5 );
+                    nw = CubicBezierInterpolator("linear").interpolate(ow, ow * 1.2 ,normalize(resting_progress, 0, 0.3) );
+                    nh = CubicBezierInterpolator("linear").interpolate(oh, oh * 0.2 ,normalize(resting_progress, 0, 0.3) );
+                    obj.x-= (nw-obj.width) * 0.5
+                    obj.y+= (obj.height-nh) * 0.5
+                    obj.height -= (obj.height-nh)
+                    obj.width += (nw-obj.width)
                 }else if(resting_progress <= 0.7){
-                    nw = CubicBezierInterpolator("linear").interpolate(ow * 1.4, ow * 0.5 , normalize(resting_progress, 0.3, 0.7) );
-                    nh = CubicBezierInterpolator("linear").interpolate(oh * 0.2, oh * 1.4 , normalize(resting_progress, 0.3, 0.7) );
-                    obj.width = nw;
-                    obj.height = nh;
-                    obj.x = states["origin"].x - ( (nw - ow) * 0.5 );
-                    obj.y = states["origin"].y - ( (nh - oh) * 0.5 );
+                    nw = CubicBezierInterpolator("linear").interpolate(ow * 1.2, ow * 0.6 ,normalize(resting_progress, 0.3, 0.7) );
+                    nh = CubicBezierInterpolator("linear").interpolate(oh * 0.2, oh * 1.7 ,normalize(resting_progress, 0.3, 0.7) );
+                    obj.x+= (obj.width-nw) * 0.5
+                    obj.y-= (nh-obj.height) * 0.5
+                    obj.height += (nh-obj.height)
+                    obj.width -= (obj.width-nw)
                 }else{
-                    nw = CubicBezierInterpolator("ease-out-back").interpolate(ow * 0.5, ow, normalize(resting_progress, 0.7, 1)  );
-                    nh = CubicBezierInterpolator("ease-out-back").interpolate(oh * 1.4, oh, normalize(resting_progress, 0.7, 1)  );
-                    obj.width = nw;
-                    obj.height = nh;
-                    obj.x = states["origin"].x - ( (nw - ow) * 0.5 );
-                    obj.y = states["origin"].y - ( (nh - oh) * 0.5 );
+                    nw = CubicBezierInterpolator("elastic-back").interpolate(ow * 0.6, ow ,normalize(resting_progress, 0.7, 1.0) );
+                    nh = CubicBezierInterpolator("elastic-back").interpolate(oh * 1.7, oh ,normalize(resting_progress, 0.7, 1.0) );
+                    obj.x-= (nw-obj.width) * 0.5
+                    obj.y+= (obj.height-nh) * 0.5
+                    obj.height -= (obj.height-nh)
+                    obj.width += (nw-obj.width)
                 }
                 if(resting_progress == 1.0) resting = false;
             break;
 
-           case "pulse":
-           case "pulse fast": // OK check easing
-                ( opts.rest == "pulse fast" ? speed = 0.85 : speed = 0.40);
-                local zoom = 1.21;
+            case "pulse":
+            case "pulse fast": // OK check easing
+                (opts.rest == "pulse fast" ? speed = 0.85 : speed = 0.40);
+                local zoom = 1.24;
                 local nw,nh;
                 local itr = CubicBezierInterpolator("ease-in-out-circle");
                 if(resting_progress <= 0.5){
-                    nw = itr.interpolate(states["origin"].width, states["origin"].width * zoom, resting_progress);
-                    nh = itr.interpolate(states["origin"].height, states["origin"].height * zoom , resting_progress);
-                    obj.width = nw;
-                    obj.height = nh;
-                    obj.x = states["origin"].x + ( (states["origin"].width - nw) * 0.5 );
-                    obj.y = states["origin"].y + ( (states["origin"].height - nh) * 0.5 );
-
+                    nw = itr.interpolate(states["finish"].width, states["finish"].width * zoom, resting_progress);
+                    nh = itr.interpolate(states["finish"].height, states["finish"].height * zoom , resting_progress);
+                    obj.x-= (nw-obj.width) * 0.5
+                    obj.y+= (obj.height-nh) * 0.5
+                    obj.height -= (obj.height-nh)
+                    obj.width += (nw-obj.width)
                 }else{
-                    nw = itr.interpolate(states["origin"].width * zoom, states["origin"].width , resting_progress);
-                    nh = itr.interpolate(states["origin"].height * zoom, states["origin"].height , resting_progress);
-                    obj.width = nw;
-                    obj.height = nh;
-                    obj.x = states["origin"].x - ( (nw - states["origin"].width) * 0.5 );
-                    obj.y = states["origin"].y - ( (nh - states["origin"].height) * 0.5 );
+                    nw = itr.interpolate(states["finish"].width * zoom, states["finish"].width , resting_progress);
+                    nh = itr.interpolate(states["finish"].height * zoom, states["finish"].height , resting_progress);
+                    obj.x-= (nw-obj.width) * 0.5
+                    obj.y+= (obj.height-nh) * 0.5
+                    obj.height -= (obj.height-nh)
+                    obj.width += (nw-obj.width)
                 }
-                if(resting_progress == 1.0) resting_progress = 0;
-           break;
+                if(resting_progress == 1.0) resting_progress = 0.0;
+            break;
 
            case "spin":
            case "spin slow":
@@ -210,10 +232,10 @@ class PresetAnimation extends Animation {
                         speed = 30.00;
                     break;
                 }
+
                 local r = obj.rotation + opts.smoothing * speed;
-                if( r > 359 ) r = 0;
-                obj.rotation=r;
-                set_rotation( r, obj, true ); // fixed rotation
+                if( r >= 360 ) r = 0.0;
+                obj.rotation = r
             break;
 
             case "hover":
@@ -226,7 +248,7 @@ class PresetAnimation extends Animation {
         }
 
         resting_progress = clamp( resting_progress + ( opts.smoothing * speed ), 0.0, 1.0);
-
+        set_rotation(obj.rotation , obj);
         base.anim_rest();
     }
 
@@ -235,15 +257,18 @@ class PresetAnimation extends Animation {
         states["current"] <- collect_state( opts.target );
         state( "start", clone(states["current"]) );
 
+        if(opts.preset == "random"){
+            local rnd = ["linear","ease","elastic","elastic bounce","flip","fade","bounce","blur","pixelate","zoom out","pixelate zoom out","strobe",
+            "grow","grow bounce","grow blur","grow x","grow y","grow center shrink","flag","stripes","stripes 2"];
+            opts.preset = rnd[rndint(rnd.len()-1)];
+        }
+
         if(opts.preset == "fade" && opts.name == "video") opts.preset = "video_fade";
         if (  opts.preset && opts.preset_load ) {
             try {
                 local t = PresetA[opts.preset];
-                if(pr_opt)
-                    local res = t(opts.target, pr_opt);
-                else
-                   local res = t(opts.target);
-
+                local res = t(opts.target, pr_opt);
+                set_rotation(opts.target.rotation, opts.target)
                 opts.preset_load = false;
             }catch(e) {
                 return false;
@@ -255,7 +280,7 @@ class PresetAnimation extends Animation {
             });
         }
 
-        if(opts.rotation && opts.preset != "chase"){ // hyerspin animate a rotation only if it's greater than 180 or -180
+        if(opts.rotation){
             if(typeof( opts.to ) == "table"){
                opts.to.rotation <- opts.rotation;
             }else{
@@ -264,7 +289,6 @@ class PresetAnimation extends Animation {
                     case "sweep right":
                         states["D"].rotation <- opts.rotation;
                     break;
-
                     default:
                         if(states.rawin("B")) states["B"].rotation <- opts.rotation; // fort states anim , anime on first part
                     break;
@@ -301,9 +325,9 @@ class PresetAnimation extends Animation {
         //store a table of unique keys we are animating
         unique_keys = {}
         foreach ( key, val in states["from"] )
-            if ( supported.find(key) != null )
+            if ( supported.find(key) != null ){
                 if ( states["from"][key] != states["to"][key] ) unique_keys[key] <- "";
-
+            }
         base.start();
     }
 
@@ -311,78 +335,77 @@ class PresetAnimation extends Animation {
         switch(opts.preset){
             case "rain float":
                 local x=0; local y=0; local v=0;
-                if( progress == 0.0 )return;
+                if( progress == 0.0 ) return;
                 progress = 0.1;
-                for ( local i=0; i < ArtArray.len(); i++ ){
-                    y = ArtArray[i].y + opts.datas.s[i];
+                for ( local i=0; i < ParticlesArray.len(); i++ ){
+                    y = ParticlesArray[i].y + opts.datas.s[i];
                     opts.datas.t[i] += opts.datas.x[i];
                     v = cos(opts.datas.t[i] / 100) * 8;
-                    if(ArtArray[i].rotation > 0)
-                        x = ArtArray[i].x - v;
+                    if(ParticlesArray[i].rotation > 0)
+                        x = ParticlesArray[i].x - v;
                     else
-                        x = ArtArray[i].x + v;
+                        x = ParticlesArray[i].x + v;
 
-                    if( ArtArray[i].y >= flh ){
-                        y = - (ArtArray[i].height + rndint(flh * 0.10));
+                    if( ParticlesArray[i].y >= flh ){
+                        y = - (ParticlesArray[i].height + rndint(flh * 0.10));
                         x = rndint(flw);
                         opts.datas.x[i] = rndfloat(2.0);
                     }
 
-                    ArtArray[i].rotation = v;
-                    ArtArray[i].y = y;
-                    ArtArray[i].x = x;
+                    ParticlesArray[i].rotation = v;
+                    ParticlesArray[i].y = y;
+                    ParticlesArray[i].x = x;
                 }
-
             break;
 
             case "arc grow":
                 if ( elapsed < opts.delay ) return true;  // wait delay before start
                 local arc;
 
-                if(opts.starting == "none" || opts.starting == "left" || opts.starting == "bottom"){
+                if( opts.starting == "right"){
+                    arc = quadbezier(
 
-                   arc = quadbezier(
-                   //0 + offset_x, (flh * 0.5) + states["origin"].height * 0.5,
-                   0 , (flh * 0.5) + states["origin"].height * 0.5,
+                        flw , flh * 0.5 - opts.target.height * 0.5,
 
-                   flw * 0.5, -(flh * 0.5),
+                        flw * 0.5 , -(flh * 0.25) + opts.target.height * 0.5 ,
 
-                   flw , flh + opts.target.height * 0.5,
+                        -opts.target.width * 0.5, flh + opts.target.height * 0.5,
 
-                    progress);
+                        progress);
 
                 }else{
 
-                   arc = quadbezier(
+                    arc = quadbezier(
 
-                   flw + opts.target.width * 0.5, (flh * 0.5) + states["origin"].height * 0.5,
+                        0 , flh * 0.5,
 
-                   flw  * 0.5, -(flh * 0.5),
+                        flw * 0.5 , -(flh * 0.25) + opts.target.height * 0.5 ,
 
-                   0, flh + opts.target.height * 0.5,
+                        flw + opts.target.width * 0.5 , flh + opts.target.height * 0.5 ,
 
-                   progress);
+                        progress);
                 }
-                opts.target.width = states["origin"].width * 1.5 * progress + 0.1;
-                opts.target.height = states["origin"].height* 1.5 * progress + 0.1;
+                opts.target.width = states["origin"].width * 2.4 * progress + 0.1;
+                opts.target.height = states["origin"].height * 2.4 * progress + 0.1;
                 opts.target.x = arc.x - opts.target.width * 0.5;
                 opts.target.y = arc.y - opts.target.height * 0.5;
+                if(opts.rotation) opts.target["rotation"] = opts.interpolator.interpolate(0, opts.rotation, progress); // animated rotation ( only if > 180 )
+                set_rotation(opts.target["rotation"], opts.target);
                 if(progress == 1.0) restart();
             break;
 
             case "arc shrink":
                 if ( elapsed < opts.delay ) return true;  // wait delay before start
-
                 local arc;
                 // HS left/right is inverted !!!!
-                if( opts.starting == "right"){ //hs = left
+                if( opts.starting == "right"){
+
                     arc = quadbezier(
+                        flw, flh
 
-                        -opts.target.width * 2, flh + opts.target.height,
+                        flw * 0.5 , -(flh * 0.50) - opts.target.height * 0.5,
 
-                        flw * 0.5, -(flh * 0.5),
-
-                        flw + opts.target.width * 0.5  , flh * 0.5 ,
+                        -opts.target.width  , flh * 0.5 - opts.target.height * 0.5,
 
                         progress
                     );
@@ -391,60 +414,61 @@ class PresetAnimation extends Animation {
                 }else{
                     arc = quadbezier( //hs =  right , bottom, top, none
 
-                        flw, flh + opts.target.height,
+                        -opts.target.width * 2, flh,
 
-                        flw * 0.5, -(flh * 0.5),
+                        flw * 0.5 , -(flh * 0.50) - opts.target.height * 0.5,
 
-                        -opts.target.width * 1.5  , flh * 0.5 ,
+                        flw , flh * 0.5 ,
 
                         progress
                     );
                 }
-                opts.target.width  = states["origin"].width * 1.1  - (states["origin"].width  * progress) + 0.1;
-                opts.target.height = states["origin"].height * 1.1 - (states["origin"].height  * progress) + 0.1;
+
+                opts.target.width  = states["origin"].width * 2.4  - (states["origin"].width * 2.4 * progress) + 0.1;
+                opts.target.height = states["origin"].height * 2.4 - (states["origin"].height * 2.4 * progress) + 0.1;
                 opts.target.x = arc.x + opts.target.width * 0.5;
                 opts.target.y = arc.y + opts.target.height * 0.5;
+                if(opts.rotation) opts.target["rotation"] = opts.interpolator.interpolate(0, opts.rotation, progress); // animated rotation ( only if > 180 )
+                set_rotation(opts.target["rotation"], opts.target);
                 if(progress == 1.0) restart();
             break;
 
             case "pendulum":
                 //starting : top left , bottom = right
-                if ( elapsed < opts.delay ) return true;  // wait delay before start
-                if( progress == 0.0 )return;
+                if (elapsed < opts.delay) return true;  // wait delay before start except in HS theme !  hs does not apply the delay
+                if( progress == 0.0 ) return;
                 if(opts.datas.loops > 0 && opts.datas.nbr >= opts.datas.loops){ progress=1.0; return }
-                progress = 0.1;
                 if(opts.datas.rotation > PI || opts.datas.rotation < 0){
                     opts.datas.nbr++;
                     opts.datas.step=-opts.datas.step;
                 }
                 opts.datas.rotation+=opts.datas.step;
                 local x = (states["origin"].x ) + cos( opts.datas.rotation ) * opts.datas.radius
-                local y = (states["origin"].y - flw * 1.59 ) + sin( opts.datas.rotation ) * opts.datas.radius
+                local y = (states["origin"].y - opts.datas.radius ) + sin( opts.datas.rotation ) * opts.datas.radius
+                if(!opts.datas.hd) y = Screen["center"].y - (opts.target.height * 0.60) - opts.datas.radius  + sin( opts.datas.rotation ) * opts.datas.radius
                 local angle = opts.datas.rotation / PI * 180 - 90; // 90 starting angle
                 opts.target.rotation = angle;
                 opts.target.x = x;
                 opts.target.y = y;
                 set_rotation(angle, opts.target);
+                progress = 0.1;
             break;
 
             case "bounce random":
                 if ( elapsed < opts.delay ) return true;  // wait delay before start
-                random_bounce(opts.target);
-                progress = 0.1;
+                unset_rotation(opts.target["rotation"], opts.target);
+                random_bounce(opts.target)
+                if(progress == 1.0) progress = 0.0;
             break;
 
             case "bounce around 3d":
                 if ( elapsed < opts.delay ) return true;  // wait delay before start
+                unset_rotation(opts.target["rotation"], opts.target);
                 bounce_around(opts.target);
-                //progress = 0.1;
             break;
 
             default:
-                foreach( key, val in states["to"] ) {
-                    // if from width is set to 0.1 unhide object (hidden in layout !)
-                    if(key == "width"){
-                        if( _from[key] <= 0.1 && progress > 0 && !opts.target.visible) opts.target.visible = true;
-                    }
+                foreach( key, val in states["to"] ){
                     if ( key == "rgb" ) {
                         opts.target.set_rgb(
                             opts.interpolator.interpolate(_from[key][0], _to[key][0], progress),
@@ -454,6 +478,9 @@ class PresetAnimation extends Animation {
                         if ( _from[key].len() > 3 && _to[key].len() > 3 )
                             opts.interpolator.interpolate(_from[key][3], _to[key][3], progress)
                     } else if ( supported.find(key) != null ) {
+                        // if from width/height is set to 0.1 unhide object (hidden in layout !)
+                        if(key == "width" || key == "height") if( _from[key] <= 0.1 && progress > 0 && !opts.target.visible) opts.target.visible = true;
+
                         try {
                             if(key_interpolator[key]) opts.target[key] = key_interpolator[key].interpolate(_from[key], _to[key], progress)
                         }
@@ -461,23 +488,24 @@ class PresetAnimation extends Animation {
                             opts.target[key] = opts.interpolator.interpolate(_from[key], _to[key], progress);
                         }
 
-                        if ( key == "alpha" && opts.name !="" ){
+                        if ( key == "alpha" && opts.name != "" ){
                            ArtObj[opts.name].shader.set_param( "alpha", opts.interpolator.interpolate( _from["alpha"] / 255 , _to["alpha"] / 255, progress) );
                         }
                     }
                 }
-
-                if (states["to"].rawin("rotation")) set_rotation(opts.target["rotation"], opts.target);
+                //set_rotation(opts.target["rotation"], opts.target);
             break;
         }
+
+        set_rotation(opts.target["rotation"], opts.target);
         states["current"] <- collect_state(opts.target);
         base.update();
     }
 
     PresetA = {
         "linear": //OK (Default without Preset)
-        function( obj )
-        {
+        function(...){
+            local obj = vargv[0];
             if(opts.delay > 0 && opts.duration == 0){
                 opts.duration = 1
                 opts.starting = "top"
@@ -488,35 +516,32 @@ class PresetAnimation extends Animation {
         },
 
         "ease": //OK
-        function( obj )
-        {
-            //if(opts.starting == "none") return;
+        function(...){
+            local obj = vargv[0];
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
             opts.to = { x=states["origin"].x,  y=states["origin"].y  };
             opts.interpolator = CubicBezierInterpolator("ease")
         },
 
         "elastic": // OK (can be better)
-        function( obj )
-        {
-            //if(opts.starting == "none") return;
+        function(...){
+            local obj = vargv[0];
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
             opts.to = { x=states["origin"].x,  y=states["origin"].y  };
             opts.interpolator = PennerInterpolator("ease-out-elastic")
         },
 
         "elastic bounce": // OK (can be better)
-        function( obj )
-        {
-            //if(opts.starting == "none") return;
+        function(...){
+            local obj = vargv[0];
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
             opts.to = { x=states["origin"].x,  y=states["origin"].y  };
             opts.interpolator = PennerInterpolator("ease-out-elastic");
         },
 
         "flip": // OK
-        function( obj )
-        {
+        function(...){
+            local obj = vargv[0];
             local startx=POSITIONS[opts.starting](obj).x;
             local starty=POSITIONS[opts.starting](obj).y;
             opts.interpolator = CubicBezierInterpolator("ease-in-out-quart")
@@ -527,29 +552,31 @@ class PresetAnimation extends Animation {
                key_interpolator["x"] <- CubicBezierInterpolator("linear");
                opts.interpolator = CubicBezierInterpolator("ease-in-quart")
             }
+
             opts.from = { y=starty, width = 0.1, pinch_y=-states["origin"].height / 6,  x=startx + states["origin"].width * 0.5 };
             opts.to = { y=states["origin"].y, width=states["origin"].width, pinch_y = 0, x=states["origin"].x };
 
         },
 
         "fade": // OK
-        function ( obj )
-        {
+        function (...){
+            local obj = vargv[0];
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y, alpha=0 };
             opts.to = { x=states["origin"].x,  y=states["origin"].y, alpha=255 };
             opts.interpolator = CubicBezierInterpolator("ease")
         },
 
         "bounce": // OK
-        function( obj ){
-            //if(opts.starting == null) return;
+        function(...){
+            local obj = vargv[0];
             opts.interpolator = PennerInterpolator("ease-out-bounce")
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
             opts.to = { x=states["origin"].x,  y=states["origin"].y };
         },
 
         "blur": // OK (can be better)
-        function( obj ){
+        function(...){
+            local obj = vargv[0];
             blur(obj);
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y, alpha=0 };
             opts.to = { x=states["origin"].x,  y=states["origin"].y, alpha=255  };
@@ -558,7 +585,8 @@ class PresetAnimation extends Animation {
         },
 
         "pixelate": // OK
-        function( obj ){
+        function(...){
+            local obj = vargv[0];
             local art = opts.name.slice( opts.name.len() - 1, opts.name.len() ).tointeger();
             artwork_shader[art-1].set_param("datas",1,0,0,0);
             anims_shader[art-1].duration(opts.duration)
@@ -570,44 +598,44 @@ class PresetAnimation extends Animation {
             opts.interpolator = CubicBezierInterpolator("ease-out-cubic");
         },
 
-        "zoom out": // OK (can be better)
-        function( obj ){
-            local mtpl = (fe.layout.width+(OFFSET*2) ) / obj.width;
-            local f = center_zoom(obj, obj.width*mtpl, obj.height*mtpl, obj.width, obj.height);
-            opts.from = {x=f.from_x, y=f.from_y, height=obj.height*mtpl, width=obj.width*mtpl,alpha=0 };
-            opts.to = { x=f.to_x, y=f.to_y, height=obj.height,width=obj.width,alpha=255  };
+        "zoom out": // OK
+        function(...){
+            local obj = vargv[0];
+            local mtpl = (fe.layout.width + (OFFSET * 2) ) / obj.width * 4.0;
+            opts.from = { x=Screen["center"].x  - (obj.width * mtpl * 0.5), y=Screen["center"].y - (obj.height * mtpl * 0.5), height=obj.height * mtpl, width=obj.width * mtpl, alpha=0 };
+            opts.to = { x=obj.x, y=obj.y, height=obj.height, width=obj.width, alpha=255  };
             opts.interpolator = PennerInterpolator("ease-out-sine");
-
         },
 
         "pixelate zoom out": // OK
-        function( obj ){
+        function(...){
+            local obj = vargv[0];
             local art = opts.name.slice( opts.name.len() - 1, opts.name.len() ).tointeger();
             artwork_shader[art-1].set_param("datas",1,0,0,0);
             anims_shader[art-1].duration(opts.duration)
             anims_shader[art-1].delay(opts.delay)
             anims_shader[art-1].play();
-
-            local f = center_zoom(obj, obj.width*2.8, obj.height*2.8, obj.width, obj.height);
-            opts.from = {x=f.from_x, y=f.from_y, height=obj.height*2.8, width=obj.width*2.8,alpha=0 };
-            opts.to = { x=f.to_x, y=f.to_y, height=obj.height,width=obj.width,alpha=255  };
-            interpolator(PennerInterpolator("ease-out-sine"))
+            local mtpl = (fe.layout.width+(OFFSET*2) ) / obj.width;
+            opts.from = { x=Screen["center"].x  - (obj.width * mtpl * 0.5), y=Screen["center"].y - (obj.height * mtpl * 0.5), height=obj.height * mtpl, width=obj.width * mtpl, alpha=0 };
+            opts.to = { x=obj.x, y=obj.y, height=obj.height, width=obj.width, alpha=255  };
+            opts.interpolator = PennerInterpolator("ease-out-sine");
         },
 
         "chase": // OK
-        function( obj ){
-            local startx=POSITIONS["left"](obj).x - obj.width*1.5;
-            local endx=POSITIONS["right"](obj).x + obj.width*1.5;
+        function(...){
+            local obj = vargv[0];
+            local startx=POSITIONS["left"](obj).x - obj.width * 1.5;
+            local endx=POSITIONS["right"](obj).x + obj.width * 1.5;
 
             local a= -1;
             local orig_subW = obj.subimg_width;
             local orig_subX = obj.subimg_x;
-            if(opts.starting =="right"){
+            if(opts.starting == "right"){
                 startx=POSITIONS["right"](obj).x + obj.width*1.5;
                 endx=POSITIONS["left"](obj).x - obj.width*1.5;
             }
-            opts.from = {x=startx}
-            opts.to = {x=endx}
+            opts.from = {y=obj.y, x=startx}
+            opts.to = {y=obj.y, x=endx}
             on("restart", function(anim) {
                 if(a == -1){
                     orig_subW = obj.subimg_width;
@@ -625,35 +653,38 @@ class PresetAnimation extends Animation {
         },
 
         "sweep left": // OK
-        function( obj ){
-            state("A", { x=POSITIONS["left"](obj).x } )
-            state("B", { x=POSITIONS["right"](obj).x } )
+        function(...){
+            local obj = vargv[0];
+            state("A", { x=POSITIONS["left"](obj).x, y=obj.y} )
+            state("B", { x=POSITIONS["right"](obj).x, y=obj.y } )
             state("C", { y=POSITIONS["top"](obj).y, x=states["origin"].x } )
             state("D", { y=states["origin"].y, x=states["origin"].x } )
             from("A")
             to("B")
-            duration(opts.duration / 2)
+            duration(opts.duration * 0.5)
             then(function(anim) {
-                anim.from("C").to("D").delay(550).duration(opts.duration / 2 ).play()
+                anim.from("C").to("D").delay(550).duration(opts.duration * 0.5 ).play()
             })
         },
 
         "sweep right": // OK
-        function( obj ){
-            state("A", { x=POSITIONS["right"](obj).x } )
-            state("B", { x=POSITIONS["left"](obj).x } )
+        function(...){
+            local obj = vargv[0];
+            state("A", { x=POSITIONS["right"](obj).x, y=obj.y } )
+            state("B", { x=POSITIONS["left"](obj).x, y=obj.y } )
             state("C", { y=POSITIONS["top"](obj).y, x=states["origin"].x } )
             state("D", { y=states["origin"].y, x=states["origin"].x } )
             from("A")
             to("B")
-            duration(opts.duration / 2)
+            duration(opts.duration * 0.5)
             then(function(anim) {
-                anim.from("C").to("D").delay(550).duration(opts.duration / 2).play()
+                anim.from("C").to("D").delay(550).duration(opts.duration * 0.5).play()
             })
         },
 
         "strobe": // OK (mindless need rewrite ...)
-        function( obj ){
+        function(...){
+            local obj = vargv[0];
             opts.datas.cnt <- 0;
             opts.from = { alpha=0, y=POSITIONS[opts.starting](obj).y, x=POSITIONS[opts.starting](obj).x };
             opts.to = { alpha=255, y=states["origin"].y, x=states["origin"].x };
@@ -674,57 +705,68 @@ class PresetAnimation extends Animation {
         },
 
         "grow": // OK
-        function ( obj ){
-            opts.from = {width=0.1, height=0.1, x=POSITIONS[opts.starting](obj).x + obj.width/2, y=POSITIONS[opts.starting](obj).y + obj.height/2, alpha=0 };
+        function (...){
+            local obj = vargv[0];
+            opts.from = {width=0.1, height=0.1, x=POSITIONS[opts.starting](obj).x + obj.width * 0.5, y=POSITIONS[opts.starting](obj).y + obj.height * 0.5, alpha=0 };
             opts.to = {width=obj.width, height=obj.height, x=obj.x, y=obj.y, alpha=255};
         },
 
         "grow bounce": // OK
-        function ( obj ){
-            opts.from = {width=0.1, height=0.1, x=POSITIONS[opts.starting](obj).x + obj.width/2, y=POSITIONS[opts.starting](obj).y + obj.height/2, alpha=0 };
+        function (...){
+            local obj = vargv[0];
+            opts.from = {width=0.1, height=0.1, x=POSITIONS[opts.starting](obj).x + obj.width * 0.5, y=POSITIONS[opts.starting](obj).y + obj.height * 0.5, alpha=0 };
             opts.to = {width=obj.width, height=obj.height, x=obj.x, y=obj.y, alpha=255};
             opts.interpolator = PennerInterpolator("ease-out-bounce")
         },
 
         "grow blur": // OK
-        function ( obj ){
-            blur(obj);
-           opts.from = {width=0.1, height=0.1, x=POSITIONS[opts.starting](obj).x + obj.width/2, y=POSITIONS[opts.starting](obj).y + obj.height/2 };
+        function (...){
+           local obj = vargv[0];
+           blur(obj);
+           opts.from = {width=0.1, height=0.1, x=POSITIONS[opts.starting](obj).x + obj.width * 0.5, y=POSITIONS[opts.starting](obj).y + obj.height/2 };
            opts.to = {width=obj.width, height=obj.height, x=obj.x, y=obj.y};
         },
 
         "grow x": // OK
-        function ( obj ){
-            opts.from = { width=0.1, x=POSITIONS[opts.starting](obj).x + (states["origin"].width / 2), y=POSITIONS[opts.starting](obj).y  };
+        function (...){
+            local obj = vargv[0];
+            opts.from = { width=0.1, x=POSITIONS[opts.starting](obj).x + (states["origin"].width * 0.5), y=POSITIONS[opts.starting](obj).y  };
             opts.to = { width=states["origin"].width, x=states["origin"].x,y=states["origin"].y  };
         },
 
         "grow y": // OK
-        function ( obj ){
-            opts.from = { height=0.1, y=POSITIONS[opts.starting](obj).y+(obj.height / 2), x=POSITIONS[opts.starting](obj).x  };
+        function (...){
+            local obj = vargv[0];
+            opts.from = { height=0.1, y=POSITIONS[opts.starting](obj).y+(obj.height * 0.5), x=POSITIONS[opts.starting](obj).x  };
             opts.to = { height=states["origin"].height, x=states["origin"].x, y=states["origin"].y };
         },
 
         "grow center shrink": // OK
-        function ( obj ){
-            local starty=Screen["center"].y;
-            local startx=Screen["center"].x;
-            local f = center_zoom(obj, 0.1, 0.1, obj.width*3, obj.height*3, startx, starty);
-            state("A",  { x=f.from_x, y=f.from_y, height=0.1, width=0.1 } )
-            state("B",  { x=f.to_x,  y=f.to_y, height=obj.height*3, width=obj.width*3 } )
-            state("C",  { x=obj.x,  y=obj.y, height=obj.height,width=obj.width } )
+        function (...){
+            local obj = vargv[0];
+            state("A",  { x=Screen["center"].x, y=Screen["center"].y, height=0.1, width=0.1 } )
+            state("B",  { x=Screen["center"].x - (obj.width * 3 * 0.5)  , y=Screen["center"].y - (obj.height * 3 * 0.5), height=obj.height * 3, width=obj.width * 3 } )
+            state("C",  { x=obj.x,  y=obj.y, height=obj.height, width=obj.width } )
+
+            if (opts.rotation){
+                states["A"].rotation <- obj.rotation
+                states["B"].rotation <- opts.rotation
+                states["C"].rotation <- opts.rotation + 360;
+            }
+
             opts.from = "A";
             opts.to = "B";
-            interpolator(PennerInterpolator("ease-in-sine") )
-            duration(opts.duration / 2)
-            then(function(anim) {
-                anim.from("B").to("C").duration(opts.duration / 2).delay(350).play()
-            })
 
+            interpolator(PennerInterpolator("ease-in-sine") )
+            duration(opts.duration * 0.5)
+            then(function(anim) {
+                anim.from("B").to("C").duration(opts.duration * 0.5).delay(350).play()
+            })
         },
 
-        "scroll":  // not really like HS
-        function ( obj ){
+        "scroll":  //OK  (not really like HS)
+        function (...){
+            local obj = vargv[0];
             if(opts.starting == "left"){
               opts.from = { x=POSITIONS[opts.starting](obj).x, y=obj.y };
               opts.to = { x=POSITIONS["right"](obj).x ,y=obj.y };
@@ -745,7 +787,8 @@ class PresetAnimation extends Animation {
         },
 
         "flag": // OK
-        function( obj ){
+        function(...){
+            local obj = vargv[0];
             local art = opts.name.slice( opts.name.len() - 1, opts.name.len() ).tointeger();
             artwork_shader[art-1].set_param("datas",2,0,0,0);
             anims_shader[art-1].duration(opts.duration);
@@ -756,18 +799,20 @@ class PresetAnimation extends Animation {
         },
 
         "pendulum": // OK
-        function ( obj ){
-            local divider = 25;
+        function (...){
+            local obj = vargv[0];
+            local divider = 35;
             opts.target.x = -2500; // hide away before starting animation
             local start = PI;
             if(opts.starting == "right" || opts.starting == "bottom") start = 0;
-            opts.datas <- { "loops" : -1, "rotation" : start, "radius" : flw * 2 , "nbr" : 0 }
+            opts.datas <- { "loops" : -1, "rotation" : start, "radius" : flw * 1.1  , "nbr" : 0, "hd" : vargv[1]  }
             opts.datas.step <- PI / (opts.duration / divider );
             if( opts.datas.loops > 0 ) opts.datas.loops *= 2;
         },
 
-        "stripes": // not really like HS
-        function( obj ){
+        "stripes": //OK  (not really like HS)
+        function(...){
+            local obj = vargv[0];
             local art = opts.name.slice( opts.name.len() - 1, opts.name.len() ).tointeger();
             artwork_shader[art-1].set_param("datas",3,0,0,0);
             anims_shader[art-1].duration(opts.duration);
@@ -776,11 +821,11 @@ class PresetAnimation extends Animation {
 
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
             opts.to = { x=states["origin"].x,  y=states["origin"].y  };
-            //opts.interpolator = CubicBezierInterpolator("ease-out-cubic");
         },
 
-        "stripes 2": // not really like HS
-        function( obj ){
+        "stripes 2": // OK (not really like HS)
+        function(...){
+            local obj = vargv[0];
             local art = opts.name.slice( opts.name.len() - 1, opts.name.len() ).tointeger();
             artwork_shader[art-1].set_param("datas",4,0,0,0);
             anims_shader[art-1].duration(opts.duration)
@@ -789,55 +834,56 @@ class PresetAnimation extends Animation {
 
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
             opts.to = { x=states["origin"].x,  y=states["origin"].y  };
-            //opts.interpolator = CubicBezierInterpolator("ease-out-cubic");
         },
 
         "arc grow": // OK
-        function( obj ){
+        function(...){
             opts.target.x = -2500; // hide away before starting animation
             return true;
         },
 
         "arc shrink": // OK
-        function( obj ){
+        function(...){
             opts.target.x = -2500; // hide away before starting animation
             return true;
         },
 
         "bounce random": // OK
-        function( obj ){
+        function(...){
             opts.datas <- { "velY" : 10, "velX" : 20, "damping" : 0.8 , "traction" : 0.8, "gravity" : 0.4, "bound" : false, "zoom" : 0 }
             return true;
         },
 
         "rain float": // OK
-        function ( obj ){
+        function (...){
+            local obj = vargv[0];
             opts.target.zorder-=1000
-            local nx = ArtArray.len();
+            local nx = ParticlesArray.len();
             if( nx < 4 ){ // add missings images if needed
-                for ( local i=0; i < 4-nx; i++ ){ ArtArray.push(fe.add_image("",0 , 0 , 0 , 0)) }
+                for ( local i=0; i < 4-nx; i++ ){ ParticlesArray.push(fe.add_image("" ,0 , 0 , 0 , 0)) }
             }
 
             for ( local i=0; i < 4; i++ ){
-                local posx = ( i > 0 ? (obj.width * i) + rndint(obj.width) : flw*0.01)
-                ArtArray[i].file_name = obj.file_name;
-                ArtArray[i].visible = true;
-                ArtArray[i].set_pos( posx , -( rndint(flh*0.5) + obj.height ) , obj.width, obj.height);
-                ArtArray[i].zorder-=1; // fix: hide obj on exit menu
+                local posx = ( i > 0 ? (obj.width * i) + rndint(obj.width) : flw * 0.01)
+                ParticlesArray[i].file_name = obj.file_name;
+                ParticlesArray[i].visible = true;
+                ParticlesArray[i].set_pos( posx , -( rndint(flh*0.5) + obj.height ) , obj.width, obj.height);
+                ParticlesArray[i].zorder-=1; // fix: hide obj on exit menu
             }
             opts.datas <- { "s": [4.1, 2.8, 3.4, 1.9], "t": [0,0,0,0], "x": [rndfloat(2.1), rndfloat(2.1), rndfloat(2.1), rndfloat(2.1)] };
         },
 
         "bounce around 3d": // OK
-        function( obj ){
-            opts.duration /= 2;
+        function(...){
+            local obj = vargv[0];
             opts.datas <- { "velY" : 6, "velX" : 6, "zoom" : 0 ,"tw" : obj.width, "th" : obj.height }
             return true;
         },
 
         /* Video Only */
         "pump": // OK
-        function( obj ){
+        function(...){
+            local obj = vargv[0];
             local part = opts.duration - (opts.duration / 3);
             obj.width = obj.width / 6;
             obj.height = obj.height / 6;
@@ -864,14 +910,13 @@ class PresetAnimation extends Animation {
                         then(function(anim) {
                             anim.from("D").to("E").delay(0).duration(part / 3 ).play()
                         })
-
                 })
             })
         },
 
         "video_fade": // OK
-        function ( obj )
-        {
+        function (...){
+            local obj = vargv[0];
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
             opts.to = { x=states["origin"].x,  y=states["origin"].y };
             opts.interpolator = CubicBezierInterpolator("ease")
@@ -886,7 +931,8 @@ class PresetAnimation extends Animation {
         },
 
         "tv":
-        function( obj ){
+        function(...){
+            local obj = vargv[0];
             opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
             opts.to = { x=states["origin"].x,  y=states["origin"].y };
             opts.interpolator = CubicBezierInterpolator("ease")
@@ -900,11 +946,11 @@ class PresetAnimation extends Animation {
         },
 
         "tv zoom out":
-        function( obj ){
-            local mtpl = 3;
-            local f = center_zoom(obj, obj.width*mtpl, obj.height*mtpl, obj.width, obj.height);
-            opts.from = {x=f.from_x, y=f.from_y, height=obj.height*mtpl, width=obj.width*mtpl };
-            opts.to = { x=f.to_x, y=f.to_y, height=obj.height,width=obj.width  };
+        function(...){
+            local obj = vargv[0];
+            local mtpl = (fe.layout.width + (OFFSET * 2) ) / obj.width * 4.0;
+            opts.from = { x=states["origin"].x  - (obj.width * mtpl * 0.5), y=states["origin"].y - (obj.height * mtpl * 0.5), height=obj.height * mtpl, width=obj.width * mtpl };
+            opts.to = { x=states["origin"].x, y=states["origin"].y, height=obj.height, width=obj.width  };
             interpolator(PennerInterpolator("ease-out-sine"))
 
             anim_video_shader.param("progress")
@@ -918,90 +964,101 @@ class PresetAnimation extends Animation {
 
         /* Custom */
         "zoom": // OK
-        function( obj , mtpl=false){
-            local alpha = 255;
-            if(!mtpl){ // out anim with fade
+        function(...){
+            local obj = vargv[0];
+            local alpha = obj.alpha;
+            local mtpl = vargv[1];
+            if(typeof mtpl == "instance" || !mtpl){ // anim with fade and size option
                 mtpl = (fe.layout.width+(OFFSET*2) ) / obj.width;
                 alpha=0;
             }
-            local f = center_zoom(obj, obj.width*mtpl, obj.height*mtpl, obj.width, obj.height);
-            opts.from = { x=f.to_x, y=f.to_y, height=obj.height,width=obj.width,alpha=obj.alpha };
-            opts.to = {x=f.from_x, y=f.from_y, height=obj.height*mtpl, width=obj.width*mtpl,alpha=alpha };
+            opts.from = {width=obj.width, height=obj.height, x=obj.x, y=obj.y, alpha=obj.alpha};
+            opts.to = {width=obj.width * mtpl, height=obj.height * mtpl, x=obj.x + obj.width * 0.5 - (obj.width * mtpl * 0.5), y=obj.y + obj.height * 0.5 - (obj.height * mtpl * 0.5), alpha=alpha};
             interpolator(PennerInterpolator("ease-out-sine"));
-
         },
 
         "unzoom": // OK
-        function( obj, mtpl=false ){
-            local alpha = 255;
-            if(!mtpl){ // out anim with fade
-                mtpl = (fe.layout.width+(OFFSET*2) ) / obj.width;
-                alpha=0;
-            }
-            local f = center_zoom(obj, obj.width, obj.height, 0.1, 0.1);
-            opts.from = {x=f.from_x, y=f.from_y, height=obj.height, width=obj.width, alpha=obj.alpha };
-            opts.to = { x=f.to_x, y=f.to_y, height=0.1,width=0.1,alpha=alpha };
+        function(...){
+            local obj = vargv[0];
+            opts.from = {width=obj.width, height=obj.height, x=obj.x, y=obj.y, alpha=255 };
+            opts.to = {width=0.1, height=0.1, x=obj.x + obj.width * 0.5 , y=obj.y + obj.height * 0.5, alpha=0 };
             interpolator(PennerInterpolator("ease-out-sine"));
-
         },
 
         "fade out": // OK
-        function ( obj )
-        {
-            opts.from = { alpha=obj.alpha };
-            opts.to = { alpha=0 };
+        function (...){
+            local obj = vargv[0];
+            opts.from <- { alpha=obj.alpha, x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y };
+            opts.to <- { alpha=0, x=states["origin"].x,  y=states["origin"].y  };
             opts.interpolator = CubicBezierInterpolator("ease");
         },
 
         "expl": // OK
-        function ( obj )
-        {
+        function (...){
+            local obj = vargv[0];
             local f={}; local t={};
-            if(obj.x <= fe.layout.width  / 2){
-                if(obj.y <= fe.layout.height / 2){
+            if(obj.x <= fe.layout.width  * 0.5){
+                if(obj.y <= fe.layout.height * 0.5){
                     f.y <- obj.y;
                     t.y <- -fe.layout.height;
+                    f.x <- obj.x
+                    t.x <- obj.x
                 }else{
                     f.x <- obj.x;
                     t.x <- -fe.layout.width;
+                    f.y <- obj.y
+                    t.y <- obj.y
                 }
             }else{
-                if(obj.y <= fe.layout.height / 2){
+                if(obj.y <= fe.layout.height * 0.5){
                     f.y <- obj.y;
                     t.y <- fe.layout.height * 2;
+                    f.x <- obj.x;
+                    t.x <- obj.x;
                 }else{
                     f.x <- obj.x;
                     t.x <- fe.layout.width * 2;
+                    f.y <- obj.y
+                    t.y <- obj.y
                 }
             }
             opts.from = f;
             opts.to = t;
+        },
+
+        "swirl":
+        function (...){
+            local obj = vargv[0];
+            opts.from = {width=obj.width, height=obj.height, x=obj.x, y=obj.y, alpha=255, rotation=obj.rotation };
+            opts.to = {width=0.1, height=0.1, x=obj.x + obj.width * 0.5 , y=obj.y + obj.height * 0.5, alpha=0, rotation=obj.rotation+540 };
+            interpolator(PennerInterpolator("linear"));
+        },
+
+        "pixelate fadeout":
+        function (...){
+            local obj = vargv[0];
+            local art = opts.name.slice( opts.name.len() - 1, opts.name.len() ).tointeger();
+            artwork_shader[art-1].set_param("datas",1,0,0,0);
+            anims_shader[art-1].duration(opts.duration)
+            anims_shader[art-1].delay(opts.delay)
+            anims_shader[art-1].play();
+
+            opts.from = { x=POSITIONS[opts.starting](obj).x, y=POSITIONS[opts.starting](obj).y, alpha=obj.alpha };
+            opts.to = { x=states["origin"].x,  y=states["origin"].y, alpha=100  };
+            opts.interpolator = CubicBezierInterpolator("ease-out-cubic");
         }
     }
 
-    function center_zoom(target, from_w, from_h, to_w, to_h, x=false,y=false){
-        local base_x = target.x;
-        local base_y = target.y;
-        if( x ) base_x = x - (target.width / 2);
-        if( y ) base_y = y - (target.height / 2);
-        local from_x = base_x + (target.width / 2) - (from_w / 2);
-        local to_x = base_x + target.width / 2 - (to_w / 2);
-        local from_y = base_y + (target.height/2) - (from_h / 2);
-        local to_y = base_y + target.height / 2 - (to_h / 2);
-        return { from_x = from_x, to_x = to_x, from_y = from_y, to_y = to_y };
-    }
-
-    function set_rotation( r, obj, fixed = false ) {
+    function set_rotation(r, obj) {
         local mr = PI * r / 180;
-        local w2 = obj.width;
-        local h2 = obj.height;
-        if(!fixed ) {
-            obj.x += cos( mr ) * (-w2/2) - sin( mr ) * (-h2/2) + w2/2;
-            obj.y +=  sin( mr ) * (-w2/2) + cos( mr ) * (-h2/2) + h2/2;
-        }else{
-            obj.x = states["origin"].x + cos( mr ) * (-w2/2) - sin( mr ) * (-h2/2) + w2/2;
-            obj.y = states["origin"].y + sin( mr ) * (-w2/2) + cos( mr ) * (-h2/2) + h2/2;
-        }
+        obj.x += cos( mr ) * (-obj.width * 0.5) - sin( mr ) * (-obj.height * 0.5) + obj.width * 0.5;
+        obj.y += sin( mr ) * (-obj.width * 0.5) + cos( mr ) * (-obj.height * 0.5) + obj.height * 0.5;
+    }
+
+    function unset_rotation(r, obj) {
+        local mr = PI * r / 180;
+        obj.x -= cos( mr ) * (-obj.width * 0.5) - sin( mr ) * (-obj.height * 0.5) + obj.width * 0.5;
+        obj.y -= sin( mr ) * (-obj.width * 0.5) + cos( mr ) * (-obj.height * 0.5) + obj.height * 0.5;
     }
 
     function blur(obj){
@@ -1019,7 +1076,7 @@ class PresetAnimation extends Animation {
         local y = art.y;
         local dw = opts.datas.tw * 3.50 - opts.datas.tw;
         local dh = opts.datas.th * 3.50 - opts.datas.th;
-        local itr;
+        local itr = CubicBezierInterpolator("ease-in-circle");
 
         if(!opts.datas.zoom){
             itr = CubicBezierInterpolator("ease-out-circle");
@@ -1051,31 +1108,28 @@ class PresetAnimation extends Animation {
             opts.datas.velX = -opts.datas.velX;
             x = flw - (w * 0.5);
         }
-        // update position
-        if(true){
-            art.x = opts.datas.velX + itr.interpolate(art.x, x , progress);
-            art.y = opts.datas.velY + itr.interpolate(art.y, y , progress);
-            art.width = itr.interpolate(art.width , w, progress);
-            art.height = itr.interpolate(art.height, h, progress);
-        }else{
-            art.width = w;
-            art.height = h;
-            art.x = x + opts.datas.velX;
-            art.y = y + opts.datas.velY;
-        }
 
-        if (progress >=1.0){
+        // update position
+        art.x = x + opts.datas.velX;
+        art.y = y + opts.datas.velY;
+        art.width = itr.interpolate(art.width , w, progress);
+        art.height = itr.interpolate(art.height, h, progress);
+
+        if(opts.rotation) opts.target["rotation"] +=opts.duration * 0.001; // animated rotation ( only if > 180 )
+
+        if (progress >= 1.0){
             opts.datas.zoom = 1 - opts.datas.zoom;
-            progress = 0;
+            progress = 0.0;
         }
     }
 
     function random_bounce(art){ // OK
+        // bottom bound
         if ( art.y + art.height >= flh){
             opts.datas.velY = -opts.datas.velY * opts.datas.damping;
             if(opts.datas.bound){
-                opts.datas.velY = ( rand()%(opts.datas.bound - (opts.datas.bound / 2) + 1) + (opts.datas.bound / 2) ) * opts.datas.damping
-                local jumpX = (rand()%( opts.datas.bound / 2 - (opts.datas.bound / 4) + 1) + (opts.datas.bound / 4));
+                opts.datas.velY = ( rand()%(opts.datas.bound - (opts.datas.bound * 0.5) + 1) + (opts.datas.bound * 0.50) ) * opts.datas.damping
+                local jumpX = (rand()%( opts.datas.bound * 0.5 - (opts.datas.bound * 0.25) + 1) + (opts.datas.bound * 0.25));
                 if(rndint(3) < 1) opts.datas.velX += jumpX; else opts.datas.velX -= jumpX;
                 opts.datas.bound = false;
             }
@@ -1100,9 +1154,12 @@ class PresetAnimation extends Animation {
         }
         // add gravity
         opts.datas.velY += opts.datas.gravity;
-        if( abs(opts.datas.velY) == 0 && art.y > rand()%(flw / 2 - flw / 4 + 1) + flw / 4){
-           opts.datas.bound = (art.y + art.height) / 10;
+        if( abs(opts.datas.velY) == 0 && art.y > rand()%(flw * 0.5 - flw * 0.5 + 1) + flw * 0.25){
+           opts.datas.bound = (art.y + art.height) * 0.1;
         }
+
+        if(opts.rotation) opts.target["rotation"]+=opts.duration * 0.001;
+
         // update position
         art.x += opts.datas.velX;
         art.y += opts.datas.velY;
@@ -1131,13 +1188,8 @@ class PresetAnimation extends Animation {
 
         if (animate_type == "hover vertical" || animate_type == "hover")
         {
-            if ( art.y >= surface.y+range && _move_direction_y == "Down"){
-                _move_direction_y = "Up";
-            }
-
-            if(art.y <= surface.y-range && _move_direction_y == "Up"){
-                _move_direction_y = "Down";
-            }
+            if(art.y >= surface.y+range && _move_direction_y == "Down") _move_direction_y = "Up";
+            if(art.y <= surface.y-range && _move_direction_y == "Up") _move_direction_y = "Down";
 
             if (_move_direction_y == "Down"){
                 art.y += move_speed_y;
@@ -1148,12 +1200,8 @@ class PresetAnimation extends Animation {
 
         if (animate_type == "hover horizontal" || animate_type == "hover")
         {
-            if (art.x >= surface.x+range && _move_direction_x == "Right"){
-                _move_direction_x = "Left";
-            }
-            if (art.x <= surface.x-range && _move_direction_x == "Left"){
-                _move_direction_x = "Right";
-            }
+            if (art.x >= surface.x+range && _move_direction_x == "Right") _move_direction_x = "Left";
+            if (art.x <= surface.x-range && _move_direction_x == "Left")  _move_direction_x = "Right";
 
             if (_move_direction_x == "Right"){
                 art.x += move_speed_x;
@@ -1184,7 +1232,7 @@ class PresetAnimation extends Animation {
         return roll;
     }
 
-    //Generate a pseudo-random integer between 0 and max
+    // Generate a pseudo-random integer between 0 and max
     function rndint(max) {
         local roll = 1.0 * max * rand() / RAND_MAX;
         return roll.tointeger();
@@ -1194,5 +1242,4 @@ class PresetAnimation extends Animation {
     static function normalize(value, min, max) {
         return (value - min) / (max - min);
     }
-
 }
