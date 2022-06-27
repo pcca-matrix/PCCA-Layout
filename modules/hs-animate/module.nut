@@ -122,7 +122,7 @@ class Animation {
             } else {
                 tick = ::clock() * 1000 - last_update;
                 elapsed += tick;
-                last_update = ::clock() * 1000;
+                //last_update = ::clock() * 1000;
                 if ( elapsed > opts.delay ) {
                     //increase progress
                     if ( opts.duration <= 0 ) {
@@ -137,6 +137,7 @@ class Animation {
         }else if( resting && progress == 1 ){
             anim_rest();
         }
+        last_update = ::clock() * 1000; // keep counter alive (when using pause)
     }
 
     //listen to AM transitions

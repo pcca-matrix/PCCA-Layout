@@ -98,6 +98,7 @@ local prev_back = {}; // previous background table infos ( transitions )
 
 // Globals
 local tr_directory_cache  = get_dir_lists( medias_path + "Frontend/Video/Transitions" ); // cached table of global transitions files
+local pause_animation = ["rain float", "chase", "arc shrink", "arc grow", "bounce around 3d", "bounce random", "scroll"];
 
 Ini_settings <- get_ini_values("Main Menu"); // initialize and set settings ini value for main menu
 
@@ -691,6 +692,7 @@ function background_transitions(anim, File){
 }
 
 function load_theme(name, theme_content, prev_def){
+    set_custom_value(Ini_settings);
     xml_root = null;
     if(theme_content.len() <= 0){  // If there is no theme file, return (unified theme)
         hd = true;
@@ -704,13 +706,10 @@ function load_theme(name, theme_content, prev_def){
         return false;
     }
 
-    set_custom_value(Ini_settings);
-
     local zippath = "";
     local DiR = theme_content[0];
     if ( DiR[DiR.len()-1] == '/' ) zippath = theme_content[0];
     local f = ReadTextFile( name, zippath + "Theme.xml" );
-
     local raw_xml = "";
     while ( !f.eos() ){
         local l = f.read_line();
@@ -729,6 +728,7 @@ function load_theme(name, theme_content, prev_def){
     try{ xml_root = xml.load( raw_xml ); } catch ( e ) { };
     local theme_node = find_theme_node( xml_root );
     try{ theme_node.children } catch ( e ) { return; }; // return if no xml
+
     foreach(a,b in artwork_list_full) availables[b] <- false; // reset full artworks availability
     local anim_rotate;
 
@@ -1122,7 +1122,6 @@ function game_in_out( ttype, var, ttime ) {
 // Global Transition
 //
 local prev_tr = 0;
-
 fe.add_transition_callback( "hs_transition" );
 function hs_transition( ttype, var, ttime )
 {
@@ -1180,7 +1179,10 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.ToNewSelection: //2
-            foreach(a,b in artwork_list ) if(curr_theme != "Default" || availables[b] == false ) anims[a].stop(); // used to stop hideart when navigating!
+            foreach(a,b in artwork_list ){
+                if(curr_theme != "Default" || availables[b] == false ) anims[a].stop(); // used to stop hideart when navigating !
+                if(pause_animation.find(anims[a].opts.preset) != null ) anims[a].pause(); // pause some looping animation
+            }
             wheel_surf.alpha = 255;
             ArtObj.snap.video_flags = Vid.NoAudio;
             Background_Music.playing = false;
@@ -1213,6 +1215,10 @@ function hs_transition( ttype, var, ttime )
                 if (sid > sound_buffer_size) sid = 0;
                 Wheelclick[sid].file_name = wsound;
                 Wheelclick[sid].playing = true;
+            }
+
+            foreach(a,b in artwork_list ){
+                if( pause_animation.find(anims[a].opts.preset) != null) anims[a].unpause(); // unpause looping animations
             }
         break;
 
