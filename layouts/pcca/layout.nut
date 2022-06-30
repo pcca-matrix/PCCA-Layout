@@ -1060,7 +1060,7 @@ overlay_list.set_sel_rgb( 255, 0, 0 );
 local overlay_title = custom_overlay.add_text("", flw*0.346, flh*0.324, flw*0.312, flh*0.046);
 overlay_title.charsize = flw*0.018;
 overlay_title.set_rgb(192, 192, 192);
-local exit_overlay = fe.overlay.set_custom_controls( overlay_title, overlay_list );
+local exit_overlay = fe.overlay.set_custom_controls( overlay_title, overlay_list ); // should be called set_custom_style instead of control ...
 
 local wheel_art = custom_overlay.add_image( "[!ret_wheel]", flw*0.425, flh*0.192, flw*0.156, flh*0.138);
 wheel_art.visible = false;
@@ -1428,7 +1428,7 @@ function hs_tick( ttime )
             }else{ //if no video is found assume it's system default theme
                 path = medias_path + fe.list.name + "/Themes/Default/";
                 theme_content = zip_get_dir( path );
-                if(!theme_content.len()){
+                if(!theme_content.len() && curr_sys != "Main Menu"){
                     path = medias_path + fe.list.name + "/Themes/Default.zip";
                     theme_content = zip_get_dir( path );
                 }
