@@ -37,6 +37,13 @@ globs <- {"signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.
 medias_path <- ( my_config["medias_path"] != "" ? my_config["medias_path"] : fe.script_dir + "Media" );
 if ( medias_path.len()-1 != '/' ) medias_path += "/";
 
+// check if it's am or am+ (thanks zpaolo11x)
+AMPlus <- true;
+try{fe.add_rectangle(0,0,10,10)}
+catch(err){
+    AMPlus <- false;
+}
+
 //-- controls
 controls <- {};
 controls.Right <- ["Joy0 Right", "Right"];
@@ -156,7 +163,7 @@ hd <- true; // global bool for hd or hs theme
 // Background / Bezel
 ArtObj.background <- fe.add_image("", 0, 0, flw, flh);
 ArtObj.background.file_name = "images/Backgrounds/Black.png";
-ArtObj.background1 <- fe.add_image("images/init.swf",-2000,-2000,0.1,0.1); // needed for initialising SWF  ?, without can't use any surface overlay when swf is displayed (AM BUG) !
+ArtObj.background1 <- fe.add_image( (AMPlus ? "" : "images/init.swf"),-2000,-2000,0.1,0.1); // needed for initialising SWF  ?, without can't use any surface overlay when swf is displayed (AM BUG) !
 ArtObj.background2 <- fe.add_image("",-2000,-2000,0.1,0.1);
 ArtObj.background1.visible = false;
 ArtObj.background2.visible = false;
@@ -1569,8 +1576,7 @@ menus.push ({
                 set_list( { "title":"Keep Aspect", "object":current_list.object, "slot_pos":(elem.attr["keepaspect"] ? 0 : 1),
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
-                            print("selectd ="+selected_row.target)
-                            xml_root.getChild(current_list.object).addAttr("keepaspect", (selected_row.target == "yes" ? "true" : "false") );
+                            xml_root.getChild(current_list.object).addAttr("keepaspect", (selected_row.target == "yes" ? true : false) );
                             save_xml(xml_root, path);
                             trigger_load_theme = true;
                         }
@@ -1815,7 +1821,7 @@ menus.push({
                 set_list( { "title":"Keep Aspect", "slot_pos":(xml_root.getChild("video").attr["forceaspect"] ? 0 : 1),
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
-                            xml_root.getChild("video").addAttr("forceaspect", (selected_row.target == "yes" ? "true" : "false") );
+                            xml_root.getChild("video").addAttr("forceaspect", (selected_row.target == "yes" ? true : false) );
                             save_xml(xml_root, path);
                             trigger_load_theme = true;
                         }
@@ -1893,7 +1899,7 @@ menus.push({
                 "rows":YesNo_menu,
                     "onselect":function(current_list, selected_row){
                         video_shader.set_param("scanline", (selected_row.target == "yes" ? 1 : 0 ) );
-                        xml_root.getChild("video").addAttr("crt_scanline", (selected_row.target == "yes" ? "true" : "false") );
+                        xml_root.getChild("video").addAttr("crt_scanline", (selected_row.target == "yes" ? true : false) );
                     }
             });
             return true;
@@ -2824,7 +2830,9 @@ function edit_artworks(elem){ // edit for artworks pos/size/rotate
         set = child.addAttr("r", r-=step); // rotate cw
     }
 
-    if(child.attr["keepaspect"]){
+    local set_aspect = (elem == "video" ? "forceaspect" : "keepaspect");
+
+    if(child.attr[set_aspect]){
         if( g_input("ZWP") || g_input("ZHP")){
            set = child.addAttr("w", w+=step);
         }
