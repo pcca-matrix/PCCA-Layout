@@ -14,6 +14,7 @@ _LL["Fr"] <- {
     Filter_all = "tous",
     Yes = "Oui",
     No = "Non",
+    Close = "Fermer",
     M_Menu_stretch = "Etiré",
     M_Menu_center = "Centrer",
     M_inf_Bezel = "Utiliser les bezels pour les themes HS",
@@ -39,7 +40,16 @@ _LL["Fr"] <- {
     M_inf_gametext_stroke = "Couleur bord de texte des infos jeu",
     M_inf_gametext = "Montre ou cache les infos jeu",
     M_inf_pointer_pos = "Position du pointeur de la wheel",
-    M_inf_pointer_anim = "Utiliser un pointeur de wheel animé"
+    M_inf_pointer_anim = "Utiliser un pointeur de wheel animé",
+    M_inf_Special_disabled = "Les specials artwork sont desactivé globalement...",
+    M_inf_No_Overlay = "Il n'y as pas d'overlay video dans ce theme.",
+    M_inf_No_Artworks = "Aucun artwork trouvé, merci d'en ajouter.",
+    Create_folder = "Theme, dossier et xml crée , ajouter vos artwork",
+    Uneditable = "Les themes Zip et unified video ne sont pas editable ...",
+    Cancel = "Annuler",
+    Edit_Ask = "Que voulez-vous faire ?",
+    Create = "Créer",
+    Edit = "Editer"
 }
 
 _LL["En"] <- {
@@ -56,6 +66,7 @@ _LL["En"] <- {
     Filter_all = "all",
     Yes = "Yes",
     No = "No",
+    Close = "Close",
     M_Menu_stretch = "Stretch",
     M_Menu_center = "Center",
     M_inf_Bezel = "Display or hide bezel on HS themes",
@@ -73,7 +84,7 @@ _LL["En"] <- {
     M_inf_wheel_speed = "Time in milliseconds for wheel spin",
     M_inf_wheel_fade = "Time in seconds for wheel fade out (negative value disable fading)",
     M_inf_wheel_fade_val = "Alpha value of the faded wheel (0.0 - 1.0)",
-    M_inf_wheel_slots = "Number of wheel to display", 
+    M_inf_wheel_slots = "Number of wheel to display",
     M_inf_wheel_stats = "position of the wheel stats infos",
     M_inf_wheel_pos = "Align the position of the wheel",
     M_inf_gsurf_pos = "position of the game info surface",
@@ -81,7 +92,14 @@ _LL["En"] <- {
     M_inf_gametext_stroke = "Stroke color of the game text font",
     M_inf_gametext = "Enable or disable the Game Info Surface",
     M_inf_pointer_pos = "Wheel pointer position",
-    M_inf_pointer_anim = "Use pointer animation"
-    
-    
+    M_inf_pointer_anim = "Use pointer animation",
+    M_inf_Special_disabled = "Special artworks are globally disabled...",
+    M_inf_No_Overlay = "There is no video overlay in this theme",
+    M_inf_No_Artworks = "No Artworks found Please add them !",
+    Create_folder = "Theme folder and XML created! please add your artworks",
+    Uneditable = "Zip and unified video theme are not editable...",
+    Cancel = "Cancel",
+    Edit_Ask = "What do you want to do ?",
+    Create = "Create",
+    Edit = "Edit"
 }

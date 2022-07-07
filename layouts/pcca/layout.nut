@@ -1061,16 +1061,18 @@ local overlay_anim = PresetAnimation(custom_overlay)
 local overlay_list = custom_overlay.add_listbox(flw*0.369, flh*0.361 , flw*0.260, flh*0.370);
 overlay_list.font = "SF Slapstick Comic Bold Oblique";
 overlay_list.align = Align.Centre;
-overlay_list.selbg_alpha = 0;
-overlay_list.set_sel_rgb( 255, 0, 0 );
+SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
 
-local overlay_title = custom_overlay.add_text("", flw*0.346, flh*0.324, flw*0.312, flh*0.046);
+local overlay_title = custom_overlay.add_text("", 0, flh*0.324, flw, flh*0.046);
 overlay_title.charsize = flw*0.018;
 overlay_title.set_rgb(192, 192, 192);
-local exit_overlay = fe.overlay.set_custom_controls( overlay_title, overlay_list ); // should be called set_custom_style instead of control ...
+fe.overlay.set_custom_controls( overlay_title, overlay_list ); // should be called set_custom_style instead of control ...
 
 local wheel_art = custom_overlay.add_image( "[!ret_wheel]", flw*0.425, flh*0.192, flw*0.156, flh*0.138);
 wheel_art.visible = false;
+
+local overlay_icon = custom_overlay.add_image( "", 0, 0, 200, 200);
+overlay_icon.visible = false;
 
 //-- KeyboardSearch
 class Keyboard extends KeyboardSearch
@@ -1299,28 +1301,27 @@ function hs_transition( ttype, var, ttime )
                     overlay_background.file_name = "images/filters_overlay.png"; // 600 x 675
                     overlay_background.set_pos(flw*0.343, flh*0.187, flw*0.312, flh*0.625);
                     overlay_background.alpha = 250;
-                    overlay_list.rows = 7;
-                    overlay_list.charsize = flw*0.017;
+                    SetListBox(overlay_list, {visible = true, rows = 7, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
                     wheel_art.visible = false;
-                    //overlay_title.msg = "Filtres";
+                    overlay_icon.visible = false;
                 break;
 
                 case Overlay.Tags: //31 Tags
                     overlay_background.file_name = "images/tags_overlay.png";
                     overlay_background.set_pos(flw*0.312, flh*0.092, flw*0.385, flh*0.740);
                     overlay_background.alpha = 250;
-                    overlay_list.rows = 7;
-                    overlay_list.charsize = flw*0.017;
+                    SetListBox(overlay_list, {visible = true, rows = 7, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
                     wheel_art.visible = true;
+                    overlay_icon.visible = false;
                 break;
 
                 case 28: //28  favorites
                     overlay_background.file_name = "images/favorites_overlay.png";
                     overlay_background.set_pos(flw*0.312, flh*0.092, flw*0.385, flh*0.740);
                     overlay_background.alpha = 250;
-                    overlay_list.rows = 5;
-                    overlay_list.charsize = flw*0.032;
+                    SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.032 })
                     wheel_art.visible = true;
+                    overlay_icon.visible = false;
                 break;
 
                 case Overlay.Exit: // = 22
@@ -1328,12 +1329,13 @@ function hs_transition( ttype, var, ttime )
                     overlay_background.file_name = medias_path + "Frontend/Images/Menu_Exit_Background_" + my_config["user_lang"] + ".png";
                     if(overlay_background.file_name == "") overlay_background.file_name = medias_path + "Frontend/Images/Menu_Exit_Background.png"; // if hyperspin default exit screen
                     overlay_background.set_pos(0,0,flw, flh);
-                    overlay_list.rows = 3;
-                    overlay_list.charsize  = flw*0.052;
-                    overlay_title.msg = "";
+                    SetListBox(overlay_list, {visible = true, rows = 3, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.050 })
                     wheel_art.visible = false;
+                    overlay_title.msg = "";
+                    overlay_icon.visible = false;
                 break;
             }
+
             custom_overlay.visible = true;
             overlay_anim.reverse(false).play();
             overlay_list.visible = true;
@@ -1526,9 +1528,91 @@ menus.push ({
     "title":"Main", "id":"main",
     "rows":[ {"title":"Theme", "target":"theme",
         "onselect":function(a,b){ // act as filter
-            if(IS_ARCHIVE(path)){
-                fe.overlay.edit_dialog("Zip Theme are not editable...","Close")
-                return false;
+            overlay_background.file_name = "images/Backgrounds/faded.png";
+            overlay_background.set_pos(0, 0, flw, flh);
+            overlay_background.alpha = 255;
+            overlay_list.charsize = flw*0.024;
+            overlay_icon.visible = false;
+            overlay_list.set_pos(flw*0.369, flh*0.361 , flw*0.260, flh*0.370);
+            SetListBox(overlay_list, {visible = true, rows = 1, sel_alpha = 0, bg_alpha = 0, selbg_alpha = 0 })
+            overlay_icon.set_pos(flw * 0.5 - (flw * 0.0833 * 0.5), flh * 0.15, flw * 0.0833, flh * 0.1111);
+            if(curr_sys == "Main Menu"){
+                local p = medias_path + "Main Menu\\Themes\\" + fe.game_info(Info.Name) + "\\";
+                if( file_exist(path) && strip_ext(path.tolower()) != "xml" ){
+                    overlay_icon.file_name = "images/warning.png";
+                    overlay_icon.visible = true;
+                    fe.overlay.list_dialog([], LnG.Uneditable, 0, 0)
+                    return false;
+                }else if(!zip_get_dir( p ).len()){
+                    overlay_list.y = flh*0.261
+                    SetListBox(overlay_list, {visible = true, rows = 4, sel_alpha = 255, bg_alpha = 0, selbg_alpha = 0 })
+                    local selected = fe.overlay.list_dialog([ LnG.Create + " main menu theme", LnG.Cancel], LnG.Edit_Ask, 0, -1);
+                    if(selected == 0){
+                        system ("mkdir \"" + p);
+                        create_xml();
+                        save_xml(xml_root, p);
+                        overlay_icon.file_name = "images/validate.png";
+                        overlay_icon.visible = true;
+                        fe.overlay.list_dialog([], LnG.Create_folder)
+                    }
+                    return false;
+                }
+            }else{
+                if( file_exist(path) && strip_ext(path.tolower()) != "xml" ){
+                    overlay_icon.file_name = "images/warning.png";
+                    overlay_icon.set_pos(flw * 0.5 - (flw * 0.0833 * 0.5), flh * 0.15, flw * 0.0833, flh * 0.1111);
+                    overlay_icon.visible = true;
+                    fe.overlay.list_dialog([], LnG.Uneditable, 0, 0)
+                    return false;
+                }else{
+                    local default_theme = false;
+
+                    if( file_exist(medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\Theme.xml")){ // if game theme exist
+                        return true;
+                    }
+                    if( file_exist(medias_path + curr_sys + "\\Themes\\Default\\Theme.xml")) default_theme = true;
+
+                    if(default_theme){ // if default theme exist but not game theme
+                        SetListBox(overlay_list, {visible = true, rows = 4, sel_alpha = 255, bg_alpha = 0, selbg_alpha = 0 })
+                        local selected = fe.overlay.list_dialog([ LnG.Edit + " default theme",  LnG.Create  + " game theme", LnG.Cancel], LnG.Edit_Ask, 2, -1);
+                        if(selected == 0){
+                            return true;
+                        }else if(selected == 1){
+                            system ("mkdir \"" + medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\");
+                            create_xml();
+                            save_xml(xml_root, medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\")
+                            path = ""; // reset path forcing the theme to reload artworks
+                            trigger_load_theme = true;
+                            overlay_icon.file_name = "images/validate.png";
+                            overlay_icon.visible = true;
+                            fe.overlay.list_dialog([], LnG.Create_folder)
+                        }
+                        return false;
+                    }else{ // ask to Create Default or game theme
+                        SetListBox(overlay_list, {visible = true, rows = 4, sel_alpha = 255, bg_alpha = 0, selbg_alpha = 0 })
+                        local selected = fe.overlay.list_dialog([LnG.Create + " default theme", LnG.Create + "game theme", LnG.Cancel], LnG.Edit_Ask, 1, -1);
+                        if(selected == 0){
+                            system ("mkdir \"" + medias_path + curr_sys + "\\Themes\\Default\\");
+                            create_xml();
+                            save_xml(xml_root, medias_path + curr_sys + "\\Themes\\Default\\")
+                            path = ""; // reset path forcing the theme to reload artworks
+                            trigger_load_theme = true;
+                            overlay_icon.file_name = "images/validate.png";
+                            overlay_icon.visible = true;
+                            fe.overlay.list_dialog([], LnG.Create_folder);
+                        }else if(selected == 1){
+                            system ("mkdir \"" + medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\");
+                            create_xml();
+                            save_xml(xml_root, medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\")
+                            path = ""; // reset path forcing the theme to reload artworks
+                            trigger_load_theme = true;
+                            overlay_icon.file_name = "images/validate.png";
+                            overlay_icon.visible = true;
+                            fe.overlay.list_dialog([], LnG.Create_folder)
+                        }
+                        return false;
+                    }
+                }
             }
             return true;
         }
@@ -1718,32 +1802,11 @@ menus.push({
                 art_av.sort();
             }
 
-            if( !file_exist(path + "Theme.xml") ){
-                fe.overlay.edit_dialog("No theme xml found, empty one is created for your resolution", "Close")
-                local f = ReadTextFile( fe.script_dir, "empty.xml" );
-                local raw_xml = "";
-                while ( !f.eos() ) raw_xml += f.read_line();
-                try{ xml_root = xml.load( raw_xml ); } catch ( e ) { }
-                local res_c = split( my_config["theme_resolution"].tolower(), "x");
-                xml_root.getChild("hd").addAttr("lw", res_c[0]);
-                xml_root.getChild("hd").addAttr("lh", res_c[1]);
-                save_xml(xml_root, path);
-                path = ""; // reset path forcing the theme to reload artworks
-                trigger_load_theme = true;
+            if(!art_av.len()){
+                overlay_icon.file_name = "images/warning.png";
+                overlay_icon.visible = true;
+                fe.overlay.list_dialog([], LnG.M_inf_No_Artworks, 0, 0)
                 return;
-            }
-
-            if(!xml_root.getChild("hd")){
-                local node = XMLNode();
-                node.parent = "Theme";
-                node.startPos = 0;
-                node.tag = "hd";
-                local res_c = split( my_config["theme_resolution"].tolower(), "x");
-                node.attr["lw"] <- 1920;
-                node.attr["lh"] <- 1080;
-                xml_root.addChild(node);
-                xml_root.getChild("hd").addAttr("lw", res_c[0]);
-                xml_root.getChild("hd").addAttr("lh", res_c[1]);
             }
 
             // create the artworks list menu
@@ -1777,7 +1840,9 @@ menus.push({
         "title":"Video Overlay", "target":"video_overlay",
         "onselect":function(current_list, selected_row){
             if(!availables["video"]){
-                fe.overlay.edit_dialog("There is no video overlay in this theme","Close")
+                overlay_icon.file_name = "images/warning.png";
+                overlay_icon.visible = true;
+                fe.overlay.list_dialog([], LnG.M_inf_No_Overlay, 0, 0)
                 return false;
             }
             return true
@@ -1787,7 +1852,9 @@ menus.push({
         "title":"Special Artworks", "target":"special_list",
             "onselect":function(current_list, selected_row){
                 if(my_config["special_artworks"].tolower() == "no"){
-                    fe.overlay.edit_dialog("Special artworks are globally disabled...","Close")
+                    overlay_icon.file_name = "images/warning.png";
+                    overlay_icon.visible = true;
+                    fe.overlay.list_dialog([], LnG.M_inf_Special_disabled, 0, 0)
                     return false;
                 }
                 return true;
@@ -2896,12 +2963,14 @@ function overlay_video(){
 
 function artworks_transform(Xtag, rotate=true, art=""){
     local artD = clone(xml_root.getChild(Xtag).attr);
-    //if(artD.keepaspect || !hd) ArtObj[Xtag].preserve_aspect_ratio = true;
+
     if(artD.keepaspect || !hd) artD.h = artD.w / ( ArtObj[Xtag].texture_width.tofloat() / ArtObj[Xtag].texture_height.tofloat() );
 
     if( !artD.w || !artD.h ){
-        artD.w = ArtObj[Xtag].texture_width;
-        artD.h = ArtObj[Xtag].texture_height;
+        artD.w = ArtObj[Xtag].texture_width.tofloat();
+        artD.h = ArtObj[Xtag].texture_height.tofloat();
+        xml_root.getChild(Xtag).addAttr( "w", ArtObj[Xtag].texture_width.tofloat() );
+        xml_root.getChild(Xtag).addAttr( "h", ArtObj[Xtag].texture_height.tofloat() );
     }
 
     artD.x -= artD.w * 0.5;

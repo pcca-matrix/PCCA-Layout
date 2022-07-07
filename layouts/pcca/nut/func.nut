@@ -554,6 +554,37 @@ function video_transform(rotate=true){
     ArtObj.snap.set_pos( (artD.x  * mul) + offset_x, (artD.y * mul_h) + offset_y, viewport_width * mul, viewport_height * mul_h);
 }
 
+function create_theme_struct(sys){
+    system ("mkdir \"" + medias_path + sys + "\\Images\\");
+    system ("mkdir \"" + medias_path + sys + "\\Images\\Letters\\");
+    system ("mkdir \"" + medias_path + sys + "\\Images\\Other\\");
+    system ("mkdir \"" + medias_path + sys + "\\Images\\Particle\\");
+    system ("mkdir \"" + medias_path + sys + "\\Images\\Special\\");
+    system ("mkdir \"" + medias_path + sys + "\\Images\\Wheel\\");
+    system ("mkdir \"" + medias_path + sys + "\\Images\\Backgrounds\\");
+    system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork1\\");
+    system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork2\\");
+    system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork3\\");
+    system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork4\\");
+    system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork5\\");
+    system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork6\\");
+    system ("mkdir \"" + medias_path + sys + "\\Sound\\");
+    system ("mkdir \"" + medias_path + sys + "\\Sound\\Wheel sounds\\");
+    system ("mkdir \"" + medias_path + sys + "\\Themes\\");
+    system ("mkdir \"" + medias_path + sys + "\\Video\\");
+    system ("mkdir \"" + medias_path + sys + "\\Video\\Override Transitions\\");
+}
+
+function create_xml(){
+    local f = ReadTextFile( fe.script_dir, "empty.xml" );
+    local raw_xml = "";
+    while ( !f.eos() ) raw_xml += f.read_line();
+    try{ xml_root = xml.load( raw_xml ); } catch ( e ) { }
+    local res_c = split( my_config["theme_resolution"].tolower(), "x");
+    xml_root.getChild("hd").addAttr("lw", res_c[0]);
+    xml_root.getChild("hd").addAttr("lh", res_c[1]);
+}
+
 /* DEBUG */
 
 //Convert a squirrel table to a string
@@ -568,6 +599,28 @@ function table_as_string( table )
             str += name + ": " + value + " \n"
 
     return str
+}
+
+function SetListBox(obj, p) {
+    if ( obj == null ) return;
+    foreach( key, val in p )
+        try {
+            if ( key == "rgba" ) {
+                obj.set_rgb(p[key][0], p[key][1], p[key][2]);
+                obj.alpha = p[key][3];
+            } else if ( key == "bg_rgba" ) {
+                obj.set_bg_rgb(p[key][0], p[key][1], p[key][2]);
+                obj.bg_alpha = p[key][3];
+            } else if ( key == "sel_rgba" ) {
+                obj.set_sel_rgb(p[key][0], p[key][1], p[key][2]);
+                obj.sel_alpha = p[key][3];
+            } else if ( key == "selbg_rgba" ) {
+                obj.set_selbg_rgb(p[key][0], p[key][1], p[key][2]);
+                obj.selbg_alpha = p[key][3];
+            } else {
+                obj[key] = val;
+            }
+        } catch(e) {}
 }
 
 // named transitions
