@@ -73,7 +73,7 @@ class PresetAnimation extends Animation {
         opts.delay = 0;
         opts.trigger_restart = true;
         key_interpolator.clear();
-        opts.speed = 1;
+        opts.speed = 1.0;
         opts.delay_from = 0;
         opts.interpolator = CubicBezierInterpolator("linear");
         hide_particles();

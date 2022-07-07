@@ -125,8 +125,10 @@ class Animation {
                 //last_update = ::clock() * 1000;
                 if ( elapsed > opts.delay ) {
                     //increase progress
-                    if ( opts.duration <= 0 ) {
-                         progress = clamp( progress + ( opts.smoothing * opts.speed ), 0, 1);
+                    if ( opts.speed != 1.0 ) {
+                        progress = clamp( progress + ( opts.smoothing * opts.speed ), 0, 1);
+                    }else if(opts.duration == 0){ // set obj at final position if no duration
+                        progress = 1.0;
                     } else {
                         //use time
                         progress =  clamp( progress + (tick / opts.duration) ,0 ,1);
