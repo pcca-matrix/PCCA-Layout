@@ -1652,6 +1652,10 @@ menus.push ({
                 _edit_type = "pos/size/rotate";
                 _slot[_slot_pos].set_bg_rgb(30, 240, 40); // set cell color on the menu
                 globs.signal = "edit_sig";
+            },
+            "onback":function(selected_row, current_list){
+                local anum = current_list.object.slice( 7, 8 ).tointeger() -1; // get the artwork index for anims array
+                anims[anum].resting = true;
             }
         },
         {"title":"Keep Aspect",
