@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.50
+// PCCA v2.55
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -448,18 +448,18 @@ surf_menu_info.alpha = 200;
 surf_menu_info.visible = false;
 surf_menu.visible = false;
 
-/* Extra Artworks Screen Overlay */
-local surf_inf = fe.add_surface(flw, flh);
-local surf_bck = surf_inf.add_image("images/Backgrounds/faded.png", 0, 0, flw, flh );
+/* Extra Artworks and startup infos Screen Overlay */
+surf_inf <- fe.add_surface(flw, flh);
+surf_bck <- surf_inf.add_image("images/Backgrounds/faded.png", 0, 0, flw, flh );
 surf_img <- surf_inf.add_image("", 0, 0, 0, flh * 0.82 );
 local surf_arrow = surf_inf.add_image("images/double_arrow.png", flw * 0.5 - ( flw * 0.083 * 0.5), flh * 0.942, flw * 0.083, flh * 0.037);
+surf_arrow.visible = false;
 surf_img.preserve_aspect_ratio = true;
 surf_inf.visible = false;
 
-local surf_txt = surf_inf.add_text( "", flw * 0.007, flh * 0.018, flw, flh * 0.046)
+surf_txt <- surf_inf.add_text( "", flw * 0.007, flh * 0.018, flw, flh * 0.046)
 surf_txt.font = ttfont;
 surf_txt.align = Align.Left;
-surf_txt.set_rgb( 241, 250, 200 );
 
 local surf_inf_anim = PresetAnimation(surf_inf)
 .key("alpha").from(0).to(255)
@@ -506,7 +506,11 @@ local extraArtworks = {
         }else{
             surf_arrow.visible = false;
         }
-        if( title.len() ) surf_txt.msg = nbr+" "+title.slice( 0, 1 ).toupper() + title.slice( 1, title.len() ); // caps first char
+        if( title.len() ){
+            surf_txt.set_pos(flw * 0.007, flh * 0.018, flw, flh * 0.046);
+            surf_txt.set_rgb( 241, 250, 200 );
+            surf_txt.msg = nbr+" "+title.slice( 0, 1 ).toupper() + title.slice( 1, title.len() ); // caps first char
+        }
     }
 }
 
@@ -1168,9 +1172,13 @@ function hs_transition( ttype, var, ttime )
                 ArtObj.snap.video_playing = false;
                 return true;
             }else{
-                global_fade(1500, 1500, false)
-                // store old playedtime when lauching a game (only if Track Usage is set to Yes in AM!)
-                if( fe.game_info(Info.PlayedTime) != "" ) game_elapse = fe.game_info(Info.PlayedTime).tointeger();
+                if(!get_infos_screen(fe.game_info(Info.Name), curr_sys, ttime)){
+                    return true;
+                }else{
+                    global_fade(1500, 1500, false)
+                    // store old playedtime when lauching a game (only if Track Usage is set to Yes in AM!)
+                    if( fe.game_info(Info.PlayedTime) != "" ) game_elapse = fe.game_info(Info.PlayedTime).tointeger();
+                }
             }
         break;
 
@@ -2554,10 +2562,6 @@ signals["move_sig"] <- function (str) {
             sel_menu.reset();
             surf_inf_anim.reverse(true).play();
             return true;
-        break;
-
-        case  my_config["extra_artworks_key"]:
-
         break;
 
         case "select":

@@ -80,6 +80,31 @@ function get_ini_values(name){
     return map;
 }
 
+function get_ini(path){
+    local map = {};
+    local f = ReadTextFile( path );
+    local entity = null;
+    while ( !f.eos() )
+    {
+        local line = strip( f.read_line() );
+        if (( line.len() > 0 ) && ( line[0] == '[' ))
+        {
+            entity = line.slice( 1, line.len()-1 ).tolower();
+            map[ entity ] <- {};
+        }
+        else
+        {
+            if(!line.find("=")) continue;
+            local temp = split( line, "=" );
+            local v = ( temp.len() > 1 ) ? strip( temp[1] ).tolower() : "";
+            local key = strip(temp[0]).tolower();
+            if ( entity ) map[ entity ][ key ] <- v;
+            else map[ key ] <- v;
+        }
+    }
+    return map;
+}
+
 function refresh_stats(system = "") {
     fe.overlay.splash_message (LnG.RefreshTxt + " ...")
     local datas = main_infos; local sys = "";local cnt;
@@ -585,6 +610,64 @@ function create_xml(){
     xml_root.getChild("hd").addAttr("lh", res_c[1]);
 }
 
+function get_infos_screen(curr_game, curr_sys, ttime){
+    local def = false, game = false, globals = false;
+    // check if infos is available for this systeme and for selected game
+    if(file_exist(fe.script_dir + "Loader/" + curr_sys + "/Default/settings.ini")) def = true;
+    if(file_exist(fe.script_dir + "Loader/" + curr_sys + "/" + curr_game + "/settings.ini")) game = true;
+    surf_txt.msg = "";
+    surf_txt.set_rgb( 255, 255, 255 );
+    surf_img.file_name = "";
+    
+    if(def){
+        local def_ini = get_ini(fe.script_dir + "Loader/" + curr_sys + "/Default/settings.ini");
+        if(def_ini.main.globals == "true"){
+            surf_bck.file_name = fe.script_dir + "Loader/" + curr_sys + "/Default/default.png";
+            surf_inf.visible = true;
+            surf_inf.alpha = 255;
+            // type
+            switch(def_ini.main.type){
+                case "select":
+                    local opts = split( def_ini.main.options, "," );
+                    opt_selected <- fe.overlay.list_dialog(opts, def_ini.main.select_title, 0, -1);
+                    fe.do_nut(fe.script_dir + "Loader/" + curr_sys + "/Default/action.nut");
+                break;
+            }
+        }
+    }
+
+    if(game){
+        local game_ini = get_ini(fe.script_dir + "Loader/" + curr_sys + "/" + curr_game + "/settings.ini");
+        surf_bck.file_name = fe.script_dir + "Loader/" + curr_sys + "/" + curr_game + "/default.png";
+        surf_inf.visible = true;
+        surf_inf.alpha = 255;
+        // type
+        switch(game_ini.main.type){
+            case "select":
+                local opts = split( game_ini.main.options, "," );
+                opt_selected <- fe.overlay.list_dialog(opts, game_ini.main.select_title, 0, -1);
+                fe.do_nut(fe.script_dir + "Loader/" + curr_sys + "/" + curr_game + "/action.nut");
+            break;
+
+            case "infos":
+                if( "infos" in game_ini.main ) surf_txt.msg = game_ini.main.infos;
+                if( "infos_pos" in game_ini.main ){
+                    local pos = split( game_ini.main.infos_pos, "," ).map(function(v){return v.tofloat()});
+                    surf_txt.set_pos(flw * pos[0], flh * pos[1], flw * pos[2], flh * pos[3]);
+                }
+                if( "infos_rgb" in game_ini.main ){
+                    local rgb = split( game_ini.main.infos_rgb, "," ).map(function(v){return v.tointeger()});;
+                    surf_txt.set_rgb( rgb[0], rgb[1], rgb[2] );
+                }
+                fe.overlay.list_dialog(["Continue"],"", 0,-1); // simulate wait
+            break;
+        }
+    }
+    surf_txt.msg = "";
+    surf_inf.visible = false;
+    surf_bck.file_name = "images/Backgrounds/faded.png"; // restore !!
+   return true;
+}
 /* DEBUG */
 
 //Convert a squirrel table to a string

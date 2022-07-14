@@ -25,10 +25,10 @@
            type="none"
            start="none"
            rest="none"/>
-    <artwork1 x="200" y="200" w="0" h="0" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-8"/>
-    <artwork2 x="200" y="500" w="0" h="0" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-4"/>
-    <artwork3 x="600" y="200" w="0" h="0" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-3"/>
-    <artwork4 x="700" y="700" w="0" h="0" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-2"/>
-    <artwork5 x="800" y="400" w="0" h="0" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-9"/>
-    <artwork6 x="900" y="300" w="0" h="0" r="0" time="0.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-9"/>
+    <artwork1 x="200" y="200" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-8"/>
+    <artwork2 x="200" y="500" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-4"/>
+    <artwork3 x="600" y="200" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-3"/>
+    <artwork4 x="700" y="700" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-2"/>
+    <artwork5 x="800" y="400" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-9"/>
+    <artwork6 x="900" y="300" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-9"/>
 </Theme>
