@@ -173,7 +173,7 @@ ArtObj.bezel.visible = false;
 // create all artworks img obj
 foreach(a,b in artwork_list_full) ArtObj[b] <- fe.add_image("",-1000,-1000,0.1,0.1);
 ArtObj.snap <- fe.add_image("",-1000,-1000,0.1,0.1);
-
+ArtObj.snap.mipmap = true;
 // Override Transitions Videos
 local flv_transitions = fe.add_image("",0,0,flw,flh);
 flv_transitions.video_flags = Vid.NoLoop;
@@ -199,6 +199,7 @@ anims_shader <- [];
 anims <- [];
 foreach(k,v in artwork_list ){
     artwork_shader.push( fe.add_shader( Shader.VertexAndFragment, "shaders/main.vert", "shaders/artworks.frag" ) );
+    ArtObj[v].mipmap = true;
     ArtObj[v].shader = artwork_shader[k];
     anims_shader.push( ShaderAnimation( artwork_shader[k] ) );
     anims.push( PresetAnimation(ArtObj[v]).name(v));
@@ -452,11 +453,12 @@ surf_menu.visible = false;
 surf_inf <- fe.add_surface(flw, flh);
 surf_bck <- surf_inf.add_image("images/Backgrounds/faded.png", 0, 0, flw, flh );
 surf_img <- surf_inf.add_image("", 0, 0, 0, flh * 0.82 );
+surf_img.mipmap = true;
 local surf_arrow = surf_inf.add_image("images/double_arrow.png", flw * 0.5 - ( flw * 0.083 * 0.5), flh * 0.942, flw * 0.083, flh * 0.037);
 surf_arrow.visible = false;
 surf_img.preserve_aspect_ratio = true;
 surf_inf.visible = false;
-
+surf_inf.zorder=1;
 surf_txt <- surf_inf.add_text( "", flw * 0.007, flh * 0.018, flw, flh * 0.046)
 surf_txt.font = ttfont;
 surf_txt.align = Align.Left;
@@ -477,6 +479,7 @@ local extraArtworks = {
         num = 0
         local lst = zip_get_dir( medias_path + curr_sys + "/Images/Artworks/" +  fe.game_info(Info.Name) );
         foreach( v in lst ) if( ["jpg","png","mp4"].find( ext(v) ) != null ) lists.push(v);
+        return lists;
     },
 
     function setImage( act=0 ){
@@ -1428,7 +1431,7 @@ function hs_tick( ttime )
             local tr_cache  = get_dir_lists( medias_path + curr_sys + "/Video/Override Transitions/" ); // cached table of global transitions files
             if( fe.game_info(Info.Name).tolower() in tr_cache){ // if transition exist for this game/system
                 flv_transitions.file_name = tr_cache[fe.game_info(Info.Name).tolower()];
-            }else if( (fe.game_info(Info.Category) in tr_cache) ){ // if transitions exist for this game category
+            }else if( (fe.game_info(Info.Category) in tr_directory_cache) ){ // if transitions exist for this game category ( in the frontend folder )
                flv_transitions.file_name = tr_cache[fe.game_info(Info.Name).tolower()]
             }else{ // else choose random transition from cached directory front-end
                 if( tr_directory_cache.len() > 0 ) flv_transitions.file_name = get_random_table(tr_directory_cache);
@@ -2554,6 +2557,7 @@ function main_signal(str){
 signals["move_sig"] <- function (str) {
     switch (str){
         case "back":
+            surf_txt.set_rgb( 241, 250, 200 ); //restore surf_txt when leaving move mode 
             if(sel_menu._edit_type == "edit_obj"){
                 sel_menu._edit_type = null;
                 return true;
@@ -2572,6 +2576,7 @@ signals["move_sig"] <- function (str) {
                 sel_menu._edit_datas.name <- "spec_art";
                 sel_menu._current_list.object <- surf_img;
                 sel_menu._edit_type = "edit_obj";
+                surf_txt.set_rgb( 255, 10, 10 ); // set txt in red to specify we are on move mode
             }
         break;
 
@@ -2668,8 +2673,13 @@ signals["default_sig"] <- function (str) {
 
         case my_config["extra_artworks_key"] : // Extra artworks screen
             if(curr_sys == "Main Menu") break;
+            local spec_list = extraArtworks.getLists();
+            if(!spec_list.len()){
+                dialog_text.msg = "No additional artworks";
+                dialog_anim.play();
+                break;
+            }
             surf_img.width=0;surf_img.height=0; // reset image size !
-            extraArtworks.getLists();
             extraArtworks.setImage();
             surf_inf.visible = true;
             surf_inf_anim.reverse(false).play();
