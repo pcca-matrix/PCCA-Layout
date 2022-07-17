@@ -23,9 +23,15 @@ function global_default_settings(){
 
     Ini_settings["game text"] <- {}
     Ini_settings["game text"]["game_text_active"] <- true;
-    Ini_settings["game text"]["show_year"] <- true;
-    Ini_settings["game text"]["show_manf"] <- true;
-    Ini_settings["game text"]["show_description"] <- true;
+    Ini_settings["game text"]["game_text_hide"] <- false;
+    Ini_settings["game text"]["hide_year"] <- false;
+    Ini_settings["game text"]["hide_lang"] <- false;
+    Ini_settings["game text"]["hide_counter"] <- false;
+    Ini_settings["game text"]["hide_filter"] <- false;
+    Ini_settings["game text"]["hide_rating"] <- false;
+    Ini_settings["game text"]["hide_players"] <- false;
+    Ini_settings["game text"]["hide_category"] <- false;
+    Ini_settings["game text"]["hide_country"] <- false;
     Ini_settings["game text"]["coord"] <- "0,0.805,0"; // in %
     Ini_settings["game text"]["text_color"] <- "FFFFFF";
     Ini_settings["game text"]["stroke_color"] <- "000000";

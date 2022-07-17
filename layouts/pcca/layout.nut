@@ -388,8 +388,7 @@ function dialog_datas(type){
 
 // Game Infos surface
 local ttfont = "ArialCEMTBlack";
-
-surf_ginfos.add_image("[!get_media_tag]", flw*0.006, 0, flw*0.063, flh*0.036)
+local Tags = surf_ginfos.add_image("[!get_media_tag]", flw*0.006, 0, flw*0.063, flh*0.036)
 
 local favo = surf_ginfos.add_text( "[Favourite]", flw*0.004, flh*0.000, flw*0.050, flh*0.035 );
 favo.font = "fontello.ttf";
@@ -421,7 +420,7 @@ local list_entry = OutlinedText(surf_ginfos, "[ListEntry]/[ListSize] " + LnG.dis
 list_entry.set("align" , Align.Left);
 list_entry.set("font" , ttfont);
 
-local Copy =  OutlinedText(surf_ginfos, "[!copyright]", {"color":[255,255,150], "x":flw*0.028, "y":flh*0.111, "w": flw*0.9375 , "size":flh*0.025}, 1.1);
+local Copy = OutlinedText(surf_ginfos, "[!copyright]", {"color":[255,255,150], "x":flw*0.028, "y":flh*0.111, "w": flw*0.9375 , "size":flh*0.025}, 1.1);
 Copy.set("align" , Align.Left);
 Copy.set("font" , ttfont);
 
@@ -1195,6 +1194,7 @@ function hs_transition( ttype, var, ttime )
 
         case Transition.FromOldSelection: //3
             if(curr_sys == "Main Menu") stats_text_update( fe.game_info(Info.Title) );
+            if(Ini_settings["game text"]["game_text_hide"]) surf_ginfos.visible = false;
         break;
 
         case Transition.ToNewSelection: //2
@@ -1215,6 +1215,7 @@ function hs_transition( ttype, var, ttime )
             flv_transitions.visible = false;
             flv_transitions.file_name = "";
             if(curr_sys == "Main Menu") stats_text_update( fe.game_info(Info.Title, 1) );
+            if(Ini_settings["game text"]["game_text_hide"]) surf_ginfos.visible = false;
         break;
 
         case Transition.EndNavigation: //7
@@ -1472,7 +1473,18 @@ function hs_tick( ttime )
             load_theme(path, theme_content, false);
         }
 
+        // user setting for game text infos
         if(Ini_settings["game text"]["game_text_active"]) surf_ginfos.visible = ( curr_sys == "Main Menu" ? false : true ); // Game infos surface
+        rating.visible = !Ini_settings["game text"]["hide_rating"]
+        pl_i.visible = !Ini_settings["game text"]["hide_players"]
+        pl_t.visible = !Ini_settings["game text"]["hide_players"]
+        cate.visible = !Ini_settings["game text"]["hide_category"]
+        flags.visible = !Ini_settings["game text"]["hide_country"]
+        cate2.visible = !Ini_settings["game text"]["hide_category"]
+        Copy.visible(!Ini_settings["game text"]["hide_year"]);
+        list_entry.visible(!Ini_settings["game text"]["hide_filter"]);
+        PCount.visible(!Ini_settings["game text"]["hide_counter"]);
+        for ( local i = 0; i < 17; i++ ) { Lang[i].visible = !Ini_settings["game text"]["hide_lang"]; }
 
         trigger_load_theme = false;
         visi = false;
@@ -2317,7 +2329,134 @@ menus.push({
                             trigger_load_theme = true;
                         }
                 });
-            },"infos":LnG.M_inf_gametext
+                return true;
+            },"infos":LnG.M_inf_gametext        
+        },
+        {
+        "title":"Hide when navigate",
+            "onselect":function(current_list, selected_row){
+                local actual_value = (Ini_settings["game text"]["game_text_hide"] == true ? 0 : 1);
+                set_list( { "title":selected_row.title, "slot_pos":actual_value,
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            Ini_settings["game text"]["game_text_hide"] = (selected_row.target == "yes" ? true : false);
+                            trigger_load_theme = true;
+                        }
+                });
+            },"infos":LnG.M_inf_gametext_hide
+        },
+        {
+        "title":"Hide year line",
+            "onselect":function(current_list, selected_row){
+                local actual_value = (Ini_settings["game text"]["hide_year"] == true ? 0 : 1);
+                set_list( { "title":selected_row.title, "slot_pos":actual_value,
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            Ini_settings["game text"]["hide_year"] = (selected_row.target == "yes" ? true : false);
+                            trigger_load_theme = true;
+                        }
+                });
+                return true;
+            },"infos":LnG.M_inf_gametext_year        
+        },
+        {
+        "title":"Hide language flags",
+            "onselect":function(current_list, selected_row){
+                local actual_value = (Ini_settings["game text"]["hide_lang"] == true ? 0 : 1);
+                set_list( { "title":selected_row.title, "slot_pos":actual_value,
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            Ini_settings["game text"]["hide_lang"] = (selected_row.target == "yes" ? true : false);
+                            trigger_load_theme = true;
+                        }
+                });
+                return true;
+            },"infos":LnG.M_inf_gametext_lang        
+        },
+        {
+        "title":"Hide counter infos",
+            "onselect":function(current_list, selected_row){
+                local actual_value = (Ini_settings["game text"]["hide_counter"] == true ? 0 : 1);
+                set_list( { "title":selected_row.title, "slot_pos":actual_value,
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            Ini_settings["game text"]["hide_counter"] = (selected_row.target == "yes" ? true : false);
+                            trigger_load_theme = true;
+                        }
+                });
+                return true;
+            },"infos":LnG.M_inf_gametext_counter        
+        },
+        {
+        "title":"Hide filter line infos",
+            "onselect":function(current_list, selected_row){
+                local actual_value = (Ini_settings["game text"]["hide_filter"] == true ? 0 : 1);
+                set_list( { "title":selected_row.title, "slot_pos":actual_value,
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            Ini_settings["game text"]["hide_filter"] = (selected_row.target == "yes" ? true : false);
+                            trigger_load_theme = true;
+                        }
+                });
+                return true;
+            },"infos":LnG.M_inf_gametext_filter        
+        },
+        {
+        "title":"Hide rating logo",
+            "onselect":function(current_list, selected_row){
+                local actual_value = (Ini_settings["game text"]["hide_rating"] == true ? 0 : 1);
+                set_list( { "title":selected_row.title, "slot_pos":actual_value,
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            Ini_settings["game text"]["hide_rating"] = (selected_row.target == "yes" ? true : false);
+                            trigger_load_theme = true;
+                        }
+                });
+                return true;
+            },"infos":LnG.M_inf_gametext_rating        
+            
+        },
+        {
+        "title":"Hide players icon",
+            "onselect":function(current_list, selected_row){
+                local actual_value = (Ini_settings["game text"]["hide_players"] == true ? 0 : 1);
+                set_list( { "title":selected_row.title, "slot_pos":actual_value,
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            Ini_settings["game text"]["hide_players"] = (selected_row.target == "yes" ? true : false);
+                            trigger_load_theme = true;
+                        }
+                });
+                return true;
+            },"infos":LnG.M_inf_gametext_players        
+        },
+        {
+        "title":"Hide category icons",
+            "onselect":function(current_list, selected_row){
+                local actual_value = (Ini_settings["game text"]["hide_category"] == true ? 0 : 1);
+                set_list( { "title":selected_row.title, "slot_pos":actual_value,
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            Ini_settings["game text"]["hide_category"] = (selected_row.target == "yes" ? true : false);
+                            trigger_load_theme = true;
+                        }
+                });
+                return true;
+            },"infos":LnG.M_inf_gametext_category        
+        },
+        {
+        "title":"Hide country icons",
+            "onselect":function(current_list, selected_row){
+                local actual_value = (Ini_settings["game text"]["hide_country"] == true ? 0 : 1);
+                set_list( { "title":selected_row.title, "slot_pos":actual_value,
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            Ini_settings["game text"]["hide_country"] = (selected_row.target == "yes" ? true : false);
+                            trigger_load_theme = true;
+                        }
+                });
+                return true;
+            },"infos":LnG.M_inf_gametext_country
     }]
 })
 

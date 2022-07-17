@@ -49,7 +49,15 @@ class OutlinedText
     function text_color(tbl){
        _title.set_rgb( tbl[0], tbl[1], tbl[2] );
     }
-
+    
+    function visible(bool){ 
+        _title.visible = bool;
+        _title_l.visible = bool;
+        _title_r.visible = bool;
+        _title_u.visible = bool;
+        _title_d.visible = bool;       
+    }
+    
     outl = null;
     x_offset = null;
     y_offset = null;
