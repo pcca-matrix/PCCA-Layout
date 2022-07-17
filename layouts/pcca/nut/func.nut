@@ -12,6 +12,7 @@ function global_default_settings(){
 
     Ini_settings["wheel"] <- {}
     Ini_settings["wheel"]["transition_ms"] <- 50;
+    Ini_settings["wheel"]["animation"] <- "linear";
     Ini_settings["wheel"]["fade_time"] <- 3.0;
     Ini_settings["wheel"]["alpha"] <- 0.0;
     Ini_settings["wheel"]["slots"] <- 10;
@@ -32,6 +33,7 @@ function global_default_settings(){
     Ini_settings["game text"]["hide_players"] <- false;
     Ini_settings["game text"]["hide_category"] <- false;
     Ini_settings["game text"]["hide_country"] <- false;
+    Ini_settings["game text"]["hide_ctrl"] <- false;
     Ini_settings["game text"]["coord"] <- "0,0.805,0"; // in %
     Ini_settings["game text"]["text_color"] <- "FFFFFF";
     Ini_settings["game text"]["stroke_color"] <- "000000";

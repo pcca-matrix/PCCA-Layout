@@ -1298,9 +1298,17 @@ function hs_transition( ttype, var, ttime )
             if(my_config["special_artworks"].tolower() == "yes") load_special(); // Load special artworks
 
             rtime = glob_time
-            wheel_animation.cancel("from");
-            trigger_wheel_anim = true;
+            //wheel_animation.cancel("from");
             trigger_load_theme = true;
+            if(Ini_settings["wheel"]["animation"] != "none"){
+                trigger_wheel_anim = true;
+                wheel_animation
+                .preset(Ini_settings["wheel"]["animation"])
+                .starting("right")
+                .duration(glob_delay)
+                .delay(glob_delay)
+                wheel_animation.play()
+            }
         break;
 
         /* Custom Overlays */
@@ -1534,6 +1542,9 @@ local video_anim_tab = [{"title":"None","target":"none"},{"title":"Pump","target
 {"title":"TV Zoom Out","target":"tv zoom out"},{"title":"Ease","target":"ease"},{"title":"Bounce","target":"bounce"},{"title":"Grow","target":"grow"},
 {"title":"Grow X","target":"grow x"},{"title":"Grow Y","target":"grow y"},{"title":"Grow Bounce","target":"grow bounce"}];
 video_anim_tab.sort(@(a,b) a.title <=> b.title)
+
+local wheel_anim_tab = [{"title":"None","target":"none"},{"title":"Ease","target":"ease"},{"title":"Linear","target":"linear"},{"title":"Bounce","target":"bounce"},
+{"title":"Elastic", "target":"elastic"}];
 
 local rest_tab = [{"title":"Shake", "target":"shake"}, {"title":"Rock", "target":"rock"}, {"title":"Rock Fast", "target":"rock fast"},
 {"title":"Squeeze", "target":"squeeze"}, {"title":"Pulse", "target":"pulse"},{"title":"Pulse Fast", "target":"pulse fast"},{"title":"Hover", "target":"hover"},
@@ -2204,11 +2215,19 @@ menus.push({
         "onselect":function(current_list, selected_row){
             local elem = Ini_settings.wheel["animation"];
             local sel = 0;
-            foreach(a,b in wheel_anim_tab){ if(b.target == elem.attr["type"]) sel = a; }
-            set_list( {"title":"Animation", "id":"video_anim", "rows":video_anim_tab,"slot_pos":sel,
+            foreach(a,b in wheel_anim_tab){ if(b.target == elem) sel = a; }
+            set_list( {"title":"Animation", "rows":wheel_anim_tab,"slot_pos":sel,
                 "onselect":function(current_list, selected_row){
-                    xml_root.getChild("video").addAttr("type", (selected_row.target));
-                    save_xml(xml_root, path);
+                    Ini_settings.wheel["animation"] = selected_row.target;
+                    if(Ini_settings["wheel"]["animation"] != "none"){
+                        wheel_surf.alpha = 255;
+                        wheel_animation
+                        .preset(Ini_settings["wheel"]["animation"])
+                        .starting("right")
+                        .duration(glob_delay)
+                        .delay(glob_delay)
+                        wheel_animation.play()
+                    }
                     trigger_load_theme = true;
                 }
             })
@@ -2330,7 +2349,7 @@ menus.push({
                         }
                 });
                 return true;
-            },"infos":LnG.M_inf_gametext        
+            },"infos":LnG.M_inf_gametext
         },
         {
         "title":"Hide when navigate",
@@ -2357,7 +2376,7 @@ menus.push({
                         }
                 });
                 return true;
-            },"infos":LnG.M_inf_gametext_year        
+            },"infos":LnG.M_inf_gametext_year
         },
         {
         "title":"Hide language flags",
@@ -2371,7 +2390,7 @@ menus.push({
                         }
                 });
                 return true;
-            },"infos":LnG.M_inf_gametext_lang        
+            },"infos":LnG.M_inf_gametext_lang
         },
         {
         "title":"Hide counter infos",
@@ -2385,7 +2404,7 @@ menus.push({
                         }
                 });
                 return true;
-            },"infos":LnG.M_inf_gametext_counter        
+            },"infos":LnG.M_inf_gametext_counter
         },
         {
         "title":"Hide filter line infos",
@@ -2399,7 +2418,7 @@ menus.push({
                         }
                 });
                 return true;
-            },"infos":LnG.M_inf_gametext_filter        
+            },"infos":LnG.M_inf_gametext_filter
         },
         {
         "title":"Hide rating logo",
@@ -2413,8 +2432,7 @@ menus.push({
                         }
                 });
                 return true;
-            },"infos":LnG.M_inf_gametext_rating        
-            
+            },"infos":LnG.M_inf_gametext_rating
         },
         {
         "title":"Hide players icon",
@@ -2428,7 +2446,7 @@ menus.push({
                         }
                 });
                 return true;
-            },"infos":LnG.M_inf_gametext_players        
+            },"infos":LnG.M_inf_gametext_players
         },
         {
         "title":"Hide category icons",
@@ -2442,7 +2460,7 @@ menus.push({
                         }
                 });
                 return true;
-            },"infos":LnG.M_inf_gametext_category        
+            },"infos":LnG.M_inf_gametext_category
         },
         {
         "title":"Hide country icons",
@@ -2457,6 +2475,20 @@ menus.push({
                 });
                 return true;
             },"infos":LnG.M_inf_gametext_country
+        },
+        {
+        "title":"Hide controller icons",
+            "onselect":function(current_list, selected_row){
+                local actual_value = (Ini_settings["game text"]["hide_ctrl"] == true ? 0 : 1);
+                set_list( { "title":selected_row.title, "slot_pos":actual_value,
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            Ini_settings["game text"]["hide_ctrl"] = (selected_row.target == "yes" ? true : false);
+                            trigger_load_theme = true;
+                        }
+                });
+                return true;
+            },"infos":LnG.M_inf_gametext_ctrl
     }]
 })
 
@@ -2696,7 +2728,7 @@ function main_signal(str){
 signals["move_sig"] <- function (str) {
     switch (str){
         case "back":
-            surf_txt.set_rgb( 241, 250, 200 ); //restore surf_txt when leaving move mode 
+            surf_txt.set_rgb( 241, 250, 200 ); //restore surf_txt when leaving move mode
             if(sel_menu._edit_type == "edit_obj"){
                 sel_menu._edit_type = null;
                 return true;
