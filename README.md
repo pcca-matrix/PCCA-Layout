@@ -13,6 +13,13 @@ PCCA theme has its own screensaver timer method, to avoid conflict set in the at
 ## Bugs and Feedback
 For bugs and questions please use the GitHub Issues.
 
+## Todo
+Particles animation
+Sprite animation
+AA in shader to fix jagged edges when object is rotated !
+more animations
+use "from" in edit mode to set where the artwork start instead of using only hyperspin starting location 
+
 # Donations
 * XMR: `44ZD1s12j8M6upWXGUS1R2YzXKiKpVmTzYKbrLYSp6pDWvW7C4ALfQ2VNyg6pt2tvA94Tu5kbcDLcLbTvjJBYk6zLFYmWM3`
 * BTC: `1F2UpGsQETpyCCnMEBLFc5whDFAhgXJVU1`

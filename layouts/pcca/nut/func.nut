@@ -9,10 +9,13 @@ function global_default_settings(){
     Ini_settings["themes"]["animated_backgrounds"] <- true;
     Ini_settings["themes"]["override_transitions"] <- true;
     Ini_settings["themes"]["synopsis"] <- true;
+    Ini_settings["themes"]["main_stats"] <- true;
+    Ini_settings["themes"]["scroll_pos"] <- "0.0,0.980,1.0,0.0200,0"; // x,y,w,h in % and rotation
+    Ini_settings["themes"]["scroll_speed"] <- 1.0;
 
     Ini_settings["wheel"] <- {}
     Ini_settings["wheel"]["transition_ms"] <- 50;
-    Ini_settings["wheel"]["animation"] <- "linear";
+    Ini_settings["wheel"]["animation"] <- "ease";
     Ini_settings["wheel"]["fade_time"] <- 3.0;
     Ini_settings["wheel"]["alpha"] <- 0.0;
     Ini_settings["wheel"]["slots"] <- 10;

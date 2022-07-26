@@ -44,7 +44,7 @@ catch(err){
     AMPlus <- false;
 }
 
-//-- controls
+//-- controls (here you can change control type according your needs)
 controls <- {};
 controls.Right <- ["Joy0 Right", "Right"];
 controls.Right <- ["Joy0 Right", "Right"];
@@ -86,7 +86,7 @@ test.zorder = 0
 local nw = flh * 1.333;
 mul <- nw / 1024;
 mul_h <- mul;
-offset_x <- (flw - nw) * 0.5;
+offset_x <- 0;
 offset_y <- 0;
 
 // Modules
@@ -96,7 +96,6 @@ fe.do_nut("nut/keyboard-search/module.nut");
 fe.do_nut("nut/class.nut");
 fe.load_module("file");
 fe.load_module("file-format");
-fe.load_module("objects/scrollingtext");
 fe.do_nut("nut/func.nut");
 fe.do_nut("nut/lang.nut");
 
@@ -305,9 +304,7 @@ function load_special(){
               ArtObj["Special" + n].width =  S_Art.w;
               ArtObj["Special" + n].height =  S_Art.h;
             }
-            if( S_Art.x > 0 && S_Art.y > 0){
-                //if(S_Art.x > 1.0) ArtObj["Special" + n].x =  S_Art["x"] * mul - (ArtObj["Special" + n].texture_width * mul * 0.5) + offset_x;
-                //if(S_Art.y > 1.0) ArtObj["Special" + n].y =  S_Art["y"] * mul_h - (ArtObj["Special" + n].texture_height * mul_h * 0.5) + offset_y;
+            if( S_Art.x != 0 && S_Art.y != 0){
                 ArtObj["Special" + n].x =  S_Art["x"] * flw
                 ArtObj["Special" + n].y =  S_Art["y"] * flh;
             }else{ // default bottom centered
@@ -457,7 +454,7 @@ local surf_arrow = surf_inf.add_image("images/double_arrow.png", flw * 0.5 - ( f
 surf_arrow.visible = false;
 surf_img.preserve_aspect_ratio = true;
 surf_inf.visible = false;
-surf_inf.zorder=1;
+surf_inf.zorder = 0;
 surf_txt <- surf_inf.add_text( "", flw * 0.007, flh * 0.018, flw, flh * 0.046)
 surf_txt.font = ttfont;
 surf_txt.align = Align.Left;
@@ -548,50 +545,36 @@ function stats_text_update( sys ){
 }
 
 // Synopsis
-syno <- ScrollingText.add( "", offset_x, flh*0.976, fe.layout.width - (offset_x * 2) , flh*0.022, ScrollType.HORIZONTAL_LEFT );
-syno.settings.delay = 2500;
-syno.settings.speed_x = 2.5;
+syno_surf <- fe.add_surface(fe.layout.width , flh*0.022);
+syno_surf_bg <- syno_surf.add_image( "images/pixel.png", 0, 0, syno_surf.width, syno_surf.height );
+syno_surf_bg.alpha = 75;
+syno_surf_bg.set_rgb(20,0,0);
+syno <- syno_surf.add_text("", flw, flh*0.001, flw ,  syno_surf.height);
+syno.charsize = syno_surf.height * 0.98;
+syno.align = Align.Left;
+
 function overview( offset ) {
-   local input = fe.game_info(Info.Overview, offset);
-   if( input.len() > 1 ){
-        syno.text.width = input.len() * flw*0.022;
-        syno.set_bg_rgb(20,0,0,75);
-        syno.text.msg = input;
-        return;
+    if(!Ini_settings.themes["synopsis"]) return;
+    local input = replace(fe.game_info(Info.Overview, offset),"\\n"," ");
+    // globals stats
+    local main_stats = "";
+    if(curr_sys == "Main Menu" && Ini_settings.themes["main_stats"] && my_config["stats_main"].tolower() == "yes" ){
+        local totgames=0, tottimes=0, totplay=0;
+        foreach(k,d in main_infos){
+            totgames+=d.cnt;
+            tottimes+=d.time;
+            totplay+=d.pl;
+        }
+        main_stats = "Stats: " + LnG.counter + ": "+totgames+" - " + LnG.playedtime + ": " + secondsToDhms( tottimes ) + " - " + LnG.Played + ": " + totplay;
     }
-   syno.text.msg = "";
-   syno.set_bg_rgb(20,0,0,0);
+
+    syno_surf_bg.set_rgb(20,0,0);
+    syno_surf_bg.alpha = 75;
+    syno.msg = (Ini_settings.themes["main_stats"] ? main_stats + " " + input : input);
+    syno.width = (syno.msg.len() * syno.charsize.tofloat());
+    if(  input.len() ) syno.x = syno_surf.width;
+   if(replace(syno.msg," ", "") == "") syno_surf_bg.alpha = 0;
    return;
-}
-
-// Fix Bugs in ScrollingText module
-ScrollingText.actual_text = function(obj, var) return obj.text.msg;
-
-ScrollingText.tick_callback = function( ttime ) {
-    for ( local i = 0; i < ScrollingText.objs.len(); i++ )
-    {
-        local obj = ScrollingText.objs[i];
-        if ( glob_time - rtime > obj.settings.delay && (obj.settings.loop < 0 || obj._count < obj.settings.loop) ) ScrollingText.scroll( obj );
-    }
-}
-
-ScrollingText.transition_callback = function( ttype, var, ttime ) {
-    switch ( ttype )
-    {
-        case Transition.ToNewList:
-        case Transition.EndNavigation:
-            for ( local i = 0; i < ScrollingText.objs.len(); i++ )
-            {
-                local obj = ScrollingText.objs[i];
-                obj._text = ScrollingText.actual_text(obj, var);
-                obj.text.width = obj.settings.fixed_width;
-                obj._count = 0;
-                obj.text.align = Align.Left;
-                obj.text.x = obj.surface.width;
-                obj._dir = "left";
-            }
-        break;
-    }
 }
 
 function background_transitions(anim, File){
@@ -1207,8 +1190,7 @@ function hs_transition( ttype, var, ttime )
             Background_Music.playing = false;
             Background_Music.file_name = "";
             ArtObj.snap.file_name = "";
-            syno.set_bg_rgb(20,0,0,0);
-            syno.text.msg = "";
+            if(curr_sys != "Main Menu") syno.x = syno_surf.width; // reset scrolling test position
             if(glob_time - rtime > 150) hide_art(); // 150ms between re-pooling hide_art when navigating fast in wheel (change !!)
             rtime = glob_time;
             conveyor_bool = false; // reset conveyor fade
@@ -1270,10 +1252,8 @@ function hs_transition( ttype, var, ttime )
                 if( fe.game_info(Info.PlayedTime) == "" ) PCount.set("visible", false); else PCount.set("visible", true); //show game stats surface only if Track Usage is set to Yes in AM!
                 hide_art(); // hide artwork when you change list
                 conveyor_bool = false;
-                syno.set_bg_rgb(20,0,0,0);
-                syno.text.msg = ""; // Hide Overview
+                syno_surf.visible = false; // hide overview
                 m_infos.msg = ""; // empty global stats
-
                 // Update and save stats if list size change and we are not on a filter !!
                 if( my_config["stats_main"].tolower() == "yes" && glob_time && fe.filters[fe.list.filter_index].name.tolower() == LnG.Filter_all){
                     if( main_infos.rawin(curr_sys) ){
@@ -1422,7 +1402,7 @@ function hs_tick( ttime )
         }
 
         prev_path = path;
-        overview(0); // start checking for games overview
+        overview(0);
         start_background.visible = false;
         local Rpath = medias_path + fe.list.name + "/Themes/";
         if(curr_sys == "Main Menu") Rpath = medias_path + "Main Menu/Themes/";
@@ -1512,6 +1492,16 @@ function hs_tick( ttime )
         letters.visible = true;
         trigger_letter = false;
     }
+
+    // syno scrolling
+    if ( glob_time - rtime > 2500 && curr_sys != "Main Menu"){
+        syno.x-=Ini_settings.themes.scroll_speed;
+        if(syno.x <= -(syno.msg.len() * syno.charsize.tofloat() * 0.5) ) syno.x = syno_surf.width;
+    }else if (curr_sys == "Main Menu"){
+        syno.x-=Ini_settings.themes.scroll_speed;
+        if(syno.x <= -(syno.msg.len() * syno.charsize.tofloat()) * 0.5 ) syno.x = syno_surf.width;
+    }
+    syno.charsize = syno_surf.height * 0.98;
 }
 
 // Menu
@@ -2175,20 +2165,66 @@ menus.push({
             "infos" : LnG.M_inf_aspect
     },
     {
-        "title":"Synopsis",
+    "title":"Scrolling Text", "target":"scrolling_menu"
+
+    }]
+})
+
+//-- Scrolling Text Menu
+menus.push({
+    "title":"Scrolling Text", "id":"scrolling_menu", "object":"syno_surf", // object: use as main object for all the menu
+    "rows":[{
+        "title":"Active",
         "onselect":function(current_list, selected_row){
             set_list( { "title":selected_row.title, "slot_pos":(Ini_settings.themes["synopsis"] == true ? 0 : 1),
                 "rows":YesNo_menu,
                     "onselect":function(current_list, selected_row){
                         Ini_settings.themes["synopsis"] = (selected_row.target == "yes" ? true : false);
-                        syno.surface.visible = (selected_row.target == "yes" ? true : false)
+                        syno_surf.visible = (selected_row.target == "yes" ? true : false)
+                        syno.x = syno_surf.width; // reset scrolling test position
                     }
             });
             return true;
         },
         "infos" : LnG.M_inf_syno
-    }
-    ]
+    },
+    {
+        "title":"Main Menu Stats", "hide":"!Main Menu",
+        "onselect":function(current_list, selected_row){
+            set_list( { "title":selected_row.title, "slot_pos":(Ini_settings.themes["main_stats"] == true ? 0 : 1),
+                "rows":YesNo_menu,
+                    "onselect":function(current_list, selected_row){
+                        Ini_settings.themes["main_stats"] = (selected_row.target == "yes" ? true : false);
+                        syno_surf.visible = (selected_row.target == "yes" ? true : false)
+                        syno.x = syno_surf.width; // reset scrolling test position
+                    }
+            });
+            return true;
+        },
+        "infos" : LnG.M_inf_main_stats
+    },
+    {
+        "title":"Scrolling Text Position", "object":syno_surf,
+            "onselect":function(current_list, selected_row){
+                _slot[_slot_pos].set_bg_rgb(30, 240, 40); // set cell color on the menu
+                current_list.object = selected_row.object;
+                globs.signal = "edit_sig";
+                _edit_type = "edit_obj";
+                _edit_datas.name <- "syno_surf";
+            },
+            "onback":function(selected_row, current_list){
+               Ini_settings["themes"]["scroll_pos"] = (syno_surf.x / flw) + "," + (syno_surf.y / flh) + "," + (syno_surf.width /flw) + "," + (syno_surf.height / flh) + "," + syno_surf.rotation;
+            },
+            "infos":LnG.M_inf_syno_speed
+    },
+    {
+        "title":"Scrolling speed", "type":"float",
+        "onselect":function(current_list, selected_row){
+            set_list( { "id":"scroll_speed", "title":_selected_row.title, "target":"ini", "object":"themes", "values" : [0.1,5.0,0.1], "rows":[ {"title":format("%.1f", Ini_settings.themes["scroll_speed"]) }] });
+            return true;
+        },
+        "infos" : LnG.M_inf_syno_speed
+    }]
 })
 
 //-- Wheel Menu
@@ -2241,7 +2277,8 @@ menus.push({
             return true;
         },
         "infos" : LnG.M_inf_wheel_speed
-    },{
+    },
+    {
         "title":"Wheel fade time", "type":"float",
         "onselect":function(current_list, selected_row){
             set_list( { "id":"fade_time", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [-1.0,60.0,0.5], "rows":[ {"title":format("%.1f", Ini_settings.wheel["fade_time"]) }] });
@@ -2279,8 +2316,7 @@ menus.push({
             "onback":function(selected_row, current_list){
                 Ini_settings["wheel"]["system stats"] = (m_infos.x / flw) + "," + (m_infos.y / flh) + "," + m_infos.rotation;
             },"infos":LnG.M_inf_wheel_stats
-    }
-
+    },
     {
         "title":"Position", "object":wheel_surf,
             "onselect":function(current_list, selected_row){
@@ -2295,8 +2331,7 @@ menus.push({
                 Ini_settings["wheel"]["offset"] = (wheel_surf.x / flw) + "," + (wheel_surf.y / flh) + "," + wheel_surf.rotation;
             },
             "infos":LnG.M_inf_wheel_pos
-    },
-    ]
+    }]
 })
 
 //-- Game surface Menu
@@ -2938,7 +2973,7 @@ function incdec(type, datas,  dir ){
 // Apply a global fade on objs and shaders
 function global_fade(ttime, target, direction){
    ttime = ttime.tofloat();
-   local objlist = [surf_ginfos, syno.surface, flv_transitions, ArtObj.bezel, point]; // objects list to fade
+   local objlist = [surf_ginfos, syno_surf, flv_transitions, ArtObj.bezel, point]; // objects list to fade
    if(direction){ // show
         foreach(obj in objlist) obj.alpha = ttime * (255.0 / target);
         video_shader.set_param("alpha", (ttime / target) );
@@ -3207,7 +3242,7 @@ function set_custom_value(Ini_settings) {
         offset_y = 0;
     }
 
-    syno.surface.visible = Ini_settings.themes["synopsis"];
+    syno_surf.visible = Ini_settings.themes["synopsis"];
 
     local g_c = split( Ini_settings["wheel"]["system stats"], ",").map(function(v){return v.tofloat()}); // %
     if( g_c.len() == 3 ) {
@@ -3261,6 +3296,14 @@ function set_custom_value(Ini_settings) {
         point.x = point_animation.opts.to; // or g_c[0]*flw
     }
     if(!Ini_settings.wheel["fade_time"]) m_infos.alpha = 255;
+    local g_c = split( Ini_settings["themes"]["scroll_pos"], ",").map(function(v){return v.tofloat()}); // %
+    if( g_c.len() == 5 ) {
+        syno_surf.width = g_c[2] * flw;
+        syno_surf.height = g_c[3] * flh;
+        syno_surf.x = g_c[0] * flw;
+        syno_surf.y = g_c[1] * flh;
+        //syno_surf.rotation = g_c[4];
+    }
 }
 
 //print( "load time:"+(clock() - start)+"\n")
