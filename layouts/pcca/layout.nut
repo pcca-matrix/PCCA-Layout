@@ -454,7 +454,7 @@ local surf_arrow = surf_inf.add_image("images/double_arrow.png", flw * 0.5 - ( f
 surf_arrow.visible = false;
 surf_img.preserve_aspect_ratio = true;
 surf_inf.visible = false;
-surf_inf.zorder = 0;
+surf_inf.zorder = 2;
 surf_txt <- surf_inf.add_text( "", flw * 0.007, flh * 0.018, flw, flh * 0.046)
 surf_txt.font = ttfont;
 surf_txt.align = Align.Left;
@@ -1093,7 +1093,9 @@ class Keyboard extends KeyboardSearch
     }
 }
 
-local search = Keyboard( fe.add_surface(flw*0.370, flh) )
+local search_surface = fe.add_surface(flw*0.370, flh);
+search_surface.zorder = 10;
+local search = Keyboard( search_surface )
     .set_pos(-flw*0.370,0,flw*0.370,flh)
     .retain(true)
     .search_key( my_config["keyboard_search_key"] )
