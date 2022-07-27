@@ -409,7 +409,7 @@ for ( local i = 0; i < 17; i++ ) {
     Lang[i] <- surf_ginfos.add_image("", lng_x, flh*0.045, flw*0.0220, flh*0.0350 );
 }
 
-local Title = OutlinedText(surf_ginfos, "[Title]", {"color":[255,255,255], "x":flw*0.0232, "y":flh*0.077, "w": flw*0.9375 , "size":flh*0.037}, 1.5);
+local Title = OutlinedText(surf_ginfos, "[Title]", {"color":[255,255,255], "x":flw*0.027, "y":flh*0.077, "w": flw*0.9375 , "size":flh*0.037}, 1.5);
 Title.set("align" , Align.Left);
 Title.set("font" , ttfont);
 
@@ -506,7 +506,6 @@ local extraArtworks = {
             surf_arrow.visible = false;
         }
         if( title.len() ){
-            surf_txt.set_pos(flw * 0.007, flh * 0.018, flw, flh * 0.046);
             surf_txt.set_rgb( 241, 250, 200 );
             surf_txt.msg = nbr+" "+title.slice( 0, 1 ).toupper() + title.slice( 1, title.len() ); // caps first char
         }
@@ -549,8 +548,8 @@ syno_surf <- fe.add_surface(fe.layout.width , flh*0.022);
 syno_surf_bg <- syno_surf.add_image( "images/pixel.png", 0, 0, syno_surf.width, syno_surf.height );
 syno_surf_bg.alpha = 75;
 syno_surf_bg.set_rgb(20,0,0);
-syno <- syno_surf.add_text("", flw, flh*0.001, flw ,  syno_surf.height);
-syno.charsize = syno_surf.height * 0.98;
+syno <- syno_surf.add_text("", flw, -flh*0.001, flw , syno_surf.height);
+syno.charsize = syno_surf.height * 0.96;
 syno.align = Align.Left;
 
 function overview( offset ) {
@@ -1033,7 +1032,6 @@ function conveyor_tick( ttime )
 fe.add_ticks_callback( "conveyor_tick" );
 
 /* OVERLAY SCREEN */
-
 local custom_overlay = fe.add_surface(flw, flh);
 custom_overlay.zorder = 10
 custom_overlay.visible = false;
@@ -1057,8 +1055,7 @@ overlay_list.align = Align.Centre;
 SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
 
 overlay_title <- custom_overlay.add_text("", 0, flh*0.324, flw, flh*0.046);
-overlay_title.charsize = flw*0.018;
-overlay_title.set_rgb(192, 192, 192);
+
 fe.overlay.set_custom_controls( overlay_title, overlay_list ); // should be called set_custom_style instead of control ...
 
 wheel_art <- custom_overlay.add_image( "[!ret_wheel]", flw*0.425, flh*0.192, flw*0.156, flh*0.138);
@@ -1320,13 +1317,15 @@ function hs_transition( ttype, var, ttime )
         /* Custom Overlays */
         case Transition.ShowOverlay: // 8 var = Custom, Exit(22), Displays, Filters(15), Tags(31), Favorites(28)
             dialog_anim.cancel(); // cancel dialog animation if in progress
+            overlay_title.set_pos( 0, flh*0.324, flw, flh*0.046)
+            overlay_title.set_rgb(192, 192, 192);
+            overlay_title.charsize = flw * 0.015;
             switch(var) {
 
                 case Overlay.Filters: // = 15 Filters
                     overlay_background.file_name = "images/filters_overlay.png"; // 600 x 675
                     overlay_background.set_pos(flw*0.343, flh*0.187, flw*0.312, flh*0.625);
                     overlay_background.alpha = 250;
-                    overlay_title.charsize = flw*0.016;
                     SetListBox(overlay_list, {visible = true, rows = 7, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
                     wheel_art.visible = false;
                     overlay_icon.visible = false;
@@ -1337,7 +1336,6 @@ function hs_transition( ttype, var, ttime )
                     overlay_background.file_name = "images/tags_overlay.png";
                     overlay_background.set_pos(flw*0.312, flh*0.092, flw*0.385, flh*0.740);
                     overlay_background.alpha = 250;
-                    overlay_title.charsize = flw*0.016;
                     SetListBox(overlay_list, {visible = true, rows = 7, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
                     wheel_art.visible = true;
                     overlay_icon.visible = false;
@@ -1348,7 +1346,6 @@ function hs_transition( ttype, var, ttime )
                     overlay_background.file_name = "images/favorites_overlay.png";
                     overlay_background.set_pos(flw*0.312, flh*0.092, flw*0.385, flh*0.740);
                     overlay_background.alpha = 250;
-                    overlay_title.charsize = flw*0.016;
                     SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.032 })
                     wheel_art.visible = true;
                     overlay_icon.visible = false;
@@ -1493,18 +1490,7 @@ function hs_tick( ttime )
             load_theme(path, theme_content, false);
         }
 
-        // user setting for game text infos
-        if(Ini_settings["game text"]["game_text_active"]) surf_ginfos.visible = ( curr_sys == "Main Menu" ? false : true ); // Game infos surface
-        rating.visible = !Ini_settings["game text"]["hide_rating"]
-        pl_i.visible = !Ini_settings["game text"]["hide_players"]
-        pl_t.visible = !Ini_settings["game text"]["hide_players"]
-        cate.visible = !Ini_settings["game text"]["hide_category"]
-        flags.visible = !Ini_settings["game text"]["hide_country"]
-        cate2.visible = !Ini_settings["game text"]["hide_category"]
-        Copy.visible(!Ini_settings["game text"]["hide_year"]);
-        list_entry.visible(!Ini_settings["game text"]["hide_filter"]);
-        PCount.visible(!Ini_settings["game text"]["hide_counter"]);
-        for ( local i = 0; i < 17; i++ ) { Lang[i].visible = !Ini_settings["game text"]["hide_lang"]; }
+        game_surface(); // user setting for game text infos
 
         trigger_load_theme = false;
         visi = false;
@@ -1533,7 +1519,7 @@ function hs_tick( ttime )
         syno.x-=Ini_settings.themes.scroll_speed;
         if(syno.x <= -(syno.msg.len() * syno.charsize.tofloat()) * 0.5 ) syno.x = syno_surf.width;
     }
-    syno.charsize = syno_surf.height * 0.98;
+    syno.charsize = syno_surf.height * 0.96;
 }
 
 // Menu
@@ -2439,7 +2425,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["game text"]["hide_year"] = (selected_row.target == "yes" ? true : false);
-                            trigger_load_theme = true;
+                            game_surface();
                         }
                 });
                 return true;
@@ -2453,7 +2439,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["game text"]["hide_lang"] = (selected_row.target == "yes" ? true : false);
-                            trigger_load_theme = true;
+                            game_surface();
                         }
                 });
                 return true;
@@ -2467,7 +2453,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["game text"]["hide_counter"] = (selected_row.target == "yes" ? true : false);
-                            trigger_load_theme = true;
+                            game_surface();
                         }
                 });
                 return true;
@@ -2481,7 +2467,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["game text"]["hide_filter"] = (selected_row.target == "yes" ? true : false);
-                            trigger_load_theme = true;
+                            game_surface();
                         }
                 });
                 return true;
@@ -2495,7 +2481,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["game text"]["hide_rating"] = (selected_row.target == "yes" ? true : false);
-                            trigger_load_theme = true;
+                            game_surface();
                         }
                 });
                 return true;
@@ -2509,7 +2495,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["game text"]["hide_players"] = (selected_row.target == "yes" ? true : false);
-                            trigger_load_theme = true;
+                            game_surface();
                         }
                 });
                 return true;
@@ -2523,7 +2509,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["game text"]["hide_category"] = (selected_row.target == "yes" ? true : false);
-                            trigger_load_theme = true;
+                            game_surface();
                         }
                 });
                 return true;
@@ -2537,7 +2523,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["game text"]["hide_country"] = (selected_row.target == "yes" ? true : false);
-                            trigger_load_theme = true;
+                            game_surface();
                         }
                 });
                 return true;
@@ -2551,7 +2537,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["game text"]["hide_ctrl"] = (selected_row.target == "yes" ? true : false);
-                            trigger_load_theme = true;
+                            game_surface();
                         }
                 });
                 return true;
@@ -3334,6 +3320,70 @@ function set_custom_value(Ini_settings) {
         syno_surf.y = g_c[1] * flh;
         //syno_surf.rotation = g_c[4];
     }
+}
+
+function game_surface(){
+    if(Ini_settings["game text"]["game_text_active"]) surf_ginfos.visible = ( curr_sys == "Main Menu" ? false : true ); // Game infos surface
+    if(!Ini_settings["game text"]["game_text_active"]) return;
+
+    // reset to default pos
+    local lng_x = flw*0.134;
+    for ( local i = 0; i < 17; i++ ) {
+        lng_x += flw*0.0230;
+        Lang[i] <- surf_ginfos.add_image("", lng_x, flh*0.045, flw*0.0220, flh*0.0350 );
+    }
+
+    Title.set("x", flw*0.027);
+    Title.set("y", flh*0.077);
+    list_entry.set("x", flw*0.030);
+    list_entry.set("y", flh*0.134);
+    PCount.set("x", flw*0.030);
+    PCount.set("y", flh*0.152);
+
+    // set user settings
+    rating.visible = !Ini_settings["game text"]["hide_rating"]
+    pl_i.visible = !Ini_settings["game text"]["hide_players"]
+    pl_t.visible = !Ini_settings["game text"]["hide_players"]
+    cate.visible = !Ini_settings["game text"]["hide_category"]
+    cate2.visible = !Ini_settings["game text"]["hide_category"]
+    Ctrl.visible = !Ini_settings["game text"]["hide_ctrl"]
+    Ctrl2.visible = !Ini_settings["game text"]["hide_ctrl"]
+    flags.visible = !Ini_settings["game text"]["hide_country"]
+
+    Copy.set("visible", !Ini_settings["game text"]["hide_year"]);
+    list_entry.set("visible", !Ini_settings["game text"]["hide_filter"]);
+    PCount.set("visible", !Ini_settings["game text"]["hide_counter"]);
+
+    for ( local i = 0; i < 17; i++ ) { Lang[i].visible = !Ini_settings["game text"]["hide_lang"]; }
+
+    // reorder icons and text
+    local fline = false;
+    foreach(k,v in [Ctrl, pl_i, cate]) if(v.visible) fline=true;
+    if(!fline){
+        local lng_x = flw*0.007;
+        for ( local i = 0; i < 17; i++ ) {
+            Lang[i].x = lng_x;
+            lng_x += flw*0.0230;
+        }
+    }
+
+    local order = [flh*0.111, flh*0.134, flh*0.152];
+
+    local i=0;
+    foreach(k,v in  [Copy, list_entry, PCount]) {
+        if(v._title.visible){
+            v.set("y", order[i]);
+            i++;
+        }
+    }
+
+    if(!rating.visible){
+        Copy.set("x", 0.0);
+        list_entry.set("x", 0.0);
+        PCount.set("x", 0.0);
+    }
+
+    if(!flags.visible) Title.set("x", -flw * 0.004);
 }
 
 //print( "load time:"+(clock() - start)+"\n")
