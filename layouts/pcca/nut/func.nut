@@ -622,61 +622,60 @@ function create_xml(){
 }
 
 function get_infos_screen(curr_game, curr_sys, ttime){
+    local script_dir = fe.script_dir;
     local def = false, game = false, globals = false;
+    wheel_art.visible = false;
     // check if infos is available for this systeme and for selected game
-    if(file_exist(fe.script_dir + "Loader/" + curr_sys + "/Default/settings.ini")) def = true;
-    if(file_exist(fe.script_dir + "Loader/" + curr_sys + "/" + curr_game + "/settings.ini")) game = true;
-    surf_txt.msg = "";
-    surf_txt.set_rgb( 255, 255, 255 );
-    surf_img.file_name = "";
-    
+    if(file_exist(script_dir + "Loader/" + curr_sys + "/Default/settings.ini")) def = true;
+    if(file_exist(script_dir + "Loader/" + curr_sys + "/" + curr_game + "/settings.ini")) game = true;
+
+    SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
     if(def){
-        local def_ini = get_ini(fe.script_dir + "Loader/" + curr_sys + "/Default/settings.ini");
+        local def_ini = get_ini(script_dir + "Loader/" + curr_sys + "/Default/settings.ini");
         if(def_ini.main.globals == "true"){
-            surf_bck.file_name = fe.script_dir + "Loader/" + curr_sys + "/Default/default.png";
-            surf_inf.visible = true;
-            surf_inf.alpha = 255;
+            overlay_background.file_name = script_dir + "Loader/" + curr_sys + "/Default/default.png";
+            overlay_background.set_pos(0,0,flw, flh);
             // type
             switch(def_ini.main.type){
                 case "select":
                     local opts = split( def_ini.main.options, "," );
                     opt_selected <- fe.overlay.list_dialog(opts, def_ini.main.select_title, 0, -1);
-                    fe.do_nut(fe.script_dir + "Loader/" + curr_sys + "/Default/action.nut");
+                    fe.do_nut(script_dir + "Loader/" + curr_sys + "/Default/action.nut");
                 break;
             }
         }
     }
 
     if(game){
-        local game_ini = get_ini(fe.script_dir + "Loader/" + curr_sys + "/" + curr_game + "/settings.ini");
-        surf_bck.file_name = fe.script_dir + "Loader/" + curr_sys + "/" + curr_game + "/default.png";
-        surf_inf.visible = true;
-        surf_inf.alpha = 255;
+        local game_ini = get_ini(script_dir + "Loader/" + curr_sys + "/" + curr_game + "/settings.ini");
+        overlay_background.file_name = script_dir + "Loader/" + curr_sys + "/" + curr_game + "/default.png";
+        overlay_background.set_pos(0,0,flw, flh);
+        overlay_title.charsize = flw*0.022;
+        overlay_title.visible = true;
         // type
         switch(game_ini.main.type){
             case "select":
                 local opts = split( game_ini.main.options, "," );
                 opt_selected <- fe.overlay.list_dialog(opts, game_ini.main.select_title, 0, -1);
-                fe.do_nut(fe.script_dir + "Loader/" + curr_sys + "/" + curr_game + "/action.nut");
+                fe.do_nut(script_dir + "Loader/" + curr_sys + "/" + curr_game + "/action.nut");
             break;
 
             case "infos":
-                if( "infos" in game_ini.main ) surf_txt.msg = game_ini.main.infos;
+                if( "infos" in game_ini.main ) overlay_title.msg = game_ini.main.infos;
                 if( "infos_pos" in game_ini.main ){
                     local pos = split( game_ini.main.infos_pos, "," ).map(function(v){return v.tofloat()});
-                    surf_txt.set_pos(flw * pos[0], flh * pos[1], flw * pos[2], flh * pos[3]);
+                    overlay_title.set_pos(flw * pos[0], flh * pos[1], flw * pos[2], flh * pos[3])
                 }
                 if( "infos_rgb" in game_ini.main ){
                     local rgb = split( game_ini.main.infos_rgb, "," ).map(function(v){return v.tointeger()});;
-                    surf_txt.set_rgb( rgb[0], rgb[1], rgb[2] );
+                    overlay_title.set_rgb( rgb[0], rgb[1], rgb[2] );
                 }
-                fe.overlay.list_dialog(["Continue"],"", 0,-1); // simulate wait
+                fe.overlay.list_dialog(["Continue"],"", 0, -1); // simulate wait
             break;
         }
     }
-    surf_txt.msg = "";
-    surf_inf.visible = false;
-    surf_bck.file_name = "images/Backgrounds/faded.png"; // restore !!
+
+    overlay_title.msg = "";
    return true;
 }
 /* DEBUG */

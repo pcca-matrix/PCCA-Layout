@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.55
+// PCCA v2.57
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -1035,9 +1035,12 @@ fe.add_ticks_callback( "conveyor_tick" );
 /* OVERLAY SCREEN */
 
 local custom_overlay = fe.add_surface(flw, flh);
+custom_overlay.zorder = 10
 custom_overlay.visible = false;
-local overlay_background = custom_overlay.add_image("",0, 0, flw, flh);
-overlay_background.zorder=-99
+overlay_background <- custom_overlay.add_image("",0, 0, flw, flh);
+overlay_hide <- fe.add_image("images/Backgrounds/Black.png", 0, 0, flw, flh); // used to hide elems with black background in (Transition.ToGame)
+overlay_hide.zorder = 9;
+overlay_hide.visible = false;
 
 local overlay_anim = PresetAnimation(custom_overlay)
 .key("alpha").from(0).to(255)
@@ -1047,20 +1050,21 @@ local overlay_anim = PresetAnimation(custom_overlay)
 .duration(600)
 
 // overlay list
-local overlay_list = custom_overlay.add_listbox(flw*0.369, flh*0.361 , flw*0.260, flh*0.370);
+overlay_list <- custom_overlay.add_listbox(flw*0.369, flh*0.361 , flw*0.260, flh*0.370);
+overlay_list.zorder = 3;
 overlay_list.font = "SF Slapstick Comic Bold Oblique";
 overlay_list.align = Align.Centre;
 SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
 
-local overlay_title = custom_overlay.add_text("", 0, flh*0.324, flw, flh*0.046);
+overlay_title <- custom_overlay.add_text("", 0, flh*0.324, flw, flh*0.046);
 overlay_title.charsize = flw*0.018;
 overlay_title.set_rgb(192, 192, 192);
 fe.overlay.set_custom_controls( overlay_title, overlay_list ); // should be called set_custom_style instead of control ...
 
-local wheel_art = custom_overlay.add_image( "[!ret_wheel]", flw*0.425, flh*0.192, flw*0.156, flh*0.138);
+wheel_art <- custom_overlay.add_image( "[!ret_wheel]", flw*0.425, flh*0.192, flw*0.156, flh*0.138);
 wheel_art.visible = false;
 
-local overlay_icon = custom_overlay.add_image( "", 0, 0, 200, 200);
+overlay_icon <- custom_overlay.add_image( "", 0, 0, flw * 0.104, flh * 0.185 );
 overlay_icon.visible = false;
 
 //-- KeyboardSearch
@@ -1115,6 +1119,7 @@ function game_in_out( ttype, var, ttime ) {
     return false;
 }
 
+local loader = 0;
 //
 // Global Transition
 //
@@ -1126,6 +1131,7 @@ function hs_transition( ttype, var, ttime )
     switch ( ttype )
     {
         case Transition.FromGame:
+            overlay_hide.visible = false;
             globs.Stimer = fe.layout.time;
             if ( ttime <= 500  ) {
                 global_fade( ttime, 500, true);
@@ -1134,7 +1140,7 @@ function hs_transition( ttype, var, ttime )
                 ArtObj.background1.video_playing = true;
                 ArtObj.background2.video_playing = true;
                 ArtObj.snap.video_playing = true;
-                global_fade( 500, 500, true); // security for sure 100% alpha is passed to function
+                global_fade( 500, 500, true); // security to be sure that 100% alpha is passed to function
                 rtime = glob_time + 2000 // add 2 seconds before fading wheel
                 conveyor_bool = false; // do not restore alpha on conveyor
                 // update stats for this system only if Track Usage is set to Yes in AM!
@@ -1150,21 +1156,39 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.ToGame:
-            if ( ttime <= 1500  ) {
-                global_fade(ttime, 1500, false)
-                ArtObj.background1.video_playing = false;
-                ArtObj.background2.video_playing = false;
-                ArtObj.snap.video_playing = false;
-                return true;
-            }else{
-                if(!get_infos_screen(fe.game_info(Info.Name), curr_sys, ttime)){
-                    return true;
-                }else{
-                    global_fade(1500, 1500, false)
-                    // store old playedtime when lauching a game (only if Track Usage is set to Yes in AM!)
-                    if( fe.game_info(Info.PlayedTime) != "" ) game_elapse = fe.game_info(Info.PlayedTime).tointeger();
-                }
+            switch(loader){
+                case 0 :
+                    if ( ttime <= 1500 ) {
+                        global_fade(ttime, 1500, false);
+                        ArtObj.background1.video_playing = false;
+                        ArtObj.background2.video_playing = false;
+                        ArtObj.snap.video_playing = false;
+                    }else{
+                        overlay_hide.visible = true; // add black background to hide animation behind
+                        loader = 1
+                    }
+                break;
+
+                case 1 :
+                  get_infos_screen(fe.game_info(Info.Name), curr_sys, ttime);
+                  ttime = 0;
+                  loader = 2;
+                break;
+
+                case 2 :
+                    if(custom_overlay.alpha > 0){
+                        custom_overlay.alpha -=5;
+                    }else{
+                        // store old playedtime when lauching a game (only if Track Usage is set to Yes in AM!)
+                        if( fe.game_info(Info.PlayedTime) != "" ) game_elapse = fe.game_info(Info.PlayedTime).tointeger();
+                        // hide overlay background
+                        overlay_background.file_name = "";
+                        loader = 0;
+                        return false;
+                    }
+                break;
             }
+            return true;
         break;
 
         case Transition.ChangedTag: // 11
@@ -1293,7 +1317,6 @@ function hs_transition( ttype, var, ttime )
 
         /* Custom Overlays */
         case Transition.ShowOverlay: // 8 var = Custom, Exit(22), Displays, Filters(15), Tags(31), Favorites(28)
-            FE_Sound_Screen_In.playing = true;
             dialog_anim.cancel(); // cancel dialog animation if in progress
             switch(var) {
 
@@ -1301,27 +1324,33 @@ function hs_transition( ttype, var, ttime )
                     overlay_background.file_name = "images/filters_overlay.png"; // 600 x 675
                     overlay_background.set_pos(flw*0.343, flh*0.187, flw*0.312, flh*0.625);
                     overlay_background.alpha = 250;
+                    overlay_title.charsize = flw*0.016;
                     SetListBox(overlay_list, {visible = true, rows = 7, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
                     wheel_art.visible = false;
                     overlay_icon.visible = false;
+                    FE_Sound_Screen_In.playing = true;
                 break;
 
                 case Overlay.Tags: //31 Tags
                     overlay_background.file_name = "images/tags_overlay.png";
                     overlay_background.set_pos(flw*0.312, flh*0.092, flw*0.385, flh*0.740);
                     overlay_background.alpha = 250;
+                    overlay_title.charsize = flw*0.016;
                     SetListBox(overlay_list, {visible = true, rows = 7, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
                     wheel_art.visible = true;
                     overlay_icon.visible = false;
+                    FE_Sound_Screen_In.playing = true;
                 break;
 
                 case 28: //28  favorites
                     overlay_background.file_name = "images/favorites_overlay.png";
                     overlay_background.set_pos(flw*0.312, flh*0.092, flw*0.385, flh*0.740);
                     overlay_background.alpha = 250;
+                    overlay_title.charsize = flw*0.016;
                     SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.032 })
                     wheel_art.visible = true;
                     overlay_icon.visible = false;
+                    FE_Sound_Screen_In.playing = true;
                 break;
 
                 case Overlay.Exit: // = 22
@@ -1333,6 +1362,7 @@ function hs_transition( ttype, var, ttime )
                     wheel_art.visible = false;
                     overlay_title.msg = "";
                     overlay_icon.visible = false;
+                    FE_Sound_Screen_In.playing = true;
                 break;
             }
 
@@ -2973,7 +3003,7 @@ function incdec(type, datas,  dir ){
 // Apply a global fade on objs and shaders
 function global_fade(ttime, target, direction){
    ttime = ttime.tofloat();
-   local objlist = [surf_ginfos, syno_surf, flv_transitions, ArtObj.bezel, point]; // objects list to fade
+   local objlist = [surf_ginfos, syno_surf, flv_transitions, ArtObj.bezel, point, wheel_surf]; // objects list to fade
    if(direction){ // show
         foreach(obj in objlist) obj.alpha = ttime * (255.0 / target);
         video_shader.set_param("alpha", (ttime / target) );
@@ -2985,7 +3015,6 @@ function global_fade(ttime, target, direction){
         ArtObj.SpecialA.shader.set_param("alpha", ttime / target);
         ArtObj.SpecialB.shader.set_param("alpha", ttime / target);
         ArtObj.SpecialC.shader.set_param("alpha", ttime / target);
-        wheel_surf.alpha = ttime * (255.0 / target);
    }else{ // hide
         flv_transitions.video_playing = false; // stop playing ovveride video during fade
         foreach(obj in objlist) obj.alpha = 255.0 - ttime * (255.0 / target);
@@ -2998,9 +3027,8 @@ function global_fade(ttime, target, direction){
         ArtObj.SpecialA.shader.set_param("alpha",1.0 - (ttime / target) );
         ArtObj.SpecialB.shader.set_param("alpha",1.0 - (ttime / target) );
         ArtObj.SpecialC.shader.set_param("alpha",1.0 - (ttime / target) );
-        wheel_surf.alpha = 0;
-   }
-   return;
+    }
+    return;
 }
 
 function zorder_list(){
