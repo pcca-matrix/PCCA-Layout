@@ -363,6 +363,7 @@ local sid = 0;
 // dialog
 local dialog = fe.add_surface(flw*0.180, flh*0.08);
 dialog.set_pos(-flw, flh*0.025);
+dialog.zorder=10;
 local dialog_text = dialog.add_text("", 0, 0, flw*0.180, flh*0.05);
 dialog_text.charsize = flh*0.022;
 dialog_text.set_bg_rgb(91,91,91);
@@ -371,13 +372,16 @@ local dialog_anim = PresetAnimation(dialog)
 .from({x=-flw * 0.180})
 .to({x=0})
 .yoyo(true)
-.loops_delay(1500)
+.loops_delay(1200)
 .duration(700)
 
 function dialog_datas(type){
     switch (type){
         case "favo":
             if(fe.game_info(Info.Favourite) == "") dialog_text.msg = LnG.ret_fav; else dialog_text.msg = LnG.add_fav;
+        break;        
+        case "tag":
+            dialog_text.msg = LnG.tag_mod;
         break;
     }
     dialog_anim.play();
@@ -1193,7 +1197,8 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.ChangedTag: // 11
-            dialog_datas("favo"); // tag not working , only for favourites ?!?
+            if(var == 21) dialog_datas("favo");
+            if(var == 22) dialog_datas("tag"); // tag not working , only for favourites ?!? see bug(#)
         break;
 
         case Transition.NewSelOverlay: // 10
@@ -1318,7 +1323,7 @@ function hs_transition( ttype, var, ttime )
 
         /* Custom Overlays */
         case Transition.ShowOverlay: // 8 var = Custom, Exit(22), Displays, Filters(15), Tags(31), Favorites(28)
-            dialog_anim.cancel(); // cancel dialog animation if in progress
+            dialog_anim.cancel("origin"); // cancel dialog animation if in progress
             wheel_art.visible = false;
             switch(var) {
 
@@ -2919,6 +2924,7 @@ signals["default_sig"] <- function (str) {
             if(curr_sys == "Main Menu") break;
             local spec_list = extraArtworks.getLists();
             if(!spec_list.len()){
+                dialog_anim.cancel("origin"); // cancel dialog animation if in progress
                 dialog_text.msg = "No additional artworks";
                 dialog_anim.play();
                 break;
