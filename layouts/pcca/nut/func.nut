@@ -21,8 +21,6 @@ function global_default_settings(){
     Ini_settings["wheel"]["slots"] <- 10;
     Ini_settings["wheel"]["type"] <- "rounded"; // rounded
     Ini_settings["wheel"]["offset"] <- "0.0,0.0,0"; // in %
-    Ini_settings["wheel"]["text_color1"] <- "FFFFFF";
-    Ini_settings["wheel"]["text_stroke_color"] <- "000000";
     Ini_settings["wheel"]["system stats"] <- "0.780,0.531,0"; // in %
 
     Ini_settings["game text"] <- {}
@@ -38,8 +36,8 @@ function global_default_settings(){
     Ini_settings["game text"]["hide_country"] <- false;
     Ini_settings["game text"]["hide_ctrl"] <- false;
     Ini_settings["game text"]["coord"] <- "0,0.805,0"; // in %
-    Ini_settings["game text"]["text_color"] <- "FFFFFF";
-    Ini_settings["game text"]["stroke_color"] <- "000000";
+    Ini_settings["game text"]["text_color"] <- 16777215; // color in dec
+    Ini_settings["game text"]["text_stroke_color"] <- 000000; // color in dec
     //text_font=Style1
     //text1_textsize=26
     Ini_settings["sounds"] <- {}
@@ -624,12 +622,12 @@ function create_xml(){
 function get_infos_screen(curr_game, curr_sys, ttime){
     local script_dir = fe.script_dir;
     local def = false, game = false, globals = false;
-    wheel_art.visible = false;
+    overlay_title.charsize = flw*0.022;
     // check if infos is available for this systeme and for selected game
     if(file_exist(script_dir + "Loader/" + curr_sys + "/Default/settings.ini")) def = true;
     if(file_exist(script_dir + "Loader/" + curr_sys + "/" + curr_game + "/settings.ini")) game = true;
 
-    SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
+    SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.020 })
     if(def){
         local def_ini = get_ini(script_dir + "Loader/" + curr_sys + "/Default/settings.ini");
         if(def_ini.main.globals == "true"){
@@ -650,7 +648,6 @@ function get_infos_screen(curr_game, curr_sys, ttime){
         local game_ini = get_ini(script_dir + "Loader/" + curr_sys + "/" + curr_game + "/settings.ini");
         overlay_background.file_name = script_dir + "Loader/" + curr_sys + "/" + curr_game + "/default.png";
         overlay_background.set_pos(0,0,flw, flh);
-        overlay_title.charsize = flw*0.022;
         overlay_title.visible = true;
         // type
         switch(game_ini.main.type){
@@ -670,7 +667,8 @@ function get_infos_screen(curr_game, curr_sys, ttime){
                     local rgb = split( game_ini.main.infos_rgb, "," ).map(function(v){return v.tointeger()});;
                     overlay_title.set_rgb( rgb[0], rgb[1], rgb[2] );
                 }
-                fe.overlay.list_dialog(["Continue"],"", 0, -1); // simulate wait
+
+                fe.overlay.list_dialog(["Continue"], overlay_title.msg, 0, -1); // simulate wait
             break;
         }
     }
@@ -678,6 +676,7 @@ function get_infos_screen(curr_game, curr_sys, ttime){
     overlay_title.msg = "";
    return true;
 }
+
 /* DEBUG */
 
 //Convert a squirrel table to a string

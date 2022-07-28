@@ -1055,6 +1055,8 @@ overlay_list.align = Align.Centre;
 SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
 
 overlay_title <- custom_overlay.add_text("", 0, flh*0.324, flw, flh*0.046);
+overlay_title.set_rgb(192, 192, 192); // global
+overlay_title.charsize = flw * 0.022; // global
 
 fe.overlay.set_custom_controls( overlay_title, overlay_list ); // should be called set_custom_style instead of control ...
 
@@ -1317,22 +1319,25 @@ function hs_transition( ttype, var, ttime )
         /* Custom Overlays */
         case Transition.ShowOverlay: // 8 var = Custom, Exit(22), Displays, Filters(15), Tags(31), Favorites(28)
             dialog_anim.cancel(); // cancel dialog animation if in progress
-            overlay_title.set_pos( 0, flh*0.324, flw, flh*0.046)
-            overlay_title.set_rgb(192, 192, 192);
-            overlay_title.charsize = flw * 0.015;
+            wheel_art.visible = false;
             switch(var) {
 
                 case Overlay.Filters: // = 15 Filters
+                    overlay_title.set_pos( 0, flh*0.324, flw, flh*0.046);
+                    overlay_title.set_rgb(192, 192, 192);
+                    overlay_title.charsize = flw * 0.015;
                     overlay_background.file_name = "images/filters_overlay.png"; // 600 x 675
                     overlay_background.set_pos(flw*0.343, flh*0.187, flw*0.312, flh*0.625);
                     overlay_background.alpha = 250;
                     SetListBox(overlay_list, {visible = true, rows = 7, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
-                    wheel_art.visible = false;
                     overlay_icon.visible = false;
                     FE_Sound_Screen_In.playing = true;
                 break;
 
                 case Overlay.Tags: //31 Tags
+                    overlay_title.set_pos( 0, flh*0.324, flw, flh*0.046);
+                    overlay_title.set_rgb(192, 192, 192);
+                    overlay_title.charsize = flw * 0.015;
                     overlay_background.file_name = "images/tags_overlay.png";
                     overlay_background.set_pos(flw*0.312, flh*0.092, flw*0.385, flh*0.740);
                     overlay_background.alpha = 250;
@@ -1343,6 +1348,9 @@ function hs_transition( ttype, var, ttime )
                 break;
 
                 case 28: //28  favorites
+                    overlay_title.set_pos( 0, flh*0.324, flw, flh*0.046);
+                    overlay_title.set_rgb(192, 192, 192);
+                    overlay_title.charsize = flw * 0.015;
                     overlay_background.file_name = "images/favorites_overlay.png";
                     overlay_background.set_pos(flw*0.312, flh*0.092, flw*0.385, flh*0.740);
                     overlay_background.alpha = 250;
@@ -2369,25 +2377,25 @@ menus.push({
             },"infos":LnG.M_inf_gsurf_pos
         },
         {
-        "title":"Text Color",
+        "title":"Text Color", "target":"text_color"
             "onselect":function(current_list, selected_row){
                 local color = fe.overlay.edit_dialog("Enter color in HEX","").toupper();
                 if(color == "") return false;
                 local rgbC = dec2rgb(hex2dec(color));
                 _slot[_current_list.slot_pos].set_bg_rgb(rgbC[0], rgbC[1], rgbC[2]);
                 Title.text_color( [rgbC[0], rgbC[1], rgbC[2]] );
-                Ini_settings["wheel"]["text_color1"] = hex2dec(color);
+                Ini_settings["game text"]["text_color"] = hex2dec(color);
             },"infos":LnG.M_inf_gametext_col
         },
         {
-        "title":"Text strokecolor",
+        "title":"Text strokecolor", "target":"text_stroke_color"
             "onselect":function(current_list, selected_row){
                 local color = fe.overlay.edit_dialog("Enter color in HEX","").toupper();
                 if(color == "") return false;
                 local rgbC = dec2rgb(hex2dec(color));
                 _slot[_current_list.slot_pos].set_bg_rgb(rgbC[0], rgbC[1], rgbC[2]);
                 Title.thick_rgb([rgbC[0], rgbC[1], rgbC[2]]);
-                Ini_settings["wheel"]["text_stroke_color"] = hex2dec(color);
+                Ini_settings["game text"]["text_stroke_color"] = hex2dec(color);
             },"infos":LnG.M_inf_gametext_stroke
         },
         {
@@ -2542,7 +2550,19 @@ menus.push({
                 });
                 return true;
             },"infos":LnG.M_inf_gametext_ctrl
-    }]
+    }],
+    "afterload":function(current_list, selected_row){ // set cell color after load
+        local valc = 0;
+        foreach(a,b in current_list.rows){
+            if( !("target" in b) ) continue;
+            if(b.target.find("color") != null){
+                valc = Ini_settings["game text"][b.target];
+                local rgbC = dec2rgb(valc);
+                _slot[a].set_bg_rgb(rgbC[0], rgbC[1], rgbC[2]);
+                _slot[a].bg_alpha=0;
+            }
+        }
+    }
 })
 
 //-- Sounds Menu
@@ -3312,6 +3332,7 @@ function set_custom_value(Ini_settings) {
         point.x = point_animation.opts.to; // or g_c[0]*flw
     }
     if(!Ini_settings.wheel["fade_time"]) m_infos.alpha = 255;
+
     local g_c = split( Ini_settings["themes"]["scroll_pos"], ",").map(function(v){return v.tofloat()}); // %
     if( g_c.len() == 5 ) {
         syno_surf.width = g_c[2] * flw;
@@ -3320,6 +3341,12 @@ function set_custom_value(Ini_settings) {
         syno_surf.y = g_c[1] * flh;
         //syno_surf.rotation = g_c[4];
     }
+
+    local rgbC = dec2rgb(Ini_settings["game text"]["text_color"]);
+    Title.text_color( [rgbC[0], rgbC[1], rgbC[2]] );
+    local rgbC = dec2rgb(Ini_settings["game text"]["text_stroke_color"]);
+    Title.thick_rgb([rgbC[0], rgbC[1], rgbC[2]]);
+
 }
 
 function game_surface(){
