@@ -445,6 +445,7 @@ function merge_table(tb1,tb2){
 
 function show_menu_artwork(sel_menu, surf_menu_img, artwork_list){
     local artwork = sel_menu._current_list.rows[sel_menu._slot_pos].title;
+    surf_menu_img.file_name = "";
     if(artwork_list.find( artwork ) != null){
         surf_menu_img.file_name = ArtObj[artwork].file_name;
         surf_menu_img.visible = true;
