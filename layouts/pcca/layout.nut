@@ -379,7 +379,7 @@ function dialog_datas(type){
     switch (type){
         case "favo":
             if(fe.game_info(Info.Favourite) == "") dialog_text.msg = LnG.ret_fav; else dialog_text.msg = LnG.add_fav;
-        break;        
+        break;
         case "tag":
             dialog_text.msg = LnG.tag_mod;
         break;
@@ -1062,6 +1062,24 @@ overlay_title <- custom_overlay.add_text("", 0, flh*0.324, flw, flh*0.046);
 overlay_title.set_rgb(192, 192, 192); // global
 overlay_title.charsize = flw * 0.022; // global
 
+function overlay_message(img=false, icon_pos=false){
+    overlay_background.file_name = "images/Backgrounds/faded.png";
+    overlay_icon.visible = false;
+    overlay_icon.set_pos(flw * 0.5 - (flw * 0.0833 * 0.5), flh * 0.15, flw * 0.0833, flh * 0.1111);
+    if(img){
+    overlay_icon.file_name = img;
+        overlay_icon.visible = true;
+    }
+    if(icon_pos){
+        overlay_icon.set_pos(icon_pos[0], icon_pos[1], icon_pos[2], icon_pos[3]);
+    }
+    overlay_background.set_pos(0, 0, flw, flh);
+    overlay_background.alpha = 255;
+    overlay_list.charsize = flw*0.024;
+    overlay_list.set_pos(flw*0.369, flh*0.361 , flw*0.260, flh*0.370);
+
+}
+
 fe.overlay.set_custom_controls( overlay_title, overlay_list ); // should be called set_custom_style instead of control ...
 
 wheel_art <- custom_overlay.add_image( "[!ret_wheel]", flw*0.425, flh*0.192, flw*0.156, flh*0.138);
@@ -1583,19 +1601,12 @@ menus.push ({
     "title":"Main", "id":"main",
     "rows":[ {"title":"Theme", "target":"theme",
         "onselect":function(a,b){ // act as filter
-            overlay_background.file_name = "images/Backgrounds/faded.png";
-            overlay_background.set_pos(0, 0, flw, flh);
-            overlay_background.alpha = 255;
-            overlay_list.charsize = flw*0.024;
-            overlay_icon.visible = false;
-            overlay_list.set_pos(flw*0.369, flh*0.361 , flw*0.260, flh*0.370);
+            overlay_message();
             SetListBox(overlay_list, {visible = true, rows = 1, sel_alpha = 0, bg_alpha = 0, selbg_alpha = 0 })
-            overlay_icon.set_pos(flw * 0.5 - (flw * 0.0833 * 0.5), flh * 0.15, flw * 0.0833, flh * 0.1111);
             if(curr_sys == "Main Menu"){
                 local p = medias_path + "Main Menu\\Themes\\" + fe.game_info(Info.Name) + "\\";
                 if( file_exist(path) && strip_ext(path.tolower()) != "xml" ){
-                    overlay_icon.file_name = "images/warning.png";
-                    overlay_icon.visible = true;
+                    overlay_message("images/warning.png");
                     fe.overlay.list_dialog([], LnG.Uneditable, 0, 0)
                     return false;
                 }else if(!zip_get_dir( p ).len()){
@@ -1606,17 +1617,14 @@ menus.push ({
                         system ("mkdir \"" + p);
                         create_xml();
                         save_xml(xml_root, p);
-                        overlay_icon.file_name = "images/validate.png";
-                        overlay_icon.visible = true;
+                        overlay_message("images/validate.png");
                         fe.overlay.list_dialog([], LnG.Create_folder)
                     }
                     return false;
                 }
             }else{
                 if( file_exist(path) && strip_ext(path.tolower()) != "xml" ){
-                    overlay_icon.file_name = "images/warning.png";
-                    overlay_icon.set_pos(flw * 0.5 - (flw * 0.0833 * 0.5), flh * 0.15, flw * 0.0833, flh * 0.1111);
-                    overlay_icon.visible = true;
+                    overlay_message("images/warning.png");
                     fe.overlay.list_dialog([], LnG.Uneditable, 0, 0)
                     return false;
                 }else{
@@ -1638,8 +1646,7 @@ menus.push ({
                             save_xml(xml_root, medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\")
                             path = ""; // reset path forcing the theme to reload artworks
                             trigger_load_theme = true;
-                            overlay_icon.file_name = "images/validate.png";
-                            overlay_icon.visible = true;
+                            overlay_message("images/validate.png");
                             fe.overlay.list_dialog([], LnG.Create_folder)
                         }
                         return false;
@@ -1652,8 +1659,7 @@ menus.push ({
                             save_xml(xml_root, medias_path + curr_sys + "\\Themes\\Default\\")
                             path = ""; // reset path forcing the theme to reload artworks
                             trigger_load_theme = true;
-                            overlay_icon.file_name = "images/validate.png";
-                            overlay_icon.visible = true;
+                            overlay_message("images/validate.png");
                             fe.overlay.list_dialog([], LnG.Create_folder);
                         }else if(selected == 1){
                             system ("mkdir \"" + medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\");
@@ -1661,8 +1667,7 @@ menus.push ({
                             save_xml(xml_root, medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\")
                             path = ""; // reset path forcing the theme to reload artworks
                             trigger_load_theme = true;
-                            overlay_icon.file_name = "images/validate.png";
-                            overlay_icon.visible = true;
+                            overlay_message("images/validate.png");
                             fe.overlay.list_dialog([], LnG.Create_folder)
                         }
                         return false;
@@ -1686,6 +1691,17 @@ menus.push ({
             {"title":"Sounds", "target":"sound"},
             {"title":"Pointer","target":"pointer"},
             {"title":"Game Text", "target":"game text", "target":"game_text", "infos":"Game info surface options" , "hide":"Main Menu"} // (should not be displayed on main menu)
+            ,{
+            "title":"Special Artworks", "target":"special_list",
+                "onselect":function(current_list, selected_row){
+                    if(my_config["special_artworks"].tolower() == "no"){
+                        overlay_message("images/warning.png");
+                        fe.overlay.list_dialog([], LnG.M_inf_Special_disabled, 0, 0)
+                        return false;
+                    }
+                    return true;
+                }
+        }
     ]
 })
 
@@ -1906,18 +1922,6 @@ menus.push({
             }
             return true
         }
-    },
-    {
-        "title":"Special Artworks", "target":"special_list",
-            "onselect":function(current_list, selected_row){
-                if(my_config["special_artworks"].tolower() == "no"){
-                    overlay_icon.file_name = "images/warning.png";
-                    overlay_icon.visible = true;
-                    fe.overlay.list_dialog([], LnG.M_inf_Special_disabled, 0, 0)
-                    return false;
-                }
-                return true;
-            }
     }
     ]
 })
