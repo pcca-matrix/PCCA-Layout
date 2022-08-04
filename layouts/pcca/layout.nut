@@ -33,7 +33,26 @@ class UserConfig {
 }
 
 my_config <- fe.get_config();
-globs <- {"signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time}; // super globals temp vars
+globs <- {"delay" : 400, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time}; // super globals temp vars
+
+triggers <- {
+    "flv_transition":{
+        "start": false,
+        "delay": 400
+    },
+    "wheel_anim":{
+        "start" : false,
+        "delay" :0
+    },
+    "theme":{
+        "start" : false
+    },
+    "letter":{
+        "start": false,
+        "delay" : 5
+    }
+}
+
 medias_path <- ( my_config["medias_path"] != "" ? my_config["medias_path"] : fe.script_dir + "Media" );
 if ( medias_path.len()-1 != '/' ) medias_path += "/";
 
@@ -111,8 +130,6 @@ Ini_settings <- get_ini_values("Main Menu"); // initialize and set settings ini 
 xml_root <- [];
 path <- "";
 curr_sys <- "";
-trigger_load_theme <- false;
-trigger_wheel_anim <- false;
 
 ArtObj <- {};
 snap_is_playing <- false;
@@ -125,12 +142,10 @@ foreach(a,b in artwork_list_full) availables[b] <- false;
 
 local curr_theme = "";
 local prev_path = "";
-local glob_delay = 400;
 local glob_time = 0;
 local rtime = 0;
 local reverse = 0;
 local visi = false;
-local trigger_letter = false;
 local letters = fe.add_image("", flw * 0.5 - (flw*0.140 * 0.5), flh * 0.5 - (flh*0.280 * 0.5), flw*0.140, flh*0.280);
 conveyor_bool <- false; // fading conveyor
 
@@ -143,19 +158,15 @@ point_animation <- PresetAnimation(point)
 .name("pointer")
 .from({x=flw,y=0})
 .to({x=0,y=0})
-.duration( 200 )
+.duration( 150 )
 .yoyo()
-point_animation.play()
-point_animation.cancel("from")
+//point_animation.start()
+//point_animation.cancel("from")
 
 wheel_animation <- PresetAnimation(wheel_surf)
 .name("wheel")
 .preset("ease")
 .starting("right")
-.duration(glob_delay)
-.delay(glob_delay)
-wheel_animation.play()
-wheel_animation.cancel("from");
 
 hd <- true; // global bool for hd or hs theme
 
@@ -237,7 +248,7 @@ Trans_shader.set_texture_param("bezel", ArtObj.bezel);
 
 local bck_anim = ShaderAnimation(Trans_shader);
 bck_anim.param("progress")
-bck_anim.duration(glob_delay * 1.40)
+bck_anim.duration(globs.delay * 1.40)
 bck_anim.delay(0)
 
 // Special Artworks
@@ -698,7 +709,6 @@ function load_theme(name, theme_content, prev_def){
         if(file_exist(medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4")){
             ArtObj.background.set_pos(0,0,flw, flh);
             reset_art();
-            //flv_transitions.zorder = -6; // put override video on top of video snap
             background_transitions(null, medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4");
         }
         return false;
@@ -850,6 +860,7 @@ function load_theme(name, theme_content, prev_def){
             anim_video.play();
         }
     }
+    wheel_surf.visible = true;
 }
 
 function clean_art(obj){
@@ -942,7 +953,7 @@ function hide_art(){
                 anim.opts.target.file_name = "";
                 anim.opts.target.visible = false;
             })
-            .duration(glob_delay * 0.8)
+            .duration(globs.delay * 0.8)
             .delay(0)
             anims[a].play();
         }
@@ -1021,7 +1032,7 @@ conveyor.transition_ms = Ini_settings.wheel["transition_ms"];
 function conveyor_tick( ttime )
 {
     local alpha;
-    local delay = glob_delay * 4;
+    local delay = globs.delay * 4;
     local fade_time = Ini_settings.wheel["fade_time"] * 1000;
     if(!fade_time) fade_time = 0.01;
     local from = 255; local to = clamp( Ini_settings.wheel["alpha"] * 255 , 0.0 , 255.0);
@@ -1255,7 +1266,7 @@ function hs_transition( ttype, var, ttime )
                 extraArtworks.getLists();
                 extraArtworks.setImage();
             }
-            trigger_load_theme = true;
+            triggers.theme.start = true;
             //Play entierly games sounds-fx (Yaron fix)
             if( Ini_settings.sounds["game_sounds"] ) {
                 // check if systeme have custom wheel sounds , if not, use main menu wheel sounds like in HS !
@@ -1326,17 +1337,10 @@ function hs_transition( ttype, var, ttime )
             if(my_config["special_artworks"].tolower() == "yes") load_special(); // Load special artworks
 
             rtime = glob_time
-            //wheel_animation.cancel("from");
-            trigger_load_theme = true;
-            if(Ini_settings["wheel"]["animation"] != "none"){
-                trigger_wheel_anim = true;
-                wheel_animation
-                .preset(Ini_settings["wheel"]["animation"])
-                .starting("right")
-                .duration(glob_delay)
-                .delay(glob_delay)
-                wheel_animation.play()
-            }
+
+            triggers.theme.start = true;
+            wheel_surf.visible = false;
+
         break;
 
         /* Custom Overlays */
@@ -1436,7 +1440,7 @@ function hs_tick( ttime )
     }
 
     // set all artwork and video visible after x ms next to triggerload except those who have width set to 0.1 (unhided later in animation preset)
-    if( (glob_time - rtime > glob_delay + 150) && visi == false){
+    if( (glob_time - rtime > globs.delay + 150) && visi == false){
         foreach(obj in ["artwork1", "artwork2", "artwork3", "artwork4", "artwork5", "artwork6", "video", "snap"] ) if(ArtObj[obj].width > 0.1) ArtObj[obj].visible = true;
         visi = true;
     }
@@ -1445,10 +1449,10 @@ function hs_tick( ttime )
         snap_is_playing = true;
     }
 
-    if( glob_time - rtime > glob_delay + 350) letters.visible = false; // if visible , hide letter search with a small delay
+    if( glob_time - rtime > globs.delay + 350) letters.visible = false; // if visible , hide letter search with a small delay
 
-    // load medias after glob_delay
-    if( (glob_time - rtime > glob_delay) && trigger_load_theme){
+    // load medias after globs.delay
+    if( (glob_time - rtime > globs.delay) && triggers.theme.start){
         hd = false;
         if( Ini_settings.themes["bezels"] && Ini_settings.themes["aspect"] == "center" ){ // Systems bezels!  only if aspect center
             if( file_exist(fe.script_dir + "images/Bezels/" + curr_sys + ".png") ){
@@ -1486,7 +1490,8 @@ function hs_tick( ttime )
                 if( tr_directory_cache.len() > 0 ) flv_transitions.file_name = get_random_table(tr_directory_cache);
             }
 
-            flv_transitions.visible = true;
+            flv_transitions.video_flags = Vid.NoAutoStart
+            triggers.flv_transition.start = true;
         }
 
         if( !theme_content.len() ) { // if no theme is found .
@@ -1523,8 +1528,14 @@ function hs_tick( ttime )
 
         game_surface(); // user setting for game text infos
 
-        trigger_load_theme = false;
+        triggers.theme.start = false;
         visi = false;
+    }
+
+    if( triggers.flv_transition.start && glob_time - rtime > globs.delay + triggers.flv_transition.delay ){
+        flv_transitions.visible = true;
+        flv_transitions.video_flags = Vid.Default;
+        triggers.flv_transition.start = false;
     }
 
     // hide flv transition video when finished
@@ -1534,12 +1545,12 @@ function hs_tick( ttime )
         flv_transitions.file_name = "";
     }
 
-    if(trigger_letter == true){
+    if(triggers.letter.start == true && glob_time - rtime > triggers.letter.delay ){
         local firstl = fe.game_info(Info.Title);
         letters.file_name = medias_path + fe.list.name + "/Images/Letters/" + firstl.slice(0,1) + ".png";
         FE_Sound_Letter_Click.playing = true;
         letters.visible = true;
-        trigger_letter = false;
+        triggers.letter.start = false;
     }
 
     // syno scrolling
@@ -1645,7 +1656,7 @@ menus.push ({
                             create_xml();
                             save_xml(xml_root, medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\")
                             path = ""; // reset path forcing the theme to reload artworks
-                            trigger_load_theme = true;
+                            triggers.theme.start = true;
                             overlay_message("images/validate.png");
                             fe.overlay.list_dialog([], LnG.Create_folder)
                         }
@@ -1658,7 +1669,7 @@ menus.push ({
                             create_xml();
                             save_xml(xml_root, medias_path + curr_sys + "\\Themes\\Default\\")
                             path = ""; // reset path forcing the theme to reload artworks
-                            trigger_load_theme = true;
+                            triggers.theme.start = true;
                             overlay_message("images/validate.png");
                             fe.overlay.list_dialog([], LnG.Create_folder);
                         }else if(selected == 1){
@@ -1666,7 +1677,7 @@ menus.push ({
                             create_xml();
                             save_xml(xml_root, medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\")
                             path = ""; // reset path forcing the theme to reload artworks
-                            trigger_load_theme = true;
+                            triggers.theme.start = true;
                             overlay_message("images/validate.png");
                             fe.overlay.list_dialog([], LnG.Create_folder)
                         }
@@ -1737,7 +1748,7 @@ menus.push ({
                         "onselect":function(current_list, selected_row){
                             xml_root.getChild(current_list.object).addAttr("keepaspect", (selected_row.target == "yes" ? true : false) );
                             save_xml(xml_root, path);
-                            trigger_load_theme = true;
+                            triggers.theme.start = true;
                         }
                 });
                 return true;
@@ -1753,7 +1764,7 @@ menus.push ({
                     "onselect":function(current_list, selected_row){
                         xml_root.getChild(current_list.object).addAttr("type", (selected_row.target));
                         save_xml(xml_root, path);
-                        trigger_load_theme = true;
+                        triggers.theme.start = true;
                     }
                 })
                 return true;
@@ -1769,7 +1780,7 @@ menus.push ({
                     "onselect":function(current_list, selected_row){
                         xml_root.getChild(current_list.object).addAttr("rest", (selected_row.target));
                         save_xml(xml_root, path);
-                        trigger_load_theme = true;
+                        triggers.theme.start = true;
                     }
                 })
                 return true;
@@ -1785,7 +1796,7 @@ menus.push ({
                     "rows":start_tab, "object":current_list.object, "onselect":function(current_list, selected_row){
                         xml_root.getChild(current_list.object).addAttr("start", selected_row.target );
                         save_xml(xml_root, path);
-                        trigger_load_theme = true;
+                        triggers.theme.start = true;
                     }
                 })
                 return true;
@@ -1953,7 +1964,7 @@ menus.push({
                         "onselect":function(current_list, selected_row){
                             xml_root.getChild("video").addAttr("forceaspect", (selected_row.target == "yes" ? true : false) );
                             save_xml(xml_root, path);
-                            trigger_load_theme = true;
+                            triggers.theme.start = true;
                         }
                 });
                 return true;
@@ -1968,7 +1979,7 @@ menus.push({
                 "onselect":function(current_list, selected_row){
                     xml_root.getChild("video").addAttr("type", (selected_row.target));
                     save_xml(xml_root, path);
-                    trigger_load_theme = true;
+                    triggers.theme.start = true;
                 }
             })
             return true;
@@ -1983,7 +1994,7 @@ menus.push({
                 "onselect":function(current_list, selected_row){
                     xml_root.getChild("video").addAttr("rest", (selected_row.target));
                     save_xml(xml_root, path);
-                    trigger_load_theme = true;
+                    triggers.theme.start = true;
                 }
             })
             return true;
@@ -2001,7 +2012,7 @@ menus.push({
                 "rows":start_tab, "target":"", "onselect":function(current_list, selected_row){
                     xml_root.getChild("video").addAttr("start", selected_row.target );
                     save_xml(xml_root, path);
-                    trigger_load_theme = true;
+                    triggers.theme.start = true;
                 }
             })
             return true;
@@ -2108,7 +2119,7 @@ menus.push({
                 "rows":YesNo_menu,
                     "onselect":function(current_list, selected_row){
                         Ini_settings.themes["override_transitions"] = (selected_row.target == "yes" ? true : false);
-                        trigger_load_theme = true;
+                        triggers.theme.start = true;
                     }
             });
             return true;
@@ -2122,7 +2133,7 @@ menus.push({
                 "rows":YesNo_menu,
                     "onselect":function(current_list, selected_row){
                         Ini_settings.themes["background_stretch"] = (selected_row.target == "yes" ? true : false);
-                        trigger_load_theme = true;
+                        triggers.theme.start = true;
                     }
             });
             return true;
@@ -2136,7 +2147,7 @@ menus.push({
                 "rows":YesNo_menu,
                     "onselect":function(current_list, selected_row){
                         Ini_settings.themes["bezels"] = (selected_row.target == "yes" ? true : false);
-                        trigger_load_theme = true;
+                        triggers.theme.start = true;
                     }
             });
             return true;
@@ -2150,7 +2161,7 @@ menus.push({
                 "rows":YesNo_menu,
                     "onselect":function(current_list, selected_row){
                         Ini_settings.themes["bezels_on_top"] = (selected_row.target == "yes" ? true : false);
-                        trigger_load_theme = true;
+                        triggers.theme.start = true;
                     }
             });
             return true;
@@ -2164,7 +2175,7 @@ menus.push({
                 "rows":YesNo_menu,
                     "onselect":function(current_list, selected_row){
                         Ini_settings.themes["animated_backgrounds"] = (selected_row.target == "yes" ? true : false);
-                        trigger_load_theme = true;
+                        triggers.theme.start = true;
                     }
             });
             return true;
@@ -2178,7 +2189,7 @@ menus.push({
                 "rows":YesNo_menu,
                     "onselect":function(current_list, selected_row){
                         Ini_settings.themes["reload_backgrounds"] = (selected_row.target == "yes" ? true : false);
-                        trigger_load_theme = true;
+                        triggers.theme.start = true;
                     }
             });
             return true;
@@ -2192,7 +2203,7 @@ menus.push({
                     "rows":[{"title":LnG.M_Menu_stretch,"target":"stretch"},{"title":LnG.M_Menu_center,"target":"center"}],
                         "onselect":function(current_list, selected_row){
                             Ini_settings.themes["aspect"] = selected_row.target;
-                            trigger_load_theme = true;
+                            triggers.theme.start = true;
                         }
                 });
                 return true;
@@ -2295,11 +2306,11 @@ menus.push({
                         wheel_animation
                         .preset(Ini_settings["wheel"]["animation"])
                         .starting("right")
-                        .duration(glob_delay)
-                        .delay(glob_delay)
+                        .duration(globs.delay)
+                        .delay(triggers.wheel_anim.delay)
                         wheel_animation.play()
                     }
-                    trigger_load_theme = true;
+                    triggers.theme.start = true;
                 }
             })
             return true;
@@ -2415,7 +2426,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["game text"]["game_text_active"] = (selected_row.target == "yes" ? true : false);
-                            trigger_load_theme = true;
+                            triggers.theme.start = true;
                         }
                 });
                 return true;
@@ -2429,7 +2440,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["game text"]["game_text_hide"] = (selected_row.target == "yes" ? true : false);
-                            trigger_load_theme = true;
+                            triggers.theme.start = true;
                         }
                 });
             },"infos":LnG.M_inf_gametext_hide
@@ -2585,7 +2596,7 @@ menus.push({
                 "rows":YesNo_menu,
                     "onselect":function(current_list, selected_row){
                         Ini_settings.sounds["game_sounds"] = (selected_row.target == "yes" ? true : false);
-                        trigger_load_theme = true;
+                        triggers.theme.start = true;
                     }
             });
             return true;
@@ -2598,7 +2609,7 @@ menus.push({
                 "rows":YesNo_menu,
                     "onselect":function(current_list, selected_row){
                         Ini_settings.sounds["wheel_click"] = (selected_row.target == "yes" ? true : false);
-                        trigger_load_theme = true;
+                        triggers.theme.start = true;
                     }
             });
             return true;
@@ -2629,7 +2640,7 @@ menus.push({
             point_animation.opts.from = {x=flw, y=point.y, rotation = 0}
             point_animation.opts.to = {x=point.x, y=point.y, rotation=point.rotation}
             point.x = point_animation.opts.from.x
-            trigger_load_theme = true;
+            triggers.theme.start = true;
         },
         "infos" : LnG.M_inf_pointer_pos
     },
@@ -2641,7 +2652,7 @@ menus.push({
                     "onselect":function(current_list, selected_row){
                         Ini_settings.pointer["animated"] = (selected_row.target == "yes" ? true : false);
                         if(selected_row.target == "yes") point_animation.play();
-                        trigger_load_theme = true;
+                        triggers.theme.start = true;
                     }
             });
             return true;
@@ -2860,7 +2871,7 @@ signals["edit_sig"] <- function (str) {
         if(sel_menu._selected_row.title.find("artwork") != null){
             local anum = sel_menu._selected_row.title.slice( 7, 8 ).tointeger() -1; // get the artwork index for anims array
             if(anims[anum].opts.rest){
-                trigger_load_theme = true; // don't restart animation otherwise new xml coord are not used by the anim class
+                triggers.theme.start = true; // don't restart animation otherwise new xml coord are not used by the anim class
             }
             save_xml(xml_root, path)
         }
@@ -2921,7 +2932,7 @@ signals["default_sig"] <- function (str) {
         case "next_letter":
         case "prev_letter":
             conveyor.transition_ms = 150; // smooth conveyor on letter jump
-            trigger_letter = true;
+            triggers.letter.start = true;
         break;
 
         case my_config["extra_artworks_key"] : // Extra artworks screen
@@ -3274,6 +3285,7 @@ function artworks_transform(Xtag, rotate=true, art=""){
 }
 
 function set_custom_value(Ini_settings) {
+
     // hs theme
     if( Ini_settings.themes["aspect"] == "stretch"){
         mul = flw / 1024;
@@ -3288,40 +3300,50 @@ function set_custom_value(Ini_settings) {
         offset_y = 0;
     }
 
-    syno_surf.visible = Ini_settings.themes["synopsis"];
+    if(prev_tr == Transition.ToNewList){
+        syno_surf.visible = Ini_settings.themes["synopsis"];
 
-    local g_c = split( Ini_settings["wheel"]["system stats"], ",").map(function(v){return v.tofloat()}); // %
-    if( g_c.len() == 3 ) {
-        m_infos.x = g_c[0]*flw;
-        m_infos.y = g_c[1]*flh;
-        m_infos.rotation = g_c[2];
-    }
+        local g_c = split( Ini_settings["wheel"]["system stats"], ",").map(function(v){return v.tofloat()}); // %
+        if( g_c.len() == 3 ) {
+            m_infos.x = g_c[0]*flw;
+            m_infos.y = g_c[1]*flh;
+            m_infos.rotation = g_c[2];
+        }
 
-    local g_c = split( Ini_settings["game text"]["coord"], ",").map(function(v){return v.tofloat()});; // %
-    if( g_c.len() == 3 ) {
-        surf_ginfos.set_pos( g_c[0]*flw, g_c[1]*flh );
-        surf_ginfos.rotation = g_c[2];
-        surf_ginfos.alpha = 255;
-    }
-    surf_ginfos.visible = Ini_settings["game text"]["game_text_active"];
+        local g_c = split( Ini_settings["game text"]["coord"], ",").map(function(v){return v.tofloat()});; // %
+        if( g_c.len() == 3 ) {
+            surf_ginfos.set_pos( g_c[0]*flw, g_c[1]*flh );
+            surf_ginfos.rotation = g_c[2];
+            surf_ginfos.alpha = 255;
+        }
+        surf_ginfos.visible = Ini_settings["game text"]["game_text_active"];
 
-    local g_c = split( Ini_settings["wheel"]["offset"], ",").map(function(v){return v.tofloat()}); // %
-    if( g_c.len() == 3 ) {
-        local x=g_c[0] * flw;
-        local y=g_c[1] * flh;
-        local width = flw * 1.15;
-        local height = flh * 1.15;
-        local mr = PI * g_c[2] / 180;
-        x -= cos( mr ) * (-width * 0.5) - sin( mr ) * (-height * 0.5) + width * 0.5;
-        y -= sin( mr ) * (-width * 0.5) + cos( mr ) * (-height * 0.5) + height * 0.5;
-        wheel_animation.opts.to = {x=x, y=y}
-        wheel_surf.rotation = g_c[2]
-    }
+        local g_c = split( Ini_settings["wheel"]["offset"], ",").map(function(v){return v.tofloat()}); // %
+        if( g_c.len() == 3 ) {
+            local x=g_c[0] * flw;
+            local y=g_c[1] * flh;
+            local width = flw * 1.15;
+            local height = flh * 1.15;
+            local mr = PI * g_c[2] / 180;
+            x -= cos( mr ) * (-width * 0.5) - sin( mr ) * (-height * 0.5) + width * 0.5;
+            y -= sin( mr ) * (-width * 0.5) + cos( mr ) * (-height * 0.5) + height * 0.5;
+            wheel_surf.rotation = g_c[2];
+            wheel_surf.set_pos(x, y);
+        }
 
-    local g_c = split( Ini_settings["pointer"]["coord"], ",").map(function(v){return v.tofloat()}); // %
-    if(trigger_wheel_anim){
+        if(Ini_settings["wheel"]["animation"] != "none"){
+            wheel_animation
+            .preset(Ini_settings["wheel"]["animation"])
+            .starting("right")
+            .duration(globs.delay)
+            .delay(triggers.wheel_anim.delay)
+            wheel_animation.start()
+            wheel_animation.cancel("from")
+            wheel_animation.start();
+        }
+
+        local g_c = split( Ini_settings["pointer"]["coord"], ",").map(function(v){return v.tofloat()}); // %
         if( g_c.len() == 5 ) {
-            //if ( Ini_settings.wheel["type"] == "vertical") point.set_pos(flw, p_co[1], p_co[2], p_co[3]);
             point.width = g_c[2] * flw;
             point.height = g_c[3] * flh;
             point.x = g_c[0] * flw;
@@ -3331,31 +3353,25 @@ function set_custom_value(Ini_settings) {
             point_animation.opts.to = {x=point.x, y=point.y, rotation=g_c[4] }
             point.x = point_animation.opts.from.x
         }
-    }
 
-    if(trigger_wheel_anim){
-        wheel_animation.play();
-        trigger_wheel_anim = false;
-    }
+        if(!Ini_settings.pointer.animated){
+            point.x = point_animation.opts.to; // or g_c[0]*flw
+        }
+        if(!Ini_settings.wheel["fade_time"]) m_infos.alpha = 255;
 
-    if(!Ini_settings.pointer.animated){
-        point.x = point_animation.opts.to; // or g_c[0]*flw
+        local g_c = split( Ini_settings["themes"]["scroll_pos"], ",").map(function(v){return v.tofloat()}); // %
+        if( g_c.len() == 5 ) {
+            syno_surf.width = g_c[2] * flw;
+            syno_surf.height = g_c[3] * flh;
+            syno_surf.x = g_c[0] * flw;
+            syno_surf.y = g_c[1] * flh;
+            //syno_surf.rotation = g_c[4];
+        }
+        local rgbC = dec2rgb(Ini_settings["game text"]["text_color"]);
+        Title.text_color( [rgbC[0], rgbC[1], rgbC[2]] );
+        local rgbC = dec2rgb(Ini_settings["game text"]["text_stroke_color"]);
+        Title.thick_rgb([rgbC[0], rgbC[1], rgbC[2]]);
     }
-    if(!Ini_settings.wheel["fade_time"]) m_infos.alpha = 255;
-
-    local g_c = split( Ini_settings["themes"]["scroll_pos"], ",").map(function(v){return v.tofloat()}); // %
-    if( g_c.len() == 5 ) {
-        syno_surf.width = g_c[2] * flw;
-        syno_surf.height = g_c[3] * flh;
-        syno_surf.x = g_c[0] * flw;
-        syno_surf.y = g_c[1] * flh;
-        //syno_surf.rotation = g_c[4];
-    }
-
-    local rgbC = dec2rgb(Ini_settings["game text"]["text_color"]);
-    Title.text_color( [rgbC[0], rgbC[1], rgbC[2]] );
-    local rgbC = dec2rgb(Ini_settings["game text"]["text_stroke_color"]);
-    Title.thick_rgb([rgbC[0], rgbC[1], rgbC[2]]);
 
 }
 
