@@ -933,7 +933,7 @@ function hide_art(){
     local cnt = 0;
     local selected = [];
     while(cnt<6){
-        local rnd = rndint(random.len());
+        local rnd = rndint(random.len()-1);
         if(selected.find(rnd)== null){
             selected.push(rnd);
             cnt++
@@ -2169,7 +2169,7 @@ menus.push({
         "infos" : LnG.M_inf_Bezel_top
     },
     {
-        "title":"Animated Background",
+        "title":"Background Transitions",
         "onselect":function(current_list, selected_row){
             set_list( { "title":selected_row.title, "slot_pos":(Ini_settings.themes["animated_backgrounds"] == true ? 0 : 1),
                 "rows":YesNo_menu,

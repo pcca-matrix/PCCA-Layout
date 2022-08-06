@@ -154,7 +154,7 @@ class SelMenu
     function select(){
         if(_selected_row.rawin("type")){ // save and reload theme if select pressed on rows that have type attr
             save_xml(xml_root, path);
-            trigger_load_theme = true;
+            triggers.theme.start = true;
         }
 
         if(_selected_row.rawin("type") || _edit_type != null) return false; // do not enter if we are on these item (prevent changing menu selected_row)
