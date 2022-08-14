@@ -248,16 +248,24 @@ function round(nbr, dec){
     return newNbr;
 }
 
-//Generate a pseudo-random integer between 0 and max
-function rndint(max) {
-    local roll = 1.0 * max * rand() / RAND_MAX;
-    return roll.tointeger();
+//Generate a pseudo-random number between min and max
+function rnd_num(min, max, type){
+    srand( rand() * time() );
+    switch(type){
+        case "int":
+            return (rand() * (max - min + 1) / (RAND_MAX + 1)) + min;
+        break;
+
+        case "float":
+            return min + (rand().tofloat() / (RAND_MAX + 1.0).tofloat()) * (max - min);
+        break;
+    }
 }
 
 //get random index in a table
 function get_random_table(tb){
     local i=0;
-    local sel = rndint(tb.len());
+    local sel = rnd_num(0,tb.len()-1,"int");
     foreach( key, val in tb ){
         if(i == sel) return val
         i++;
@@ -269,7 +277,7 @@ function get_random_table(tb){
 function get_random_file(dir){
     local fname = "";
     local tmp = zip_get_dir( dir );
-    if( tmp.len() > 0 ) fname = dir + "/" + tmp[ rndint(tmp.len()) ];
+    if( tmp.len() > 0 ) fname = dir + "/" + tmp[ rnd_num(0,tmp.len()-1,"int") ];
     return fname;
 }
 

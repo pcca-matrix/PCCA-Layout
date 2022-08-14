@@ -260,7 +260,7 @@ class PresetAnimation extends Animation {
         if(opts.preset == "random"){
             local rnd = ["linear","ease","elastic","elastic bounce","flip","fade","bounce","blur","pixelate","zoom out","pixelate zoom out","strobe",
             "grow","grow bounce","grow blur","grow x","grow y","grow center shrink","flag","stripes","stripes 2"];
-            opts.preset = rnd[rndint(rnd.len()-1)];
+            opts.preset = rnd[rnd_num(0,rnd.len()-1,"int")];
         }
 
         if(opts.preset == "fade" && opts.name == "video") opts.preset = "video_fade";
@@ -347,9 +347,9 @@ class PresetAnimation extends Animation {
                         x = ParticlesArray[i].x + v;
 
                     if( ParticlesArray[i].y >= flh ){
-                        y = - (ParticlesArray[i].height + rndint(flh * 0.10));
-                        x = rndint(flw);
-                        opts.datas.x[i] = rndfloat(2.0);
+                        y = - (ParticlesArray[i].height + rnd_num(0,flh * 0.10,"int"));
+                        x = rnd_num(0,flw,"int");
+                        opts.datas.x[i] = rnd_num(0.0,2.0,"float");
                     }
 
                     ParticlesArray[i].rotation = v;
@@ -864,13 +864,13 @@ class PresetAnimation extends Animation {
             }
 
             for ( local i=0; i < 4; i++ ){
-                local posx = ( i > 0 ? (obj.width * i) + rndint(obj.width) : flw * 0.01)
+                local posx = ( i > 0 ? (obj.width * i) + rnd_num(0,obj.width,"int") : flw * 0.01)
                 ParticlesArray[i].file_name = obj.file_name;
                 ParticlesArray[i].visible = true;
-                ParticlesArray[i].set_pos( posx , -( rndint(flh*0.5) + obj.height ) , obj.width, obj.height);
+                ParticlesArray[i].set_pos( posx , -( rnd_num(0,flh*0.5,"int") + obj.height ) , obj.width, obj.height);
                 ParticlesArray[i].zorder-=1; // fix: hide obj on exit menu
             }
-            opts.datas <- { "s": [4.1, 2.8, 3.4, 1.9], "t": [0,0,0,0], "x": [rndfloat(2.1), rndfloat(2.1), rndfloat(2.1), rndfloat(2.1)] };
+            opts.datas <- { "s": [4.1, 2.8, 3.4, 1.9], "t": [0,0,0,0], "x": [rnd_num(0.0,2.1,"float"), rnd_num(0.0,2.1,"float"), rnd_num(0.0,2.1,"float"), rnd_num(0.0,2.1,"float")] };
         },
 
         "bounce around 3d": // OK
@@ -1130,7 +1130,7 @@ class PresetAnimation extends Animation {
             if(opts.datas.bound){
                 opts.datas.velY = ( rand()%(opts.datas.bound - (opts.datas.bound * 0.5) + 1) + (opts.datas.bound * 0.50) ) * opts.datas.damping
                 local jumpX = (rand()%( opts.datas.bound * 0.5 - (opts.datas.bound * 0.25) + 1) + (opts.datas.bound * 0.25));
-                if(rndint(3) < 1) opts.datas.velX += jumpX; else opts.datas.velX -= jumpX;
+                if(rnd_num(0,3,"int") < 1) opts.datas.velX += jumpX; else opts.datas.velX -= jumpX;
                 opts.datas.bound = false;
             }
 
@@ -1183,8 +1183,8 @@ class PresetAnimation extends Animation {
         surface.y <- states["origin"].y;
         local arr_y = ["Up", "Down"];
         local arr_x = ["Left", "Right"];
-        if(_move_direction_y == -1) _move_direction_y = arr_y[rndint(2)];
-        if(_move_direction_x == -1) _move_direction_x = arr_x[rndint(2)];
+        if(_move_direction_y == -1) _move_direction_y = arr_y[rnd_num(0,1,"int")];
+        if(_move_direction_x == -1) _move_direction_x = arr_x[rnd_num(0,1,"int")];
 
         if (animate_type == "hover vertical" || animate_type == "hover")
         {
@@ -1224,18 +1224,6 @@ class PresetAnimation extends Animation {
                 }
             } catch(e) {}
         return state;
-    }
-
-    // Generate a pseudo-random float between 0 and max - 1, inclusive
-    function rndfloat(max) {
-        local roll = 1.0 * max * rand() / RAND_MAX;
-        return roll;
-    }
-
-    // Generate a pseudo-random integer between 0 and max
-    function rndint(max) {
-        local roll = 1.0 * max * rand() / RAND_MAX;
-        return roll.tointeger();
     }
 
     // normalize 0.0 - 1.0

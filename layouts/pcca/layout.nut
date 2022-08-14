@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.57
+// PCCA v2.60
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -109,13 +109,13 @@ offset_x <- 0;
 offset_y <- 0;
 
 // Modules
+fe.do_nut("nut/func.nut");
 fe.load_module("hs-animate");
 fe.load_module("conveyor");
 fe.do_nut("nut/keyboard-search/module.nut");
 fe.do_nut("nut/class.nut");
 fe.load_module("file");
 fe.load_module("file-format");
-fe.do_nut("nut/func.nut");
 fe.do_nut("nut/lang.nut");
 
 LnG <- _LL[ my_config["user_lang"] ];
@@ -675,7 +675,7 @@ function background_transitions(anim, File){
     Trans_shader.set_texture_param("bezel", ArtObj.bezel);
 
     if(!anim){
-        local rndanim = rndint(43);
+        local rndanim = rnd_num(0,43,"int");
         if(reverse && rndanim == 41)rndanim = 42; // hp corner can only be used right to left so select 42 (canna) instead if it's reverse
         Trans_shader.set_param("datas", rndanim, reverse, fromIsSWF, toIsSWF);// datas = preset number, reverse 0:1 , fromIsSWF, toIsSWF
     }else{
@@ -933,7 +933,7 @@ function hide_art(){
     local cnt = 0;
     local selected = [];
     while(cnt<6){
-        local rnd = rndint(random.len()-1);
+        local rnd = rnd_num(0,random.len()-1,"int");
         if(selected.find(rnd)== null){
             selected.push(rnd);
             cnt++
@@ -944,7 +944,6 @@ function hide_art(){
         if(curr_theme != "Default" || availables[b] == false ){
             anims[a].resting = false; // disable resting animation before hide artworks
             anims[a].preset(random[ selected[a] ])
-            //random[ rndint(random.len()) ]
             anims[a].on("stop", function(anim){
                 anim.opts.target.file_name = "";
                 anim.opts.target.visible = false;
@@ -1588,10 +1587,11 @@ local start_tab = [{"title":"None", "target":"none"},{"title":"Top", "target":"t
 local borders = [{"title":"Shape", "target":"bshape"}, {"title":"Border1 Size", "target":"bsize"}, {"title":"Border 1 Color", "target":"bcolor"},
 {"title":"Border2 Size", "target":"bsize2"}, {"title":"Border2 Color", "target":"bcolor2"}, {"title":"Border3 Size", "target":"bsize3"}, {"title":"Border3 Color", "target":"bcolor3"}];
 
-local video_anim_tab = [{"title":"None","target":"none"},{"title":"Pump","target":"pump"},{"title":"Fade","target":"fade"},{"title":"TV","target":"tv"},
+local video_anim_tab = [{"title":"Pump","target":"pump"},{"title":"Fade","target":"fade"},{"title":"TV","target":"tv"},
 {"title":"TV Zoom Out","target":"tv zoom out"},{"title":"Ease","target":"ease"},{"title":"Bounce","target":"bounce"},{"title":"Grow","target":"grow"},
 {"title":"Grow X","target":"grow x"},{"title":"Grow Y","target":"grow y"},{"title":"Grow Bounce","target":"grow bounce"}];
 video_anim_tab.sort(@(a,b) a.title <=> b.title)
+video_anim_tab.insert(0,{"title":"None", "target":"none"});
 
 local wheel_anim_tab = [{"title":"None","target":"none"},{"title":"Ease","target":"ease"},{"title":"Linear","target":"linear"},{"title":"Bounce","target":"bounce"},
 {"title":"Elastic", "target":"elastic"}];
