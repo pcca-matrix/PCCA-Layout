@@ -50,6 +50,10 @@ triggers <- {
     "letter":{
         "start": false,
         "delay" : 5
+    },
+    "background_anim":{
+        "start": false,
+        "delay" : 0
     }
 }
 
@@ -119,7 +123,7 @@ fe.load_module("file-format");
 fe.do_nut("nut/lang.nut");
 
 LnG <- _LL[ my_config["user_lang"] ];
-local prev_back = {}; // previous background table infos ( transitions )
+prev_back <- { ox = 0, oy = 0, bw = flw, bh = flh }; // previous background table infos ( transitions )
 
 // Globals
 local tr_directory_cache  = get_dir_lists( medias_path + "Frontend/Video/Transitions" ); // cached table of global transitions files
@@ -179,6 +183,13 @@ ArtObj.background1.visible = false;
 ArtObj.background2.visible = false;
 ArtObj.bezel <- fe.add_image("",0,0,flw,flh);
 ArtObj.bezel.visible = false;
+
+background_anim <- PresetAnimation(ArtObj.background)
+.name("bck_anim")
+.preset("none")
+.delay(0)
+.rest("none")
+background_anim.play()
 
 // create all artworks img obj
 foreach(a,b in artwork_list_full) ArtObj[b] <- fe.add_image("",-1000,-1000,0.1,0.1);
@@ -591,7 +602,8 @@ function overview( offset ) {
    return;
 }
 
-function background_transitions(anim, File){
+function background_transitions(transition, File, animation = null){
+
     if( Ini_settings.themes["reload_backgrounds"] == false && surf_menu.visible == false){ // dot not reload background if it's the same and the option reload_backgrounds is false (Default behavior)
         if(File == ArtObj.background1.file_name && reverse) return;
         if(File == ArtObj.background2.file_name && !reverse) return;
@@ -599,18 +611,11 @@ function background_transitions(anim, File){
 
     ArtObj.bezel.visible = false;
     local fromIsSWF = false;
-    local toIsSWF = false;
+    local toIsSWF = ( ext(File).tolower() == "swf" ? true : false );
     local bw,bh;
-    local back_mul = mul;
-    local back_mul_h = mul_h;
-    local back_offset_x = offset_x;
-    local back_offset_y = offset_y;
-
-    if( ext(File).tolower() == "swf" ) toIsSWF = true;
-
     if(reverse){
         ArtObj.background2.file_name = File;
-        // fix flipped-y background with swf (why ??? AM Bug)
+        // fix flipped-y background with swf (why ??? AM Bug) (ex:anteater mame)
         if( ext(ArtObj.background1.file_name).tolower() == "swf" ){
             ArtObj.background1.video_playing = false;
             fromIsSWF = true;
@@ -618,9 +623,10 @@ function background_transitions(anim, File){
 
         bw = ArtObj.background2.texture_width;
         bh = ArtObj.background2.texture_height;
+
     }else{
         ArtObj.background1.file_name = File;
-        // fix flipped-y background with swf (why ??? AM Bug)
+        // fix flipped-y background with swf
         if( ext(ArtObj.background2.file_name).tolower() == "swf" ){
             ArtObj.background2.video_playing = false;
             fromIsSWF = true;
@@ -630,56 +636,74 @@ function background_transitions(anim, File){
         bh = ArtObj.background1.texture_height;
     }
 
-    if( Ini_settings.themes["background_stretch"] || hd ) // no scaled backgrounds
-    {
-        if( toIsSWF ){ // hyperspin seems to stretch any swf backgrounds !
-            back_mul = flw / 1024;
-            back_mul_h = flh / 768;
-            back_offset_x = 0;
-            back_offset_y = 0;
-            Trans_shader.set_param("back_res", 0.0, 0.0, (1024 * back_mul) / flw, (768 * back_mul_h) / flh ); // actual background infos stretched
-        }else{
-            Trans_shader.set_param("back_res", 0.0, 0.0, 1.0, 1.0 ); // actual background infos
-        }
+        if( Ini_settings.themes["background_stretch"] || hd ) // no scaled backgrounds
+        {
+            Trans_shader.set_param("prev_res", prev_back.ox  / flw , prev_back.oy / flh, prev_back.bw  / flw, prev_back.bh  / flh); // previous background infos
+            if(animation){
+                local width = bw;
+                local height = bh;
+                if(width < flw * 1.5) width = flw*1.5;
+                if(height < flh * 1.5) height = flh*1.5;
+                switch(animation){
+                    case "horizontal panning":
+                        local off_x = -( (width-flw) * 0.5);
+                        Trans_shader.set_param("back_res", off_x / flw, 0.0, width / flw, 1.0 ); // actual background infos stretched
+                        prev_back = { ox = off_x, oy = 0.0, bw = width, bh = flh };
+                    break;
 
-        if(prev_back.len() > 0 ){ // previous background infos
-            Trans_shader.set_param("prev_res", prev_back.ox * (1.0 / flw) , prev_back.oy * (1.0 / flh),
-            prev_back.bw * (1.0 / flw), prev_back.bh * (1.0 / flh)); // actual background infos
-        }else{
-            Trans_shader.set_param("prev_res",
-            back_offset_x * (1.0 / flw) , back_offset_y * (1.0 / flh),
-            (bw * back_mul) / flw, (bh * back_mul_h) / flh );
-        }
-        prev_back = { ox = 0, oy = 0, bw = flw, bh = flh };
+                    case "vertical panning":
+                        local off_y = (height-flh) * 0.5;
+                        Trans_shader.set_param("back_res",0.0, off_y / flh, 1.0, height / flh ); // actual background infos stretched
+                        prev_back = { ox = 0, oy = off_y, bw = flw, bh = height };
+                    break;
 
-    }else{ // scaled (HyperSpin) Background
+                    case "random panning":
+                        local off_x = -( (width-flw) * 0.5);
+                        local off_y = (height-flh) * 0.5;
+                        Trans_shader.set_param("back_res", off_x / flw, off_y / flh, width / flw, height / flh ); // actual background infos stretched
+                        prev_back = { ox = off_x, oy = off_y, bw = width, bh = height };
+                    break;
 
-        if( toIsSWF ){ // hyperspin seems to stretch any swf backgrounds !
-            Trans_shader.set_param("back_res", back_offset_x * (1.0 / flw), back_offset_y * (1.0 / flh), (1024 * back_mul) / flw, (768 * back_mul_h) / flh); // actual background infos stretched
-        }else{
-            Trans_shader.set_param("back_res", back_offset_x * (1.0 / flw), back_offset_y * (1.0 / flh), (bw * back_mul) / flw, (bh * back_mul_h) / flh); // actual background infos
-        }
+                    case "none":
+                       Trans_shader.set_param("back_res", 0.0, 0.0, 1.0, 1.0 ); // actual background infos stretched
+                    break;
+                }
 
-        if(prev_back.len() > 0 ) { // previous background infos
-            Trans_shader.set_param("prev_res", prev_back.ox * (1.0 / flw) , prev_back.oy * (1.0 / flh),
-            prev_back.bw / flw, prev_back.bh / flh);
-        }else{
-            Trans_shader.set_param("prev_res", back_offset_x * (1.0 / flw), back_offset_y * (1.0 / flh),
-            (bw * back_mul) / flw, (bh * back_mul_h) / flh);
+            }else{  // no animation
+                Trans_shader.set_param("back_res", 0.0, 0.0, 1.0, 1.0 ); // actual background infos stretched
+                prev_back = { ox = 0, oy = 0, bw = flw, bh = flh }; // si animation précédent alors bw, etc.. doit = a la res précédente
+            }
+
+        }else{ // scaled (HyperSpin) Background
+
+            if( toIsSWF ){ // hyperspin seems to stretch any swf backgrounds !
+                Trans_shader.set_param("back_res", offset_x / flw, offset_y / flh, (1024 * mul) / flw, (768 * mul_h) / flh); // actual background infos stretched
+            }else{
+                Trans_shader.set_param("back_res", offset_x / flw, offset_y / flh, (bw * mul) / flw, (bh * mul_h) / flh); // actual background infos
+            }
+
+            if(prev_back.len() > 0 ) { // previous background infos
+                Trans_shader.set_param("prev_res", prev_back.ox / flw , prev_back.oy  / flh, prev_back.bw / flw, prev_back.bh / flh);
+            }else{
+                Trans_shader.set_param("prev_res", offset_x / flw, offset_y / flh, (bw * mul) / flw, (bh * mul_h) / flh);
+            }
+            prev_back = { ox = offset_x, oy = offset_y, bw = bw * mul, bh = bh * mul_h };
         }
-        prev_back = { ox = back_offset_x, oy = back_offset_y, bw = bw * back_mul, bh = bh * back_mul_h };
-    }
 
     Trans_shader.set_texture_param("back2", ArtObj.background2);
     Trans_shader.set_texture_param("back1", ArtObj.background1);
     Trans_shader.set_texture_param("bezel", ArtObj.bezel);
 
-    if(!anim){
+    if(!transition){
         local rndanim = rnd_num(0,43,"int");
-        if(reverse && rndanim == 41)rndanim = 42; // hp corner can only be used right to left so select 42 (canna) instead if it's reverse
+        if(reverse && rndanim == 41) rndanim = 42; // hp corner can only be used right to left so select 42 (canna) instead if it's reverse
         Trans_shader.set_param("datas", rndanim, reverse, fromIsSWF, toIsSWF);// datas = preset number, reverse 0:1 , fromIsSWF, toIsSWF
     }else{
-        Trans_shader.set_param("datas", anim, reverse, fromIsSWF ,toIsSWF);
+        if(typeof(transition) == "array"){ // select randomly only from passed array values
+            Trans_shader.set_param("datas", get_random_table(transition), reverse, fromIsSWF ,toIsSWF);
+        }else{
+            Trans_shader.set_param("datas", transition, reverse, fromIsSWF ,toIsSWF);
+        }
     }
 
     if( !hd && Ini_settings.themes["bezels_on_top"] ) ArtObj.bezel.visible = true; else ArtObj.bezel.visible = false;
@@ -688,7 +712,7 @@ function background_transitions(anim, File){
     local to = (reverse == 0.0 ? 1.0 : 0.0)
     bck_anim.from([reverse])
     bck_anim.to([to])
-    bck_anim.on("stop", function(anim){
+    bck_anim.on("stop", function(animation){
         if(!reverse){
             ArtObj.background2.video_playing = true;
             ArtObj.background1.file_name = "";
@@ -703,13 +727,15 @@ function background_transitions(anim, File){
 
 function load_theme(name, theme_content, prev_def){
     set_custom_value(Ini_settings);
+    local back_tr = 99; // 99=fade background only , array = random trough array , null=full transitions random
     xml_root = null;
     if(theme_content.len() <= 0){  // If there is no theme file, return (unified theme)
         hd = true;
         if(file_exist(medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4")){
             ArtObj.background.set_pos(0,0,flw, flh);
             reset_art();
-            background_transitions(null, medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4");
+            if( Ini_settings.themes["animated_backgrounds"] ) back_tr = null;
+            background_transitions(back_tr, medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4");
         }
         return false;
     }
@@ -765,11 +791,7 @@ function load_theme(name, theme_content, prev_def){
         if(strip_ext(v.tolower()) == zippath.tolower() + "background"){ // background found in theme
             backg = name + v;
             if( ext(name) == "zip") backg = name + "|" + v;
-            if( Ini_settings.themes["animated_backgrounds"] ){
-               background_transitions(null, backg);
-            }else{
-               background_transitions(99, backg);
-            }
+            back_tr = null
         }
 
         if( ext(v.tolower()) == "mp3" ){ // backrgound music found anywhere in theme ( in HS , must be in /Extras/Background Sounds/ ....mp3)
@@ -782,17 +804,28 @@ function load_theme(name, theme_content, prev_def){
     if(!backg){ // when background is missing in theme , fade anim and check in media background folder if background is present , otherwise use alternate
         backg = medias_path + fe.list.name + "/Images/Backgrounds/" + fe.game_info(Info.Name) + ".png";
         if(!file_exist(backg)) backg = "images/Backgrounds/Alt_Background.png";
-        if( Ini_settings.themes["animated_backgrounds"] )
-            background_transitions(31 , backg);
-        else
-            background_transitions(99, backg);
+        back_tr = 31;
     }
 
     if(raw_xml == "") return; // if broken with no theme.xml inside zip
 
+    local back_anim = null;
     foreach ( c in theme_node.children )
     {
+        // background anim
+        if(c.tag == "background" && c.attr.rest != "none" && !prev_def){
+            background_anim.opts.bck_opts.clear(); // reset background options in anim module
+            background_anim.rest(c.attr.rest);
+            background_anim.opts.rest_speed = c.attr.speed;
+            triggers.background_anim.start = true;
+            triggers.background_anim.delay = c.attr.delay;
+            back_anim = c.attr.rest;
+        }else if(c.tag == "background" && c.attr.rest == "none"){
+            background_anim.resting = false;
+        }
+
         if( !(c.tag in availables ) ) continue; // if xml tag not know continue
+
         local art = ""; local Xtag = c.tag;
         anim_rotate = 0;
         foreach(k,v in theme_content){
@@ -860,6 +893,9 @@ function load_theme(name, theme_content, prev_def){
             anim_video.play();
         }
     }
+
+    if(!Ini_settings.themes["animated_backgrounds"] ) back_tr = 99;
+    background_transitions(back_tr, backg, back_anim);
     wheel_surf.visible = true;
 }
 
@@ -1256,6 +1292,7 @@ function hs_transition( ttype, var, ttime )
             flv_transitions.file_name = "";
             if(curr_sys == "Main Menu") stats_text_update( fe.game_info(Info.Title, 1) );
             if(Ini_settings["game text"]["game_text_hide"]) surf_ginfos.visible = false;
+            if(curr_theme != "Default") background_anim.resting = false; // stop background resting when we are not on a default theme
         break;
 
         case Transition.EndNavigation: //7
@@ -1339,7 +1376,7 @@ function hs_transition( ttype, var, ttime )
 
             triggers.theme.start = true;
             wheel_surf.visible = false;
-
+            triggers.background_anim.start = false;
         break;
 
         /* Custom Overlays */
@@ -1529,6 +1566,12 @@ function hs_tick( ttime )
 
         triggers.theme.start = false;
         visi = false;
+    }
+
+
+    if(triggers.background_anim.start == true && bck_anim.progress == 1.0 && glob_time - rtime > globs.delay + (triggers.background_anim.delay * 1000)){ // start animate background
+        background_anim.resting = true;
+        triggers.background_anim.start = false;
     }
 
     if( triggers.flv_transition.start && glob_time - rtime > globs.delay + triggers.flv_transition.delay ){
@@ -1931,7 +1974,23 @@ menus.push({
                 fe.overlay.list_dialog([], LnG.M_inf_No_Overlay, 0, 0)
                 return false;
             }
-            return true
+            return true;
+        }
+    },
+    {
+        "title":"Background","target":"background_menu",
+        "onselect":function(current_list, selected_row){
+            try{ local test = xml_root.getChild(current_list.object).attr;
+            }catch(e) {
+                //create a new node as a child of the current one if not exist (temporary)
+                local node = XMLNode();
+                node.tag = "background";
+                node.attr["rest"] <- "none";
+                node.attr["speed"] <- 1.0;
+                node.attr["delay"] <- 0;
+                xml_root.addChild(node);
+            }
+            return true;
         }
     }
     ]
@@ -2793,6 +2852,44 @@ menus.push({
                 local spec = current_list.title.slice(8).tolower();
                 set_list( { "id":"delay", "title":_selected_row.title, "object":"special art "+spec, "target":"ini", "values" : [0.0,60.0,0.1],
                 "rows":[{"title":Ini_settings["special art "+spec]["delay"]}] });
+                return true;
+            }
+        }
+    ]
+})
+
+//-- Background menu
+local back_anim_tab = [{"title":"None", "target":"none"}, {"title":"Random Panning", "target":"random panning"},{"title":"Vertical Panning", "target":"vertical panning"},
+{"title":"Horizontal Panning", "target":"horizontal panning"}];
+
+menus.push ({
+    "title":"Backgound", "id":"background_menu", "object":"background",
+    "rows":[
+        {"title":"Animation",
+            "onselect":function(current_list, selected_row){
+                local elem = xml_root.getChild(current_list.object);
+                local sel = 0;
+                foreach(a,b in back_anim_tab){ if(b.target == elem.attr["rest"]) sel = a; }
+                set_list( {"title":"Animation", "object":current_list.object, "rows":back_anim_tab, "slot_pos":sel,
+                    "onselect":function(current_list, selected_row){
+                        xml_root.getChild(current_list.object).addAttr("rest", (selected_row.target));
+                        save_xml(xml_root, path);
+                        XML().display(xml_root);
+                        triggers.theme.start = true;
+                    }
+                })
+                return true;
+            }
+        },
+        {"title":"Speed", "target":"", "type":"float",
+            "onselect":function(current_list, selected_row){
+                set_list( { "id":"speed", "title":_selected_row.title, "object":current_list.object, "target":"xml", "values" : [0.1,5.0,0.1], "rows":[{"title":xml_root.getChild("background").attr["speed"]}] });
+                return true;
+            }
+        },
+        {"title":"Delay", "target":"", "type":"int",
+            "onselect":function(current_list, selected_row){
+                set_list( { "id":"delay", "title":_selected_row.title, "object":current_list.object, "target":"xml", "values" : [0,10,1], "rows":[{"title":xml_root.getChild("background").attr["delay"]}] });
                 return true;
             }
         }

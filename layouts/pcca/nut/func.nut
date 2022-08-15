@@ -501,6 +501,10 @@ function set_xml_datas(){
             case "artwork6":
                 foreach(k,v in common) datas.addAttr( k, (!(k in datas.attr) ? v : set_type(datas.attr[k], v)) );
             break;
+
+            case "background":
+                foreach(k,v in {"delay":0,"rest":"none","speed":1.0}) datas.addAttr( k, (!(k in datas.attr) ? v : set_type(datas.attr[k], v)) );
+            break;
         }
     }
 }
