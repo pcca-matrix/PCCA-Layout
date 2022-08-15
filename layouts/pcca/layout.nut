@@ -160,12 +160,10 @@ point.alpha = 255;
 
 point_animation <- PresetAnimation(point)
 .name("pointer")
-.from({x=flw,y=0})
+.from({x=flw,y=flh})
 .to({x=0,y=0})
 .duration( 150 )
 .yoyo()
-//point_animation.start()
-//point_animation.cancel("from")
 
 wheel_animation <- PresetAnimation(wheel_surf)
 .name("wheel")
@@ -1377,6 +1375,7 @@ function hs_transition( ttype, var, ttime )
             triggers.theme.start = true;
             wheel_surf.visible = false;
             triggers.background_anim.start = false;
+            surf_ginfos.visible = false;
         break;
 
         /* Custom Overlays */
@@ -3020,6 +3019,7 @@ signals["default_sig"] <- function (str) {
 
         case "next_game":
         case "prev_game":
+            if(triggers.theme.start && prev_tr == Transition.ToNewList) return true; // disable wheel navigation until the theme is fully loaded
             letters.visible = false;
             if(globs.keyhold < 1 && Ini_settings.pointer.animated) point_animation.play();
             conveyor.transition_ms = Ini_settings.wheel["transition_ms"]; // restore conveyor transition time
