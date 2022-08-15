@@ -9,12 +9,7 @@ class PresetAnimation extends Animation {
     supported = ["x", "y", "width", "height", "origin_x", "origin_y", "rotation", "rgb", "red", "green", "blue", "bg_red", "bg_green", "bg_blue", "sel_red", "sel_green", "sel_blue", "sel_alpha", "selbg_red", "selbg_green", "selbg_blue", "selbg_alpha", "alpha", "skew_x", "skew_y", "pinch_x", "pinch_y", "subimg_x", "subimg_y", "charsize", "zorder" ];
     unique_keys = null;
     pr_opt = null;
-    _move_direction_x = -1;
-    _move_direction_y = -1;
-    move_speed_x = 0.4;
-    move_speed_y = 0.4;
     ParticlesArray = null; // Particles medias clones Array
-
     function defaults(params){
         base.defaults(params);
         opts = merge_opts({
@@ -23,12 +18,14 @@ class PresetAnimation extends Animation {
             preset_load = false,
             starting = "none",
             rest = null,
+            rest_speed = 1.0,
             rotation = null,
-            datas = {}
+            datas = {},
+            bck_opts = {},
+            rest_vars = {}
         }, opts);
 
         ParticlesArray = []
-
         return this;
     }
 
@@ -50,10 +47,6 @@ class PresetAnimation extends Animation {
         yoyoing = false;
         states.clear();
         callbacks.clear();
-        move_speed_y = 0.4;
-        move_speed_x = 0.4;
-        _move_direction_x = -1;
-        _move_direction_y = -1;
         pr_opt = null;
         opts.triggers.clear();
         opts.loops = 0
@@ -62,11 +55,14 @@ class PresetAnimation extends Animation {
         opts.key = null
         opts.starting = "none"
         opts.rest = null
+        opts.rest_speed = 1.0
+        opts.rest_vars.clear();
         opts.from = null
         opts.to = null
         opts.preset = null
         opts.rotation = null
         opts.datas.clear()
+        opts.bck_opts.clear()
         opts.then = null;
         opts.reverse = false;
         opts.yoyo = false;
@@ -242,8 +238,12 @@ class PresetAnimation extends Animation {
             case "hover vertical":
             case "hover horizontal":
                 resting_hover(obj, opts.rest);
-                move_speed_y = clamp(rand()%2.0, 0.05, 0.3);
-                move_speed_x = clamp(rand()%2.0, 0.05, 0.3);
+            break;
+
+            case "horizontal panning":
+            case "vertical panning":
+            case "random panning":
+                resting_bck(obj, opts.rest);
             break;
         }
 
@@ -1176,40 +1176,87 @@ class PresetAnimation extends Animation {
         return { x = tx, y = ty };
     }
 
+    function resting_bck(art, animate_type){
 
-    function resting_hover(art, animate_type, range=30){
-        local surface = {};
-        surface.x <- states["origin"].x;
-        surface.y <- states["origin"].y;
+        if( !opts.bck_opts.len() ){
+            opts.bck_opts.x <- prev_back.ox;
+            opts.bck_opts.y <- prev_back.oy;
+        }
         local arr_y = ["Up", "Down"];
         local arr_x = ["Left", "Right"];
-        if(_move_direction_y == -1) _move_direction_y = arr_y[rnd_num(0,1,"int")];
-        if(_move_direction_x == -1) _move_direction_x = arr_x[rnd_num(0,1,"int")];
+
+
+        if( !("direction_y" in opts.rest_vars)) opts.rest_vars.direction_y <- arr_y[rnd_num(0,1,"int")];
+        if( !("direction_x" in opts.rest_vars)) opts.rest_vars.direction_x <- arr_x[rnd_num(0,1,"int")];
+
+        if (animate_type == "horizontal panning" || animate_type == "random panning")
+        {
+            if ( prev_back.ox >= 0 && opts.rest_vars.direction_x == "Right") opts.rest_vars.direction_x = "Left";
+
+            if ( prev_back.ox < opts.bck_opts.x && opts.rest_vars.direction_x == "Left") opts.rest_vars.direction_x = "Right";
+
+            if (opts.rest_vars.direction_x == "Right"){
+                prev_back.ox +=1 * opts.rest_speed;
+            }else if (opts.rest_vars.direction_x == "Left"){
+                prev_back.ox -=1 * opts.rest_speed;
+            }
+        }
+
+        if (animate_type == "vertical panning" || animate_type == "random panning")
+        {
+            if ( prev_back.oy >= opts.bck_opts.y && opts.rest_vars.direction_y == "Up") opts.rest_vars.direction_y = "Down";
+
+            if ( prev_back.oy < 0 && opts.rest_vars.direction_y == "Down") opts.rest_vars.direction_y = "Up";
+
+            if (opts.rest_vars.direction_y == "Down"){
+                prev_back.oy -=1 * opts.rest_speed ;
+            }else if (opts.rest_vars.direction_y == "Up"){
+                prev_back.oy +=1 * opts.rest_speed;
+            }
+        }
+
+        //Trans_shader.set_param("scroll_progress", prev_back.oy * 0.2)
+        Trans_shader.set_param("back_res", prev_back.ox / flw, prev_back.oy / flh, prev_back.bw / flw, prev_back.bh / flh ); // actual background infos stretched
+    }
+
+    function resting_hover(art, animate_type, range=35){
+        local arr_y = ["Up", "Down"];
+        local arr_x = ["Left", "Right"];
+
+        if( !("direction_x" in opts.rest_vars) || !rnd_num(0,24,"int") % 6){
+            opts.rest_vars.direction_x <- arr_x[rnd_num(0,1,"int")];
+            opts.rest_vars.x <- rnd_num(0.1,0.8,"float"); // speed x
+        }
+        if( !("direction_y" in opts.rest_vars) || !rnd_num(0,30,"int") % 3){
+            opts.rest_vars.direction_y <- arr_y[rnd_num(0,1,"int")];
+            opts.rest_vars.y <- rnd_num(0.1,0.8,"float"); // speed y
+        }
 
         if (animate_type == "hover vertical" || animate_type == "hover")
         {
-            if(art.y >= surface.y+range && _move_direction_y == "Down") _move_direction_y = "Up";
-            if(art.y <= surface.y-range && _move_direction_y == "Up") _move_direction_y = "Down";
+            if(art.y >= states["origin"].y+range && opts.rest_vars.direction_y == "Down") opts.rest_vars.direction_y = "Up";
+            if(art.y <= states["origin"].y-range && opts.rest_vars.direction_y == "Up") opts.rest_vars.direction_y = "Down";
 
-            if (_move_direction_y == "Down"){
-                art.y += move_speed_y;
-            }else if (_move_direction_y == "Up"){
-                art.y -= move_speed_y;
+            if (opts.rest_vars.direction_y == "Down"){
+                art.y += opts.rest_vars.y;
+            }else if (opts.rest_vars.direction_y == "Up"){
+                art.y -= opts.rest_vars.y;
             }
         }
 
         if (animate_type == "hover horizontal" || animate_type == "hover")
         {
-            if (art.x >= surface.x+range && _move_direction_x == "Right") _move_direction_x = "Left";
-            if (art.x <= surface.x-range && _move_direction_x == "Left")  _move_direction_x = "Right";
+            if (art.x >= states["origin"].x+range && opts.rest_vars.direction_x == "Right") opts.rest_vars.direction_x = "Left";
+            if (art.x <= states["origin"].x-range && opts.rest_vars.direction_x == "Left")  opts.rest_vars.direction_x = "Right";
 
-            if (_move_direction_x == "Right"){
-                art.x += move_speed_x;
-            }else if (_move_direction_x == "Left"){
-                art.x -= move_speed_x;
+            if (opts.rest_vars.direction_x == "Right"){
+                art.x += opts.rest_vars.x;
+            }else if (opts.rest_vars.direction_x == "Left"){
+                art.x -= opts.rest_vars.x;
             }
         }
     }
+
 
     //collect supported key values in a state from target
     function collect_state(target) {
