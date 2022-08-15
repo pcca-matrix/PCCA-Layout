@@ -1980,7 +1980,7 @@ menus.push({
     {
         "title":"Background","target":"background_menu",
         "onselect":function(current_list, selected_row){
-            try{ local test = xml_root.getChild(current_list.object).attr;
+            try{ local test = xml_root.getChild("background").attr;
             }catch(e) {
                 //create a new node as a child of the current one if not exist (temporary)
                 local node = XMLNode();
