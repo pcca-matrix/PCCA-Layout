@@ -693,7 +693,7 @@ function background_transitions(transition, File, animation = null){
     Trans_shader.set_texture_param("bezel", ArtObj.bezel);
 
     if(!transition){
-        local rndanim = rnd_num(0,43,"int");
+        local rndanim = rnd_num(0,42,"int");
         if(reverse && rndanim == 41) rndanim = 42; // hp corner can only be used right to left so select 42 (canna) instead if it's reverse
         Trans_shader.set_param("datas", rndanim, reverse, fromIsSWF, toIsSWF);// datas = preset number, reverse 0:1 , fromIsSWF, toIsSWF
     }else{
@@ -1732,8 +1732,14 @@ menus.push ({
     },
     {"title":"Scraper", "target":"", "hide":"Main Menu"},
 
-    {"title":LnG.M_inf_theme, "target":"theme_setting" }
-    ]
+    {"title":LnG.M_inf_theme, "target":"theme_setting" },
+    
+    {"title":"Refresh Stats", "target":"", "hide":"!Main Menu",
+        "onselect":function(current_list, selected_row){
+            refresh_stats();
+            return true;
+        }
+    }]
 })
 
 //-- Settings Menu
