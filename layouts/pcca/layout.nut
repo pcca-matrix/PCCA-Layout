@@ -618,7 +618,7 @@ local extraArtworks = {
     },
 
     function special_tick(ttime){
-        if(pos == "") return false;
+        if(pos == "" || lists.len() < 2) return false;
         local speed = 110;
         if(pos == "left"){
             surf_img.x = clamp(surf_img.x-=speed, -surf_img.width, (flw * 0.5 - surf_img.width * 0.5));
