@@ -2061,10 +2061,48 @@ menus.push({
                     if(artw != "video") art_av.push( artw );
                 }
             }
+
             if(curr_sys != "Main Menu"){
-                if(!art_av.find("artwork5")) art_av.push("artwork5");
-                if(!art_av.find("artwork6")) art_av.push("artwork6");
+                // add artwork 5 and 6 (decompressed real hs theme) if not exist in xml
+                local refresh = false;
+                if(!art_av.find("artwork5")){
+                    try{ local test = xml_root.getChild("artwork5").attr;
+                    }catch(e) {
+                        //create a new node as a child of the current one if not exist
+                        local f = ReadTextFile( fe.script_dir, "empty.xml" );
+                        local raw_xml = "", tmp = null;
+                        while ( !f.eos() ) raw_xml += f.read_line();
+                        try{ tmp = xml.load( raw_xml ); } catch ( e ) { }
+                        local node = XMLNode();
+                        node = tmp.getChild("artwork5");
+                        xml_root.addChild(node);
+                    }
+                    art_av.push("artwork5");
+                    set_xml_datas(); // format xml datas
+                    refresh = true;
+                }
+
+                if(!art_av.find("artwork6")){
+                    try{ local test = xml_root.getChild("artwork6").attr;
+                    }catch(e) {
+                        //create a new node as a child of the current one if not exist
+                        local f = ReadTextFile( fe.script_dir, "empty.xml" );
+                        local raw_xml = "", tmp = null;
+                        while ( !f.eos() ) raw_xml += f.read_line();
+                        try{ tmp = xml.load( raw_xml ); } catch ( e ) { }
+                        local node = XMLNode();
+                        node = tmp.getChild("artwork6");
+                        xml_root.addChild(node);
+                    }
+                    art_av.push("artwork6");
+                    set_xml_datas(); // format xml datas
+                    refresh = true;
+                }
                 art_av.sort();
+                if(refresh){
+                    save_xml(xml_root, path);
+                    triggers.theme.start = true;
+                }
             }
 
             if(!art_av.len()){
