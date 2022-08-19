@@ -2076,10 +2076,9 @@ menus.push({
                         local node = XMLNode();
                         node = tmp.getChild("artwork5");
                         xml_root.addChild(node);
+                        refresh = true;
                     }
                     art_av.push("artwork5");
-                    set_xml_datas(); // format xml datas
-                    refresh = true;
                 }
 
                 if(!art_av.find("artwork6")){
@@ -2093,13 +2092,15 @@ menus.push({
                         local node = XMLNode();
                         node = tmp.getChild("artwork6");
                         xml_root.addChild(node);
+                        refresh = true;
                     }
                     art_av.push("artwork6");
-                    set_xml_datas(); // format xml datas
-                    refresh = true;
                 }
+
                 art_av.sort();
+
                 if(refresh){
+                    set_xml_datas(); // format xml datas
                     save_xml(xml_root, path);
                     triggers.theme.start = true;
                 }
