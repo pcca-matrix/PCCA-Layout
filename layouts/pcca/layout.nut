@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.60
+// PCCA v2.65
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -476,12 +476,25 @@ surf_img <- surf_inf.add_image("", 0, 0, 0, flh * 0.82 );
 surf_img.mipmap = true;
 local surf_arrow = surf_inf.add_image("images/double_arrow.png", flw * 0.5 - ( flw * 0.083 * 0.5), flh * 0.942, flw * 0.083, flh * 0.037);
 surf_arrow.visible = false;
-surf_img.preserve_aspect_ratio = true;
+surf_img.preserve_aspect_ratio = false;
+
+local crt_sh = surf_inf.add_image("images/frame.png", 0, 0, 0, 0 );
+crt_sh.visible = false;
+local surf_shader = fe.add_shader( Shader.Fragment, "shaders/crt.frag");
+surf_img.shader = surf_shader;
+surf_shader.set_texture_param("Tex0");
+surf_shader.set_texture_param("Tex1", crt_sh);
+
 surf_inf.visible = false;
 surf_inf.zorder = 2;
 surf_txt <- surf_inf.add_text( "", flw * 0.007, flh * 0.018, flw, flh * 0.046)
 surf_txt.font = ttfont;
 surf_txt.align = Align.Left;
+surf_infos <- surf_inf.add_text( "", flw*0.01, flh * 0.58, flw*0.99, flh * 0.36)
+surf_infos.font = ttfont;
+surf_infos.align = Align.Left;
+surf_infos.charsize = 15;
+surf_infos.word_wrap = true;
 
 local surf_inf_anim = PresetAnimation(surf_inf)
 .key("alpha").from(0).to(255)
@@ -493,38 +506,71 @@ local surf_inf_anim = PresetAnimation(surf_inf)
 local extraArtworks = {
     lists = [],
     num = 0,
+    pos = "",
+    prev = "",
+    infos = false,
+
+    function init(){  fe.add_ticks_callback( this, "special_tick" );  },
 
     function getLists(){
-        lists = []
-        num = 0
+        lists = [];
+        num = 0;
         local lst = zip_get_dir( medias_path + curr_sys + "/Images/Artworks/" +  fe.game_info(Info.Name) );
         foreach( v in lst ) if( ["jpg","png","mp4"].find( ext(v) ) != null ) lists.push(v);
         return lists;
     },
 
-    function setImage( act=0 ){
-        if( !lists.len() ){
-            surf_img.file_name = "";
-            surf_arrow.visible = false;
-            surf_txt.msg = "";
-            return false;
+    function Resize(){
+        local coeff = 0.75;
+        local ini = medias_path + curr_sys + "/Images/Artworks/" +  fe.game_info(Info.Name) + "/" + strip_ext(lists[num]) + ".txt";
+        if(file_exist(ini)){
+            coeff = 0.60;
+            infos = ini;
         }
+        local ratio = surf_img.texture_width.tofloat() / surf_img.texture_height.tofloat();
+        if(ratio >= 1.0){
+            surf_img.width = flw * coeff;
+            surf_img.height = (flw * coeff) / ratio;
+        }else{
+            surf_img.height = (flh * coeff);
+            surf_img.width = (flh * coeff) * ratio;
+        }
+        if(!infos) surf_img.y = flh * 0.5 - surf_img.height * 0.5; else surf_img.y = flh * 0.04;
+
+        // if it's a video choose a overlay depending on the date or use simple frame
+        if(surf_img.video_duration){
+            if(lists[num].find("Commercial") != null){
+               local year = strip_ext(lists[num]).slice(strip_ext(lists[num]).len()-4, strip_ext(lists[num]).len());
+               try{year = year.tointeger()}catch(e){year = 0;}
+                if(CntDigit(year) == 4){
+                    if(year <= 1980){
+                        crt_sh.file_name = "images/crt-70.png";
+                        surf_shader.set_param("datas", 0.11, 0.0, 0.626, 0.835);
+                    }else if(year > 1980 && year <= 2000){
+                        crt_sh.file_name = "images/crt-80.png";
+                        surf_shader.set_param("datas", -0.001, 0.0, 0.67, 0.88);
+                    }else if(year > 2000){
+                        crt_sh.file_name = "images/crt-2000.png";
+                        surf_shader.set_param("datas", 0.0, 0.1, 1.0, 1);
+                    }
+                }
+            }else{
+                crt_sh.file_name = "images/frame.png";
+                surf_shader.set_param("datas", 0.0, 0.0, 0.940, 0.940);
+            }
+            surf_shader.set_param("enable", 1);
+            ArtObj.snap.video_flags = Vid.NoAudio;  // silence the snap audio if it's a video
+        }else{
+            ArtObj.snap.video_flags = Vid.Default;
+            surf_shader.set_param("enable", 0);
+        }
+    },
+
+    function set_Title(){
         local nbr = "";
-        if(act == "right") ( num < lists.len() - 1 ? num++ : num = 0 )
-        if(act == "left") ( num > 0 ? num-- : num = lists.len() - 1 )
-        surf_img.file_name =  medias_path + curr_sys + "/Images/Artworks/" +  fe.game_info(Info.Name) + "/" + lists[num];
-        local ratio = surf_img.texture_height / (flh * 0.82);
-        if(!surf_img.width){
-            surf_img.width = surf_img.texture_width;
-            surf_img.x = flw * 0.5 - (surf_img.texture_width / ratio * 0.5);
-        }
-        if(!surf_img.height){
-            surf_img.height = surf_img.texture_height;
-            surf_img.y = flh * 0.5 - (flh * 0.82 * 0.5);
-        }
         local title = strip_ext(lists[num]);
         if(lists.len() > 1){
-            nbr = "("+(num+1)+"/"+lists.len()+")";
+            nbr = "(" + (num+1) + "/" + lists.len() + ")";
             surf_arrow.visible = true;
         }else{
             surf_arrow.visible = false;
@@ -533,8 +579,84 @@ local extraArtworks = {
             surf_txt.set_rgb( 241, 250, 200 );
             surf_txt.msg = nbr+" "+title.slice( 0, 1 ).toupper() + title.slice( 1, title.len() ); // caps first char
         }
+
+        if(infos){
+            local textfile = txt.loadFile( infos );
+            local line1 = textfile.lines[0];
+            local txt = "";
+            foreach( line in textfile.lines ) { txt+=line+"\n"; }
+            surf_infos.msg = txt;
+        }
+    },
+
+    function setImage( act=0 ){
+        infos = false;
+        surf_infos.msg = "";
+        if( !lists.len() ){
+            surf_img.file_name = "";
+            surf_arrow.visible = false;
+            surf_txt.msg = "";
+            return false;
+        }
+
+        if(!act){
+            surf_img.file_name =  medias_path + curr_sys + "/Images/Artworks/" +  fe.game_info(Info.Name) + "/" + lists[num];
+            Resize();
+            set_Title();
+            surf_img.x = flw * 0.5 - surf_img.width * 0.5;
+            return false;
+        }
+        pos = act;
+    },
+
+    function special_tick(ttime){
+        if(pos == "") return false;
+        local speed = 110;
+        if(pos == "left"){
+            surf_img.x = clamp(surf_img.x-=speed, -surf_img.width, (flw * 0.5 - surf_img.width * 0.5));
+            if(surf_img.x <= -surf_img.width){
+               (num > 0 ? num-- : num = lists.len() - 1 );
+                surf_img.file_name = medias_path + curr_sys + "/Images/Artworks/" + fe.game_info(Info.Name) + "/" + lists[num];
+                Resize();
+                set_Title();
+                surf_img.x = flw
+                pos = "center";
+                prev = "left";
+            }
+        }
+
+        if(pos == "right"){
+            surf_img.x = clamp(surf_img.x+=speed, (flw * 0.5 - surf_img.width * 0.5), flw);
+            if(surf_img.x >= flw){
+                ( num < lists.len() - 1 ? num++ : num = 0 )
+                surf_img.file_name = medias_path + curr_sys + "/Images/Artworks/" + fe.game_info(Info.Name) + "/" + lists[num];
+                Resize();
+                set_Title();
+                surf_img.x = -surf_img.width;
+                pos = "center";
+                prev = "right";
+            }
+        }
+
+        if(pos == "center" && prev == "left"){
+            if(surf_img.x <= (flw * 0.5 - surf_img.width * 0.5)){
+                pos = "";
+            }else{
+               surf_img.x = clamp(surf_img.x-=speed, (flw * 0.5 - surf_img.width * 0.5), flw);
+            }
+        }
+
+        if(pos == "center" && prev == "right"){
+            if(surf_img.x >= (flw * 0.5 - surf_img.width * 0.5)){
+                pos = "";
+            }else{
+               surf_img.x = clamp(surf_img.x+=speed, -surf_img.width, (flw * 0.5 - surf_img.width * 0.5))
+            }
+        }
     }
 }
+
+extraArtworks.init()
 
 // Main Menu Infos
 main_infos <- {};
@@ -1733,7 +1855,7 @@ menus.push ({
     {"title":"Scraper", "target":"", "hide":"Main Menu"},
 
     {"title":LnG.M_inf_theme, "target":"theme_setting" },
-    
+
     {"title":"Refresh Stats", "target":"", "hide":"!Main Menu",
         "onselect":function(current_list, selected_row){
             refresh_stats();
@@ -3040,7 +3162,6 @@ signals["default_sig"] <- function (str) {
         break;
 
         case my_config["extra_artworks_key"] : // Extra artworks screen
-            if(curr_sys == "Main Menu") break;
             local spec_list = extraArtworks.getLists();
             if(!spec_list.len()){
                 dialog_anim.cancel("origin"); // cancel dialog animation if in progress
@@ -3048,7 +3169,7 @@ signals["default_sig"] <- function (str) {
                 dialog_anim.play();
                 break;
             }
-            surf_img.width=0;surf_img.height=0; // reset image size !
+
             extraArtworks.setImage();
             surf_inf.visible = true;
             surf_inf_anim.reverse(false).play();

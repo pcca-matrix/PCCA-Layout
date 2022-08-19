@@ -690,6 +690,14 @@ function get_infos_screen(curr_game, curr_sys, ttime){
    return true;
 }
 
+// count numbers of digits in integer
+function CntDigit(i)
+{
+    if (i/10 == 0)
+        return 1;
+    return 1 + CntDigit((i / 10));
+}
+
 /* DEBUG */
 
 //Convert a squirrel table to a string
