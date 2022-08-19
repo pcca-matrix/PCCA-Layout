@@ -3020,6 +3020,7 @@ signals["default_sig"] <- function (str) {
 
         case "next_display":
         case "prev_display":
+            if(curr_sys == "Main Menu") return true;
             letters.visible = false;
         break;
 
