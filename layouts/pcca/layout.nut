@@ -125,6 +125,14 @@ fe.do_nut("nut/lang.nut");
 LnG <- _LL[ my_config["user_lang"] ];
 prev_back <- { ox = 0, oy = 0, bw = flw, bh = flh }; // previous background table infos ( transitions )
 
+// overlay helper (screen center)
+text_overlay <- fe.add_text("", 0, flh * 0.4, flw, flh * 0.10);
+text_overlay.charsize = 100;
+text_overlay.set_rgb( 220, 220, 220 );
+text_overlay.alpha = 230;
+text_overlay.zorder = 10;
+text_overlay.visible = false;
+
 // Globals
 local tr_directory_cache  = get_dir_lists( medias_path + "Frontend/Video/Transitions" ); // cached table of global transitions files
 local pause_animation = ["rain float", "chase", "arc shrink", "arc grow", "bounce around 3d", "bounce random", "scroll"];
@@ -846,6 +854,7 @@ function background_transitions(transition, File, animation = null){
 }
 
 function load_theme(name, theme_content, prev_def){
+    text_overlay.visible = false; // hide overlay helper
     set_custom_value(Ini_settings);
     local back_tr = 99; // 99=fade background only , array = random trough array , null=full transitions random
     xml_root = null;
@@ -3144,6 +3153,11 @@ signals["default_sig"] <- function (str) {
         case "prev_display":
             if(curr_sys == "Main Menu") return true;
             letters.visible = false;
+            text_overlay.visible = true;
+            local offset = (str == "next_display" ? fe.list.display_index + 1 : fe.list.display_index - 1);
+            if(offset > fe.displays.len() ) offset = 0;
+            if(offset < 0 ) offset = fe.display.len();
+            text_overlay.msg = fe.displays[offset].name;
         break;
 
         case "next_game":
