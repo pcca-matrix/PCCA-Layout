@@ -3194,8 +3194,8 @@ signals["default_sig"] <- function (str) {
             letters.visible = false;
             text_overlay.visible = true;
             local offset = (str == "next_display" ? fe.list.display_index + 1 : fe.list.display_index - 1);
-            if(offset > fe.displays.len() ) offset = 0;
-            if(offset < 0 ) offset = fe.displays.len();
+            if(offset > fe.displays.len() - 1 ) offset = 0;
+            if(offset < 0 ) offset = fe.displays.len() - 1;
             text_overlay.msg = fe.displays[offset].name;
         break;
 
