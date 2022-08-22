@@ -33,7 +33,7 @@ class UserConfig {
 }
 
 my_config <- fe.get_config();
-globs <- {"delay" : 400, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time}; // super globals temp vars
+globs <- {"delay" : 400, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time, "script_dir":fe.script_dir }; // super globals temp vars
 
 triggers <- {
     "flv_transition":{
@@ -57,7 +57,7 @@ triggers <- {
     }
 }
 
-medias_path <- ( my_config["medias_path"] != "" ? my_config["medias_path"] : fe.script_dir + "Media" );
+medias_path <- ( my_config["medias_path"] != "" ? my_config["medias_path"] : globs.script_dir + "Media" );
 if ( medias_path.len()-1 != '/' ) medias_path += "/";
 
 // check if it's am or am+ (thanks zpaolo11x)
@@ -96,7 +96,7 @@ if( my_config["JoyType"]  == "Dinput"){
 flw <- fe.layout.width.tofloat();
 flh <- fe.layout.height.tofloat();
 
-fe.layout.font = "ArialCEMTBlack";
+fe.layout.font = "ArialCEMTBlack.ttf";
 
 surf_ginfos <- fe.add_surface(flw, flh*0.22);
 local start_background = fe.add_image("images/Backgrounds/Background.jpg",0,0,flw,flh);
@@ -269,9 +269,9 @@ bck_anim.duration(globs.delay * 1.40)
 bck_anim.delay(0)
 
 // Special Artworks
-ArtObj.SpecialA <- fe.add_image(medias_path + "Main Menu"+ "/Images/Special/SpecialA1.swf", -1000, -1000, 0, 0);
-ArtObj.SpecialB <- fe.add_image(medias_path + "Main Menu"+ "/Images/Special/SpecialB1.swf", -1000, -1000, 0, 0);
-ArtObj.SpecialC <- fe.add_image(medias_path + "Main Menu"+ "/Images/Special/SpecialC1.swf", -1000, -1000, 0, 0);
+ArtObj.SpecialA <- fe.add_image("", -1000, -1000, 0, 0);
+ArtObj.SpecialB <- fe.add_image("", -1000, -1000, 0, 0);
+ArtObj.SpecialC <- fe.add_image("", -1000, -1000, 0, 0);
 
 ArtObj.SpecialA.shader = fe.add_shader( Shader.Fragment, "shaders/special.frag");
 ArtObj.SpecialB.shader = fe.add_shader( Shader.Fragment, "shaders/special.frag");
@@ -416,7 +416,7 @@ function dialog_datas(type){
 }
 
 // Game Infos surface
-local ttfont = "ArialCEMTBlack";
+local ttfont = "ArialCEMTBlack.ttf";
 local Tags = surf_ginfos.add_image("[!get_media_tag]", flw*0.006, 0, flw*0.063, flh*0.036)
 
 local favo = surf_ginfos.add_text( "[Favourite]", flw*0.004, flh*0.000, flw*0.050, flh*0.035 );
@@ -684,7 +684,7 @@ if ( Ini_settings.wheel["type"] != "vertical"){
 
 if( my_config["stats_main"].tolower() == "yes" ){
     m_infos.visible = true;
-    if( !file_exist(fe.script_dir + "pcca.stats") ) refresh_stats();
+    if( !file_exist(globs.script_dir + "pcca.stats") ) refresh_stats();
     main_infos <- LoadStats();
 }
 
@@ -1148,7 +1148,7 @@ function set_wheel(){
         wheel_w = [ ww, ww, ww, ww, ww, ww, ww, ww, ww, ww, ww, ww, ];
         wheel_h = [ wh, wh, wh, wh, wh, wh, wh, wh, wh, wh, wh, wh, ];
         wheel_r = [  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ];
-        wheel_a = [  255,  255, 255,  255,  255,  255,   255   ,  255,  255,  255,  255,  255, ];	
+        wheel_a = [  255,  255, 255,  255,  255,  255,   255   ,  255,  255,  255,  255,  255, ];
     }
 }
 
@@ -1229,7 +1229,7 @@ local overlay_anim = PresetAnimation(custom_overlay)
 // overlay list
 overlay_list <- custom_overlay.add_listbox(flw*0.369, flh*0.361 , flw*0.260, flh*0.370);
 overlay_list.zorder = 3;
-overlay_list.font = "SF Slapstick Comic Bold Oblique";
+overlay_list.font = "SF Slapstick Comic Bold Oblique.ttf";
 overlay_list.align = Align.Centre;
 SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
 
@@ -1273,7 +1273,7 @@ class Keyboard extends KeyboardSearch
                 if(val.tolower() in keysf){
                     keys[ key.tolower() ].file_name = keysf[key.tolower()];
                 }else{
-                    keys[ key.tolower() ].file_name = fe.script_dir + "nut/keyboard-search/images" + "/" + val.tolower() + ".png";
+                    keys[ key.tolower() ].file_name = globs.script_dir + "nut/keyboard-search/images" + "/" + val.tolower() + ".png";
                 }
             }
             sys = curr_sys
@@ -1297,7 +1297,7 @@ local search = Keyboard( search_surface )
     .search_key( my_config["keyboard_search_key"] )
     .mode( my_config["keyboard_search_method"] )
     .preset( my_config["keyboard_layout"] )
-    .text_font("SF Slapstick Comic Bold Oblique")
+    .text_font("SF Slapstick Comic Bold Oblique.ttf")
     .text_color(214,211,210)
     .text_pos( [ 0.1, 0.31, 0.8, 0.07 ] )
     .keys_selected_color(255,255,255)
@@ -1310,7 +1310,7 @@ fe.add_transition_callback( "game_in_out" );
 function game_in_out( ttype, var, ttime ) {
     switch ( ttype ) {
         case Transition.ToGame:
-            Game_In_Out.file_name = get_random_file( fe.script_dir + "sounds/game_start" );
+            Game_In_Out.file_name = get_random_file( globs.script_dir + "sounds/game_start" );
             Game_In_Out.playing = true;
         break;
     }
@@ -1621,14 +1621,14 @@ function hs_tick( ttime )
     if( (glob_time - rtime > globs.delay) && triggers.theme.start){
         hd = false;
         if( Ini_settings.themes["bezels"] && Ini_settings.themes["aspect"] == "center" ){ // Systems bezels!  only if aspect center
-            if( file_exist(fe.script_dir + "images/Bezels/" + curr_sys + ".png") ){
-                ArtObj.bezel.file_name = fe.script_dir + "images/Bezels/" + curr_sys + ".png";
+            if( file_exist(globs.script_dir + "images/Bezels/" + curr_sys + ".png") ){
+                ArtObj.bezel.file_name = globs.script_dir + "images/Bezels/" + curr_sys + ".png";
             }else{
                 if( !Ini_settings.themes["background_stretch"] )
-                    ArtObj.bezel.file_name = fe.script_dir + "images/Bezels/Bezel_Main.png";
+                    ArtObj.bezel.file_name = globs.script_dir + "images/Bezels/Bezel_Main.png";
             }
         }else{
-            ArtObj.bezel.file_name = fe.script_dir + "images/Bezels/Bezel_trans.png";
+            ArtObj.bezel.file_name = globs.script_dir + "images/Bezels/Bezel_trans.png";
         }
 
         prev_path = path;
@@ -1664,7 +1664,7 @@ function hs_tick( ttime )
             if(file_exist(medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4")){ // if mp4 is found assume it's unified video theme
                 path = medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4";
                 theme_content = [];
-                ArtObj.bezel.file_name = fe.script_dir + "images/Bezels/Bezel_trans.png";
+                ArtObj.bezel.file_name = globs.script_dir + "images/Bezels/Bezel_trans.png";
             }else{ //if no video is found assume it's system default theme
                 path = medias_path + fe.list.name + "/Themes/Default/";
                 theme_content = zip_get_dir( path );
@@ -1677,7 +1677,7 @@ function hs_tick( ttime )
             if( prev_path == path && surf_menu.visible == false ){ // if previous and current theme is equal ( and we are not in edit mode ).
                 reset_art(true);
                 load_theme(path, theme_content, true);
-                foreach(a,b in artwork_list ) if( availables[b] == false ) anims[a].restart(); // not needed aymore (fot list without xml) ???
+                //foreach(a,b in artwork_list ) if( availables[b] == false ) anims[a].restart(); // not needed anymore (fot list without xml) ???  (in TEST disabled)
             }else{
                 reset_art();
                 load_theme(path, theme_content, false);
@@ -2069,7 +2069,7 @@ menus.push({
                     try{ local test = xml_root.getChild("artwork5").attr;
                     }catch(e) {
                         //create a new node as a child of the current one if not exist
-                        local f = ReadTextFile( fe.script_dir, "empty.xml" );
+                        local f = ReadTextFile( globs.script_dir, "empty.xml" );
                         local raw_xml = "", tmp = null;
                         while ( !f.eos() ) raw_xml += f.read_line();
                         try{ tmp = xml.load( raw_xml ); } catch ( e ) { }
@@ -2085,7 +2085,7 @@ menus.push({
                     try{ local test = xml_root.getChild("artwork6").attr;
                     }catch(e) {
                         //create a new node as a child of the current one if not exist
-                        local f = ReadTextFile( fe.script_dir, "empty.xml" );
+                        local f = ReadTextFile( globs.script_dir, "empty.xml" );
                         local raw_xml = "", tmp = null;
                         while ( !f.eos() ) raw_xml += f.read_line();
                         try{ tmp = xml.load( raw_xml ); } catch ( e ) { }
@@ -3166,7 +3166,7 @@ signals["edit_sig"] <- function (str) {
 
 signals["default_sig"] <- function (str) {
     if(curr_sys == "Main Menu"){ //disable some buttons on main-menu
-       	switch ( str )	
+       	switch ( str )
         {
             case my_config["keyboard_search_key"]:
             case "add_favourite":
@@ -3195,7 +3195,7 @@ signals["default_sig"] <- function (str) {
             text_overlay.visible = true;
             local offset = (str == "next_display" ? fe.list.display_index + 1 : fe.list.display_index - 1);
             if(offset > fe.displays.len() ) offset = 0;
-            if(offset < 0 ) offset = fe.display.len();
+            if(offset < 0 ) offset = fe.displays.len();
             text_overlay.msg = fe.displays[offset].name;
         break;
 
@@ -3205,7 +3205,7 @@ signals["default_sig"] <- function (str) {
             letters.visible = false;
             if(globs.keyhold < 1 && Ini_settings.pointer.animated) point_animation.play();
             conveyor.transition_ms = Ini_settings.wheel["transition_ms"]; // restore conveyor transition time
-            if( globs.keyhold < 1 &&  Ini_settings.sounds["wheel_click"] ) Sound_Click.playing = true; // need better key hold detection
+            if( globs.keyhold < 1 &&  Ini_settings.sounds["wheel_click"] ) Sound_Click.playing = true;
         break;
 
         case "next_letter":
@@ -3229,7 +3229,7 @@ signals["default_sig"] <- function (str) {
             globs.signal = "move_sig";
         break;
 
-        case "custom4" : // Main menu Key
+        case my_config["main_menu_key"] : // Main menu Key
             surf_menu.visible = true;
             surf_menu_anim.reverse(false).play();
             globs.signal = "menu_sig";
@@ -3243,8 +3243,9 @@ signals["default_sig"] <- function (str) {
 signals["menu_sig"] <- function (str) {
 
     switch ( str ) {
-        case "custom4" : // Main menu Key
+        case my_config["main_menu_key"] : // Main menu Key
             surf_menu_anim.reverse(true).play();
+            surf_menu_img.file_name = "";
             globs.signal = "default_sig";
             save_xml(xml_root, path);
             save_ini();

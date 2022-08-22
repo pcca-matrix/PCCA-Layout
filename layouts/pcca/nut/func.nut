@@ -64,7 +64,7 @@ function global_default_settings(){
 
 function get_ini_values(name){
     local map = global_default_settings();
-    local f = ReadTextFile( fe.script_dir + "Settings/" + name + ".ini" );
+    local f = ReadTextFile( globs.script_dir + "Settings/" + name + ".ini" );
     local entity = null;
     while ( !f.eos() )
     {
@@ -171,7 +171,7 @@ function refresh_stats(system = "") {
 
 function LoadStats(){
     local tabl = {};
-    local f = ReadTextFile( fe.script_dir, "pcca.stats" );
+    local f = ReadTextFile( globs.script_dir, "pcca.stats" );
     if( f._f.len() < 10 ) refresh_stats(); // if file is empty or too small to be complete (10 should be ok)
     while ( !f.eos() ) {
         local l = split( f.read_line(), ";");
@@ -181,7 +181,7 @@ function LoadStats(){
 }
 
 function SaveStats(tbl){ // update global systems stats
-    local f2 = file( fe.script_dir + "pcca.stats", "w" );
+    local f2 = file( globs.script_dir + "pcca.stats", "w" );
     foreach(k,d in tbl){
         local line = k + ";" + d.cnt + ";" + d.pl + ";" + d.time + "\n";
         f2.writeblob(writeB(line));
@@ -453,7 +453,6 @@ function merge_table(tb1,tb2){
 
 function show_menu_artwork(sel_menu, surf_menu_img, artwork_list){
     local artwork = sel_menu._current_list.rows[sel_menu._slot_pos].title;
-    surf_menu_img.file_name = "";
     if(artwork_list.find( artwork ) != null){
         surf_menu_img.file_name = ArtObj[artwork].file_name;
         surf_menu_img.visible = true;
@@ -521,7 +520,7 @@ function save_xml(xml_root, path){
 // Save Ini
 function save_ini(filename=false){
     if(!filename) filename = curr_sys;
-    local fileout = file(fe.script_dir + "Settings/" + filename + ".ini", "w");
+    local fileout = file(globs.script_dir + "Settings/" + filename + ".ini", "w");
     local line = "";
     foreach(ke, va in Ini_settings){
         line="";
@@ -616,14 +615,17 @@ function create_theme_struct(sys){
     system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork5\\");
     system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork6\\");
     system ("mkdir \"" + medias_path + sys + "\\Sound\\");
-    system ("mkdir \"" + medias_path + sys + "\\Sound\\Wheel sounds\\");
+    system ("mkdir \"" + medias_path + sys + "\\Sound\\Background Music\\");
+    system ("mkdir \"" + medias_path + sys + "\\Sound\\System Start\\");
+    system ("mkdir \"" + medias_path + sys + "\\Sound\\System Exit\\");
+    system ("mkdir \"" + medias_path + sys + "\\Sound\\Wheel Sounds\\");
     system ("mkdir \"" + medias_path + sys + "\\Themes\\");
     system ("mkdir \"" + medias_path + sys + "\\Video\\");
     system ("mkdir \"" + medias_path + sys + "\\Video\\Override Transitions\\");
 }
 
 function create_xml(){
-    local f = ReadTextFile( fe.script_dir, "empty.xml" );
+    local f = ReadTextFile( globs.script_dir, "empty.xml" );
     local raw_xml = "";
     while ( !f.eos() ) raw_xml += f.read_line();
     try{ xml_root = xml.load( raw_xml ); } catch ( e ) { }
@@ -633,7 +635,7 @@ function create_xml(){
 }
 
 function get_infos_screen(curr_game, curr_sys, ttime){
-    local script_dir = fe.script_dir;
+    local script_dir = globs.script_dir;
     local def = false, game = false, globals = false;
     overlay_title.charsize = flw*0.022;
     // check if infos is available for this systeme and for selected game
