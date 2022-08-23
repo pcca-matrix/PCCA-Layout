@@ -54,6 +54,10 @@ triggers <- {
     "background_anim":{
         "start": false,
         "delay" : 0
+    },
+    "background_music":{
+        "start": false,
+        "delay" : 2500
     }
 }
 
@@ -568,6 +572,7 @@ local extraArtworks = {
             }
             surf_shader.set_param("enable", 1);
             ArtObj.snap.video_flags = Vid.NoAudio;  // silence the snap audio if it's a video
+            Background_Music.playing = false;
         }else{
             ArtObj.snap.video_flags = Vid.Default;
             surf_shader.set_param("enable", 0);
@@ -909,10 +914,20 @@ function load_theme(name, theme_content, prev_def){
 
     set_xml_datas(); // format xml datas
 
-    if(file_exist(medias_path + fe.list.name + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3") ){ // background music found in media folder
-        Background_Music.file_name = medias_path + fe.list.name + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3";
-        Background_Music.playing = true;
+    if(file_exist(medias_path + curr_sys + "/Sound/Wheel Click.mp3") ) Sound_Click.file_name = medias_path + curr_sys + "/Sound/Wheel Click.mp3"; // wheel_click found in media folder
+
+    if(file_exist(medias_path + curr_sys + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3") ){ // background music found in media folder
+        Background_Music.file_name = medias_path + curr_sys + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3";
+        Background_Music.playing = false;
+        triggers.background_music.start = true;
         ArtObj.snap.video_flags = Vid.NoAudio;
+    }else if(!Background_Music.file_name.find("Default.mp3")){
+        if(file_exist(medias_path + curr_sys + "/Sound/Background Music/Default.mp3" )){
+            Background_Music.file_name = medias_path + curr_sys + "/Sound/Background Music/Default.mp3";
+            Background_Music.playing = false;
+            triggers.background_music.start = true;
+            ArtObj.snap.video_flags = Vid.NoAudio;
+        }
     }
 
     local backg = false;
@@ -923,15 +938,16 @@ function load_theme(name, theme_content, prev_def){
             back_tr = null
         }
 
-        if( ext(v.tolower()) == "mp3" ){ // backrgound music found anywhere in theme ( in HS , must be in /Extras/Background Sounds/ ....mp3)
+        if( ext(v.tolower()) == "mp3" ){ // background music found anywhere in theme ( in HS , must be in /Extras/Background Sounds/ ....mp3)
             Background_Music.file_name = name + "|" + v;
-            Background_Music.playing = true;
+            Background_Music.playing = false;
+            triggers.background_music.start = true;
             ArtObj.snap.video_flags = Vid.NoAudio;
         }
     }
 
     if(!backg){ // when background is missing in theme , fade anim and check in media background folder if background is present , otherwise use alternate
-        backg = medias_path + fe.list.name + "/Images/Backgrounds/" + fe.game_info(Info.Name) + ".png";
+        backg = medias_path + curr_sys + "/Images/Backgrounds/" + fe.game_info(Info.Name) + ".png";
         if(!file_exist(backg)) backg = "images/Backgrounds/Alt_Background.png";
         back_tr = 31;
     }
@@ -1310,7 +1326,15 @@ fe.add_transition_callback( "game_in_out" );
 function game_in_out( ttype, var, ttime ) {
     switch ( ttype ) {
         case Transition.ToGame:
-            Game_In_Out.file_name = get_random_file( globs.script_dir + "sounds/game_start" );
+            Background_Music.playing = false;
+            Sound_System_In_Out.playing = false;
+            if(file_exist(medias_path + curr_sys + "/Sound/Game Start/" + fe.game_info(Info.Name) + ".mp3") ){
+                Game_In_Out.file_name = medias_path + curr_sys + "/Sound/Game Start/" + fe.game_info(Info.Name) + ".mp3";
+            }else if( file_exist(medias_path + curr_sys + "/Sound/Game Start/Default.mp3") ){
+                Game_In_Out.file_name = medias_path + curr_sys + "/Sound/Game Start/Default.mp3";
+            }else{
+                Game_In_Out.file_name = get_random_file( globs.script_dir + "sounds/game_start" );
+            }
             Game_In_Out.playing = true;
         break;
     }
@@ -1325,7 +1349,7 @@ local prev_tr = 0;
 fe.add_transition_callback( "hs_transition" );
 function hs_transition( ttype, var, ttime )
 {
-    //print("\nTransitions= "+debug_array[ttype]+" var="+var+"\n")
+    //print("\nTransitions= "+debug_array[ttype]+" var="+var+" prev="+debug_array[prev_tr]+"\n")
     switch ( ttype )
     {
         case Transition.FromGame:
@@ -1410,8 +1434,10 @@ function hs_transition( ttype, var, ttime )
             }
             wheel_surf.alpha = 255;
             ArtObj.snap.video_flags = Vid.NoAudio;
-            Background_Music.playing = false;
-            Background_Music.file_name = "";
+            if(curr_theme != "Default" && !Background_Music.file_name.find("Default.mp3")){ // keep playing music on default
+                Background_Music.playing = false;
+                triggers.background_music.start = false;
+            }
             ArtObj.snap.file_name = "";
             if(curr_sys != "Main Menu") syno.x = syno_surf.width; // reset scrolling test position
             if(glob_time - rtime > 150) hide_art(); // 150ms between re-pooling hide_art when navigating fast in wheel (change !!)
@@ -1507,6 +1533,9 @@ function hs_transition( ttype, var, ttime )
             wheel_surf.visible = false;
             triggers.background_anim.start = false;
             surf_ginfos.visible = false;
+            Background_Music.playing = false;
+            triggers.background_music.start = false;
+            ArtObj.snap.file_name = "";
         break;
 
         /* Custom Overlays */
@@ -1563,6 +1592,8 @@ function hs_transition( ttype, var, ttime )
                     overlay_title.msg = "";
                     overlay_icon.visible = false;
                     FE_Sound_Screen_In.playing = true;
+                    Background_Music.playing = false;
+                    triggers.background_music.start = false;
                 break;
             }
 
@@ -1596,6 +1627,15 @@ function hs_tick( ttime )
             globs.keyhold =-1;
         }
     }
+
+    // Background Music
+    if(triggers.background_music.start == true && (glob_time - rtime > triggers.background_music.delay) ){
+        Background_Music.playing = true;
+        triggers.background_music.start = false;
+    }
+
+    if(Background_Music.playing || triggers.background_music.start) ArtObj.snap.video_flags = Vid.NoAudio; else ArtObj.snap.video_flags = Vid.Default; // Background Sounds
+
     // screensaver
     if(my_config["screen_saver_timer"].tointeger() > 0){
         if( (fe.layout.time-globs.Stimer) >= my_config["screen_saver_timer"].tointeger() * 1000 ){

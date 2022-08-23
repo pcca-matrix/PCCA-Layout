@@ -616,6 +616,7 @@ function create_theme_struct(sys){
     system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork6\\");
     system ("mkdir \"" + medias_path + sys + "\\Sound\\");
     system ("mkdir \"" + medias_path + sys + "\\Sound\\Background Music\\");
+    system ("mkdir \"" + medias_path + sys + "\\Sound\\Game Start\\");
     system ("mkdir \"" + medias_path + sys + "\\Sound\\System Start\\");
     system ("mkdir \"" + medias_path + sys + "\\Sound\\System Exit\\");
     system ("mkdir \"" + medias_path + sys + "\\Sound\\Wheel Sounds\\");
