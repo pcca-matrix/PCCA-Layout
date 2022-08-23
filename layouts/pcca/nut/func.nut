@@ -511,6 +511,15 @@ function set_xml_datas(){
 // Save XMl
 function save_xml(xml_root, path){
     if( xml_root == null || IS_ARCHIVE(path) ) return; // don't save xml if it's a zip or xml_root is empty
+    // add tag hd if it's not present
+    try{ local test = xml_root.getChild("background").attr; }catch(e){
+        local res_c = split( my_config["theme_resolution"].tolower(), "x");
+        local node = XMLNode();
+        node.tag = "hd";
+        node.attr["lw"] <- res_c[0];
+        node.attr["lh"] <- res_c[1];
+        xml_root.addChild(node);
+    }
     local fileout = file(path + "Theme.xml", "w");
     local line = xml_root.toXML();
     fileout.writeblob( writeB(line) );
