@@ -146,7 +146,8 @@ class SelMenu
 
     function titles(){
         local tmp = "";
-        foreach(a,v in _lists) if(a>0) tmp+=v.title + "->"; // by passe first elem (main)
+        if(!_lists.len()) tmp = "Main";
+        foreach(a,v in _lists) tmp+=v.title + "->";
         if(_lists.len() > 0) tmp+=_current_list.title;
         _list_title.msg = tmp;
     }

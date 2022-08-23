@@ -381,7 +381,7 @@ local FE_Sound_Wheel_Jump = fe.add_sound(medias_path + "Frontend/Sounds/Sound_Wh
 local Sound_Click = fe.add_sound( medias_path + "Main Menu/Sound/Wheel Click.mp3" );
 local Sound_System_In_Out = fe.add_sound("");
 local Sound_Wheel = fe.add_sound( get_random_file( medias_path + "Sound/Wheel Sounds") );
-local Background_Music = fe.add_sound( get_random_file( medias_path + "Sound/Background Music") );
+local Background_Music = fe.add_sound( "" );
 local Game_In_Out = fe.add_sound("");
 local Wheelclick = [];
 local sound_buffer_size = 5; // size of the audio buffer
@@ -1868,7 +1868,7 @@ menus.push ({
     {"title":"Refresh Stats", "target":"", "hide":"!Main Menu",
         "onselect":function(current_list, selected_row){
             refresh_stats();
-            return true;
+            return false;
         }
     }]
 })
