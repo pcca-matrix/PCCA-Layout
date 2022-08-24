@@ -74,7 +74,6 @@ catch(err){
 //-- controls (here you can change control type according your needs)
 controls <- {};
 controls.Right <- ["Joy0 Right", "Right"];
-controls.Right <- ["Joy0 Right", "Right"];
 controls.Left  <- ["Joy0 Left", "Left"];
 controls.Up    <- ["Joy0 Up", "Up"];
 controls.Down  <- ["Joy0 Down", "Down"];
@@ -533,10 +532,10 @@ local extraArtworks = {
     },
 
     function Resize(){
-        local coeff = 0.75;
+        local coeff = 0.72;
         local ini = medias_path + curr_sys + "/Images/Artworks/" +  fe.game_info(Info.Name) + "/" + strip_ext(lists[num]) + ".txt";
         if(file_exist(ini)){
-            coeff = 0.60;
+            coeff = 0.58;
             infos = ini;
         }
         local ratio = surf_img.texture_width.tofloat() / surf_img.texture_height.tofloat();
@@ -624,7 +623,7 @@ local extraArtworks = {
 
     function special_tick(ttime){
         if(pos == "" || lists.len() < 2) return false;
-        local speed = 110;
+        local speed = 175;
         if(pos == "left"){
             surf_img.x = clamp(surf_img.x-=speed, -surf_img.width, (flw * 0.5 - surf_img.width * 0.5));
             if(surf_img.x <= -surf_img.width){
@@ -1634,7 +1633,11 @@ function hs_tick( ttime )
         triggers.background_music.start = false;
     }
 
-    if(Background_Music.playing || triggers.background_music.start) ArtObj.snap.video_flags = Vid.NoAudio; else ArtObj.snap.video_flags = Vid.Default; // Background Sounds
+    if( Background_Music.playing || triggers.background_music.start){
+        ArtObj.snap.video_flags = Vid.NoAudio;
+    }else{
+        if(!surf_inf.visible) ArtObj.snap.video_flags = Vid.Default; // do not restart snap sound if extra info screen is up
+    }
 
     // screensaver
     if(my_config["screen_saver_timer"].tointeger() > 0){
@@ -1691,7 +1694,7 @@ function hs_tick( ttime )
             if( fe.game_info(Info.Name).tolower() in tr_cache){ // if transition exist for this game/system
                 flv_transitions.file_name = tr_cache[fe.game_info(Info.Name).tolower()];
             }else if( (fe.game_info(Info.Category) in tr_directory_cache) ){ // if transitions exist for this game category ( in the frontend folder )
-               flv_transitions.file_name = tr_cache[fe.game_info(Info.Name).tolower()]
+               flv_transitions.file_name = tr_cache[fe.game_info(Info.Category)]
             }else{ // else choose random transition from cached directory front-end
                 if( tr_directory_cache.len() > 0 ) flv_transitions.file_name = get_random_table(tr_directory_cache);
             }
