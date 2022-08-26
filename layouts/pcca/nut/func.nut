@@ -481,9 +481,11 @@ function set_type(val, ref){
 
 
 function set_xml_datas(){
-    local common = {"x":0.0,"y":0.0,"w":0.0,"h":0.0,"r":0.0,"time":0.0,"delay":0.0,"type":"none","start":"none","rest":"none","zorder":0,"ry":0.0,"rx":0.0,"keepaspect":true};
+    local common = {"x":0.0,"y":0.0,"w":0.0,"h":0.0,"r":0.0,"time":0.0,"delay":0.0,"type":"none","start":"none","rest":"none","zorder":0,"ry":0.0,"rx":0.0,"keepaspect":true,
+    "hidden":false};
     local video = merge_table (clone(common), {"bsize":0,"bsize2":0,"bsize3":0,"bcolor":0,"bcolor2":0,"bcolor3":0,"overlayoffsetx":0.0,"overlayoffsety":0.0,"overlaybelow":false,
     "bshape":"square", "overlaywidth":0.0, "overlayheight":0.0, "below":false, "forceaspect":false, "crt_scanline":false} );
+    video.rawdelete("hidden");
     video.rawdelete("keepaspect");
     local node = find_theme_node( xml_root );
     foreach ( child in node.children )

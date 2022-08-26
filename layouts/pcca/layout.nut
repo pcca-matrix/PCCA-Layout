@@ -997,7 +997,8 @@ function load_theme(name, theme_content, prev_def){
 
             // center rotation ,hyperspin anim artworks rotation only if it's greater than 180 or -180 and time is > 0
             if( abs(artD.r) > 180 && artD.time > 0 ) anim_rotate = artD.r;
-            artworks_transform(Xtag, (anim_rotate ? false : true), art);
+
+            if(!artD.hidden) artworks_transform(Xtag, (anim_rotate ? false : true), art);
 
         }else if( Xtag == "video" ){
             // Temporary fix for the video datas does not reset !! (see prev_def commented below)
@@ -2057,7 +2058,21 @@ menus.push ({
                 set_list( { "id":"zorder", "title":_selected_row.title, "target":"xml", "object":current_list.object, "values" : [-9,10,1], "rows":[{"title":xml_root.getChild(current_list.object).attr["zorder"]}] });
                 return true;
             }
+        },
 
+        {"title":"Visible",
+            "onselect":function(current_list, selected_row){
+                try{ xml_root.getChild(current_list.object).attr["hidden"]} catch ( e ) {xml_root.getChild(current_list.object).addAttr("hidden", false)}
+                set_list( { "title":_selected_row.title, "object":current_list.object, "slot_pos":(xml_root.getChild(current_list.object).attr["hidden"] ? 1 : 0),
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            xml_root.getChild(current_list.object).addAttr("hidden", (selected_row.target == "yes" ? "false" : "true") );
+                            save_xml(xml_root, path);
+                            triggers.theme.start = true;
+                        }
+                });
+                return true;
+            }
         }
     ]
 })
