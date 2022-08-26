@@ -24,6 +24,10 @@ function global_default_settings(){
     Ini_settings["wheel"]["system stats"] <- "0.780,0.531,0"; // in %
 
     Ini_settings["game text"] <- {}
+    Ini_settings["game text"]["animation"] <- "elastic";
+    Ini_settings["game text"]["anim_time"] <- 1.0;
+    Ini_settings["game text"]["anim_start"] <- "bottom";
+    Ini_settings["game text"]["anim_delay"] <- 0.2;
     Ini_settings["game text"]["game_text_active"] <- true;
     Ini_settings["game text"]["game_text_hide"] <- false;
     Ini_settings["game text"]["hide_year"] <- false;

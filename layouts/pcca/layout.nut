@@ -102,6 +102,8 @@ flh <- fe.layout.height.tofloat();
 fe.layout.font = "ArialCEMTBlack.ttf";
 
 surf_ginfos <- fe.add_surface(flw, flh*0.22);
+surf_ginfos.visible = false;
+
 local start_background = fe.add_image("images/Backgrounds/Background.jpg",0,0,flw,flh);
 
 test <- fe.add_text("",100,500,1000,25);// DEBUG
@@ -180,6 +182,10 @@ wheel_animation <- PresetAnimation(wheel_surf)
 .name("wheel")
 .preset("ease")
 .starting("right")
+
+surf_ginfos_animation <- PresetAnimation(surf_ginfos)
+.name("surf_ginfos")
+.preset("ease")
 
 hd <- true; // global bool for hd or hs theme
 
@@ -1445,8 +1451,9 @@ function hs_transition( ttype, var, ttime )
             flv_transitions.visible = false;
             flv_transitions.file_name = "";
             if(curr_sys == "Main Menu") stats_text_update( fe.game_info(Info.Title, 1) );
-            if(Ini_settings["game text"]["game_text_hide"]) surf_ginfos.visible = false;
             if(curr_theme != "Default") background_anim.resting = false; // stop background resting when we are not on a default theme
+            if(Ini_settings["game text"]["animation"] != "none") surf_ginfos_animation.start();
+            if(Ini_settings["game text"]["game_text_hide"]) surf_ginfos.visible = false;
         break;
 
         case Transition.EndNavigation: //7
@@ -1471,10 +1478,10 @@ function hs_transition( ttype, var, ttime )
             foreach(a,b in artwork_list ){
                 if( pause_animation.find(anims[a].opts.preset) != null) anims[a].unpause(); // unpause looping animations
             }
+            if(Ini_settings["game text"]["game_text_hide"] && Ini_settings["game text"]["game_text_active"]) surf_ginfos.visible = true;
         break;
 
         case Transition.StartLayout: //0
-            surf_ginfos.visible = false;
             if( !glob_time ){  // glob_time == 0 on first start layout
                 if( ttime <= 255  && fe.game_info (Info.Emulator) == "@" ){ // fade when back to display menu or start layout
                     global_fade(ttime, 255, true);
@@ -1535,6 +1542,7 @@ function hs_transition( ttype, var, ttime )
             Background_Music.playing = false;
             triggers.background_music.start = false;
             ArtObj.snap.file_name = "";
+            game_surface(); // user setting for game text infos
         break;
 
         /* Custom Overlays */
@@ -1735,8 +1743,6 @@ function hs_tick( ttime )
             load_theme(path, theme_content, false);
         }
 
-        game_surface(); // user setting for game text infos
-
         triggers.theme.start = false;
         visi = false;
     }
@@ -1810,6 +1816,9 @@ video_anim_tab.sort(@(a,b) a.title <=> b.title)
 video_anim_tab.insert(0,{"title":"None", "target":"none"});
 
 local wheel_anim_tab = [{"title":"None","target":"none"},{"title":"Ease","target":"ease"},{"title":"Linear","target":"linear"},{"title":"Bounce","target":"bounce"},
+{"title":"Elastic", "target":"elastic"}];
+
+local game_text_anim_tab = [{"title":"None","target":"none"},{"title":"Ease","target":"ease"},{"title":"Linear","target":"linear"},{"title":"Bounce","target":"bounce"},
 {"title":"Elastic", "target":"elastic"}];
 
 local rest_tab = [{"title":"Shake", "target":"shake"}, {"title":"Rock", "target":"rock"}, {"title":"Rock Fast", "target":"rock fast"},
@@ -2671,7 +2680,59 @@ menus.push({
             },
             "onback":function(selected_row, current_list){
                 Ini_settings["game text"]["coord"] = (surf_ginfos.x / flw) + "," + (surf_ginfos.y / flh) + "," + surf_ginfos.rotation;
+                if(Ini_settings["game text"]["animation"] != "none") triggers.theme.start = true;
             },"infos":LnG.M_inf_gsurf_pos
+        },
+        {"title":"Animations",
+            "onselect":function(current_list, selected_row){
+                local elem = Ini_settings["game text"]["animation"];
+                local sel = 0;
+                foreach(a,b in game_text_anim_tab){ if(b.target == elem) sel = a; }
+                set_list( {"title":"Animation", "rows":game_text_anim_tab,"slot_pos":sel,
+                    "onselect":function(current_list, selected_row){
+                        Ini_settings["game text"]["animation"] = selected_row.target;
+                        if(Ini_settings["game text"]["animation"] != "none"){
+                            surf_ginfos_animation
+                            .preset(Ini_settings["game text"]["animation"])
+                            .starting(Ini_settings["game text"]["anim_start"])
+                            .duration(Ini_settings["game text"]["anim_time"] * 1000)
+                            .delay( globs.delay + (Ini_settings["game text"]["anim_delay"] * 1000) )
+                            surf_ginfos_animation.play()
+                        }
+                        triggers.theme.start = true;
+                    }
+                })
+                return true;
+            }
+        },
+        {
+        "title":"Animation Time", "type":"float",
+            "onselect":function(current_list, selected_row){
+                set_list( { "id":"anim_time", "title":_selected_row.title, "target":"ini", "object":"game text", "values" : [0,2,0.1], "rows":[{"title":Ini_settings["game text"]["anim_time"]}] });
+                return true;
+            },
+            "infos" : "(Seconds)"
+        },
+        {"title":"Animation Delay", "type":"float",
+            "onselect":function(current_list, selected_row){
+                set_list( { "id":"anim_delay", "title":_selected_row.title, "target":"ini", "object":"game text", "values" : [0,2,0.1], "rows":[{"title":Ini_settings["game text"]["anim_delay"]}] });
+                return true;
+            },
+            "infos" : "(Seconds)"
+        },
+        {"title":"Animation Start",
+            "onselect":function(current_list, selected_row){
+                local sel = 0;
+                local elem = Ini_settings["game text"]["animation"]
+                foreach(a,b in start_tab){ if( b.target == elem ) sel = a; }
+                set_list( { "title":_selected_row.title, "slot_pos":sel,
+                    "rows":start_tab, "target":"", "onselect":function(current_list, selected_row){
+                        Ini_settings["game text"]["anim_start"] = selected_row.target;
+                        triggers.theme.start = true;
+                    }
+                })
+                return true;
+            }
         },
         {
         "title":"Text Color", "target":"text_color"
@@ -2703,6 +2764,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["game text"]["game_text_active"] = (selected_row.target == "yes" ? true : false);
+                            (selected_row.target == "yes" ? surf_ginfos.visible = true : surf_ginfos.visible = false)
                             triggers.theme.start = true;
                         }
                 });
@@ -3638,7 +3700,25 @@ function set_custom_value(Ini_settings) {
             surf_ginfos.rotation = g_c[2];
             surf_ginfos.alpha = 255;
         }
-        surf_ginfos.visible = Ini_settings["game text"]["game_text_active"];
+
+        if(Ini_settings["game text"]["game_text_active"]) surf_ginfos.visible = ( curr_sys == "Main Menu" ? false : true ); // Game infos surface
+
+        if(Ini_settings["game text"]["animation"] != "none"){
+            Ini_settings["game text"]["game_text_hide"] = false;
+            surf_ginfos_animation
+            .preset(Ini_settings["game text"]["animation"])
+            .starting(Ini_settings["game text"]["anim_start"])
+            .duration(Ini_settings["game text"]["anim_time"] * 1000)
+            .delay( globs.delay + (Ini_settings["game text"]["anim_delay"] * 1000) )
+            surf_ginfos_animation.start()
+            surf_ginfos_animation.cancel("from")
+            surf_ginfos_animation.start();
+        }
+
+        local rgbC = dec2rgb(Ini_settings["game text"]["text_color"]);
+        Title.text_color( [rgbC[0], rgbC[1], rgbC[2]] );
+        local rgbC = dec2rgb(Ini_settings["game text"]["text_stroke_color"]);
+        Title.thick_rgb([rgbC[0], rgbC[1], rgbC[2]]);
 
         local g_c = split( Ini_settings["wheel"]["offset"], ",").map(function(v){return v.tofloat()}); // %
         if( g_c.len() == 3 ) {
@@ -3689,18 +3769,14 @@ function set_custom_value(Ini_settings) {
             syno_surf.y = g_c[1] * flh;
             //syno_surf.rotation = g_c[4];
         }
-        local rgbC = dec2rgb(Ini_settings["game text"]["text_color"]);
-        Title.text_color( [rgbC[0], rgbC[1], rgbC[2]] );
-        local rgbC = dec2rgb(Ini_settings["game text"]["text_stroke_color"]);
-        Title.thick_rgb([rgbC[0], rgbC[1], rgbC[2]]);
     }
-
 }
 
 function game_surface(){
-    if(Ini_settings["game text"]["game_text_active"]) surf_ginfos.visible = ( curr_sys == "Main Menu" ? false : true ); // Game infos surface
-    if(!Ini_settings["game text"]["game_text_active"]) return;
-
+    if(!Ini_settings["game text"]["game_text_active"] || curr_sys == "Main Menu"){
+        surf_ginfos.visible = false;
+        return;
+    }
     // reset to default pos
     local lng_x = flw*0.134;
     for ( local i = 0; i < 17; i++ ) {
