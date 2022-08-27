@@ -741,10 +741,9 @@ function overview( offset ) {
 }
 
 function background_transitions(transition, File, animation = null){
-
     if( Ini_settings.themes["reload_backgrounds"] == false && surf_menu.visible == false){ // dot not reload background if it's the same and the option reload_backgrounds is false (Default behavior)
-        if(File == ArtObj.background1.file_name && reverse) return;
-        if(File == ArtObj.background2.file_name && !reverse) return;
+        if(replace (File, "|", "") == ArtObj.background1.file_name && reverse) return;
+        if(replace (File, "|", "") == ArtObj.background2.file_name && !reverse) return;
     }
 
     ArtObj.bezel.visible = false;
@@ -879,10 +878,10 @@ function load_theme(name, theme_content, prev_def){
         return false;
     }
 
-    local zippath = "";
+    local zipfolder = ""; // needed when media is inside subfolder on the zip archive
     local DiR = theme_content[0];
-    if ( DiR[DiR.len()-1] == '/' ) zippath = theme_content[0];
-    local f = ReadTextFile( name, zippath + "Theme.xml" );
+    if ( DiR[DiR.len()-1] == '/' ) zipfolder = theme_content[0];
+    local f = ReadTextFile( name, zipfolder + "Theme.xml" );
     local raw_xml = "";
     while ( !f.eos() ){
         local l = f.read_line();
@@ -937,9 +936,8 @@ function load_theme(name, theme_content, prev_def){
 
     local backg = false;
     foreach(k,v in theme_content){
-        if(strip_ext(v.tolower()) == zippath.tolower() + "background"){ // background found in theme
-            backg = name + v;
-            if( ext(name) == "zip") backg = name + "|" + v;
+        if(strip_ext(v.tolower()) == zipfolder.tolower() + "background"){ // background found in theme
+            backg = name + "|" + v
             back_tr = null
         }
 
@@ -951,10 +949,10 @@ function load_theme(name, theme_content, prev_def){
         }
     }
 
-    if(!backg){ // when background is missing in theme , fade anim and check in media background folder if background is present , otherwise use alternate
-        backg = medias_path + curr_sys + "/Images/Backgrounds/" + fe.game_info(Info.Name) + ".png";
-        if(!file_exist(backg)) backg = "images/Backgrounds/Alt_Background.png";
-        back_tr = 31;
+    // if where are on a default theme or if background is missing in theme, check in background folder
+    if( (!backg || name.find("/Default/") ) ){
+        local rndbckg = get_random_file(medias_path + curr_sys + "/Images/Backgrounds/" + fe.game_info(Info.Name));
+        if(rndbckg != "") backg = rndbckg;
     }
 
     if(raw_xml == "") return; // if broken with no theme.xml inside zip
@@ -979,7 +977,7 @@ function load_theme(name, theme_content, prev_def){
         local art = ""; local Xtag = c.tag;
         anim_rotate = 0;
         foreach(k,v in theme_content){
-            if(strip_ext(v.tolower()) == zippath.tolower() + Xtag.tolower()){
+            if(strip_ext(v.tolower()) == zipfolder.tolower() + Xtag.tolower()){
                 availables[Xtag] = true;
                 art = v
             }
