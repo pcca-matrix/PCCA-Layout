@@ -955,6 +955,8 @@ function load_theme(name, theme_content, prev_def){
         if(rndbckg != "") backg = rndbckg;
     }
 
+    if(!backg) backg = backg = "images/Backgrounds/Black.png"; // if no background is found , use black
+
     if(raw_xml == "") return; // if broken with no theme.xml inside zip
 
     local back_anim = null;
