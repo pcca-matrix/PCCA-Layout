@@ -15,6 +15,7 @@ class ShaderAnimation extends Animation {
     }
 
     function start() {
+        states["current"] <- {"param":_param,"val":null}
         base.start()
     }
 
@@ -31,6 +32,7 @@ class ShaderAnimation extends Animation {
             opts.target.set_param( _param, vals[0], vals[1], vals[2] );
         else if ( _from.len() == 4 )
             opts.target.set_param( _param, vals[0], vals[1], vals[2], vals[3] );
+        states["current"] <- {"param":_param,"val":vals};
         base.update();
     }
 }

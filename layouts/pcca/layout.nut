@@ -33,7 +33,7 @@ class UserConfig {
 }
 
 my_config <- fe.get_config();
-globs <- {"delay" : 400, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time, "script_dir":fe.script_dir }; // super globals temp vars
+globs <- {"delay" : 400, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time, "script_dir":fe.script_dir, "tofade":{} }; // super globals temp vars
 
 triggers <- {
     "flv_transition":{
@@ -499,6 +499,7 @@ local crt_sh = surf_inf.add_image("images/frame.png", 0, 0, 0, 0 );
 crt_sh.visible = false;
 local surf_shader = fe.add_shader( Shader.Fragment, "shaders/crt.frag");
 surf_img.shader = surf_shader;
+surf_img.video_flags = Vid.NoLoop;
 surf_shader.set_texture_param("Tex0");
 surf_shader.set_texture_param("Tex1", crt_sh);
 
@@ -955,7 +956,7 @@ function load_theme(name, theme_content, prev_def){
         if(rndbckg != "") backg = rndbckg;
     }
 
-    if(!backg) backg = backg = "images/Backgrounds/Black.png"; // if no background is found , use black
+    if(!backg) backg = "images/Backgrounds/Black.png"; // if no background is found , use black
 
     if(raw_xml == "") return; // if broken with no theme.xml inside zip
 
@@ -1332,6 +1333,7 @@ fe.add_transition_callback( "game_in_out" );
 function game_in_out( ttype, var, ttime ) {
     switch ( ttype ) {
         case Transition.ToGame:
+            globs.tofade = fade_objects();
             Background_Music.playing = false;
             Sound_System_In_Out.playing = false;
             if(file_exist(medias_path + curr_sys + "/Sound/Game Start/" + fe.game_info(Info.Name) + ".mp3") ){
@@ -1369,7 +1371,7 @@ function hs_transition( ttype, var, ttime )
                 ArtObj.background2.video_playing = true;
                 ArtObj.snap.video_playing = true;
                 global_fade( 500, 500, true); // security to be sure that 100% alpha is passed to function
-                rtime = glob_time + 2000 // add 2 seconds before fading wheel
+                rtime = glob_time + 3000 // add 3 seconds before fading wheel
                 conveyor_bool = false; // do not restore alpha on conveyor
                 // update stats for this system only if Track Usage is set to Yes in AM!
                 if( fe.game_info(Info.PlayedTime) != "" ){
@@ -3430,10 +3432,11 @@ function incdec(type, datas,  dir ){
 
 // Apply a global fade on objs and shaders
 function global_fade(ttime, target, direction){
+   target = target.tofloat();
    ttime = ttime.tofloat();
-   local objlist = [surf_ginfos, syno_surf, flv_transitions, ArtObj.bezel, point, wheel_surf]; // objects list to fade
-   if(direction){ // show
-        foreach(obj in objlist) obj.alpha = ttime * (255.0 / target);
+   local objlist = {"surf_ginfos":surf_ginfos, "syno_surf":syno_surf, "flv_transitions":flv_transitions, "bezel":ArtObj.bezel, "point":point, "wheel_surf":wheel_surf}; // objects list to fade
+    if(direction){ // show
+        foreach(a, obj in objlist) obj.alpha = ttime * (255.0 / target);
         video_shader.set_param("alpha", (ttime / target) );
         foreach(k, obj in artwork_list ){
             artwork_shader[k].set_param("alpha", (ttime / target) );
@@ -3443,18 +3446,22 @@ function global_fade(ttime, target, direction){
         ArtObj.SpecialA.shader.set_param("alpha", ttime / target);
         ArtObj.SpecialB.shader.set_param("alpha", ttime / target);
         ArtObj.SpecialC.shader.set_param("alpha", ttime / target);
-   }else{ // hide
+    }else{ // hide
         flv_transitions.video_playing = false; // stop playing ovveride video during fade
-        foreach(obj in objlist) obj.alpha = 255.0 - ttime * (255.0 / target);
-        video_shader.set_param("alpha", 1.0 - (ttime / target) );
+        foreach(a, obj in objlist) obj.alpha = globs.tofade[a].tofloat() - ttime * (globs.tofade[a] / target);
+        if( ("current" in anim_video_shader.states) && anim_video_shader.states["current"].param == "alpha"){ // if alpha is managed by shader , use the alpha value from shader
+            video_shader.set_param("alpha", ( anim_video_shader.states["current"].val[0] - (ttime / target) ) );
+        }else{
+            video_shader.set_param("alpha", ( (globs.tofade["snap"] / 255.0) - (ttime / target) ) );
+        }
         foreach(k, obj in artwork_list ){
-            artwork_shader[k].set_param("alpha", 1.0 - (ttime / target) );
+            artwork_shader[k].set_param("alpha", (globs.tofade[obj] / 255.0) - (ttime / target) );
             for (local i=0; i < anims[k].ParticlesArray.len(); i++ ) anims[k].ParticlesArray[i].alpha = 255.0 - ttime * (255.0 / target);
         }
-        Trans_shader.set_param("alpha",1.0 - (ttime / target) );
-        ArtObj.SpecialA.shader.set_param("alpha",1.0 - (ttime / target) );
-        ArtObj.SpecialB.shader.set_param("alpha",1.0 - (ttime / target) );
-        ArtObj.SpecialC.shader.set_param("alpha",1.0 - (ttime / target) );
+        Trans_shader.set_param("alpha",(globs.tofade["Trans"].tofloat() / 255.0) - (ttime / target) );
+        ArtObj.SpecialA.shader.set_param("alpha",(globs.tofade["SpecialA"] / 255.0) - (ttime / target) );
+        ArtObj.SpecialB.shader.set_param("alpha",(globs.tofade["SpecialB"] / 255.0) - (ttime / target) );
+        ArtObj.SpecialC.shader.set_param("alpha",(globs.tofade["SpecialC"] / 255.0) - (ttime / target) );
     }
     return;
 }
@@ -3850,6 +3857,14 @@ function game_surface(){
     }
 
     if(!flags.visible) Title.set("x", -flw * 0.004);
+}
+
+function fade_objects(){
+    local tofade = {"surf_ginfos":surf_ginfos.alpha, "syno_surf":syno_surf.alpha, "flv_transitions":flv_transitions.alpha, "bezel":ArtObj.bezel.alpha, "point":point.alpha,
+    "wheel_surf":wheel_surf.alpha,"snap":ArtObj.snap.alpha,"artwork1":ArtObj.artwork1.alpha,"artwork2":ArtObj.artwork2.alpha,"artwork3":ArtObj.artwork3.alpha,
+    "artwork4":ArtObj.artwork5.alpha,"artwork5":ArtObj.artwork5.alpha,"artwork6":ArtObj.artwork6.alpha,"SpecialA":ArtObj.SpecialA.alpha,"SpecialB":ArtObj.SpecialB.alpha,
+    "SpecialC":ArtObj.SpecialC.alpha,"Trans":ArtObj.background.alpha};
+    return tofade;
 }
 
 //print( "load time:"+(clock() - start)+"\n")
