@@ -1935,9 +1935,8 @@ menus.push ({
             {"title":"Wheel", "target":"wheel", "target":"wheel_settings"},
             {"title":"Sounds", "target":"sound"},
             {"title":"Pointer","target":"pointer"},
-            {"title":"Game Text", "target":"game text", "target":"game_text", "infos":"Game info surface options" , "hide":"Main Menu"} // (should not be displayed on main menu)
-            ,{
-            "title":"Special Artworks", "target":"special_list",
+            {"title":"Game Text", "target":"game text", "target":"game_text", "infos":"Game info surface options" , "hide":"Main Menu"}, // (should not be displayed on main menu)
+            {"title":"Special Artworks", "target":"special_list",
                 "onselect":function(current_list, selected_row){
                     if(my_config["special_artworks"].tolower() == "no"){
                         overlay_message("images/warning.png");
@@ -1946,7 +1945,15 @@ menus.push ({
                     }
                     return true;
                 }
-        }
+            },
+            {"title":"Reset Default", "target":"",
+                "onselect":function(current_list, selected_row){
+                    Ini_settings = global_default_settings();
+                    save_ini();
+                    triggers.theme.start = true;
+                    return true;
+                },"infos":LnG.M_inf_theme_reset
+            },
     ]
 })
 
