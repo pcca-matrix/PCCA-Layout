@@ -553,10 +553,12 @@ local extraArtworks = {
             surf_img.height = (flh * coeff);
             surf_img.width = (flh * coeff) * ratio;
         }
-        if(!infos) surf_img.y = flh * 0.5 - surf_img.height * 0.5; else surf_img.y = flh * 0.04;
 
         // if it's a video choose a overlay depending on the date or use simple frame
         if(surf_img.video_duration){
+            surf_img.height = flh*0.85;
+            surf_img.width = flw*0.85;
+
             if(lists[num].find("Commercial") != null){
                local year = strip_ext(lists[num]).slice(strip_ext(lists[num]).len()-4, strip_ext(lists[num]).len());
                try{year = year.tointeger()}catch(e){year = 0;}
@@ -583,6 +585,8 @@ local extraArtworks = {
             ArtObj.snap.video_flags = Vid.Default;
             surf_shader.set_param("enable", 0);
         }
+
+        if(!infos) surf_img.y = flh * 0.5 - surf_img.height * 0.5; else surf_img.y = flh * 0.04;
     },
 
     function set_Title(){
