@@ -1464,6 +1464,7 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.EndNavigation: //7
+            if(prev_tr == Transition.ToNewList) return false; // fix back from screensaver reload theme twice.
             if(point_animation.progress == 1.0 && Ini_settings.pointer.animated) point_animation.play();
             Langue();
             if(surf_inf.visible){
@@ -1528,6 +1529,7 @@ function hs_transition( ttype, var, ttime )
                         main_infos <- refresh_stats(curr_sys);
                     }
                 }
+                Langue();
             }
             if( glob_time ){  // when glob_time > 0 not startlayout
                 local es = get_random_file( medias_path + curr_sys + "/Sound/System Start/" );
