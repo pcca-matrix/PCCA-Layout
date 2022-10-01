@@ -131,6 +131,10 @@ LnG <- _LL[ my_config["user_lang"] ];
 prev_back <- { ox = 0, oy = 0, bw = flw, bh = flh }; // previous background table infos ( transitions )
 
 // overlay helper (screen center)
+img_overlay <- fe.add_image("", 0, 0, 0, 0);
+img_overlay.visible = false;
+img_overlay.zorder = 15;
+
 text_overlay <- fe.add_text("", 0, flh * 0.4, flw, flh * 0.10);
 text_overlay.charsize = 100;
 text_overlay.set_rgb( 220, 220, 220 );
@@ -868,7 +872,10 @@ function background_transitions(transition, File, animation = null){
 }
 
 function load_theme(name, theme_content, prev_def){
-    text_overlay.visible = false; // hide overlay helper
+    // hide overlay helper
+    text_overlay.visible = false;
+    img_overlay.visible = false;
+
     set_custom_value(Ini_settings);
     local back_tr = 99; // 99=fade background only , array = random trough array , null=full transitions random
     xml_root = null;
@@ -1514,7 +1521,7 @@ function hs_transition( ttype, var, ttime )
             wheel_surf.alpha = 255;
             if(curr_sys != "Main Menu"){
                 if( fe.game_info(Info.PlayedTime) == "" ) PCount.set("visible", false); else PCount.set("visible", true); //show game stats surface only if Track Usage is set to Yes in AM!
-                hide_art(); // hide artwork when you change list
+                if(glob_time - rtime > 550) hide_art(); // 500ms between re-pooling hide_art when navigating fast in system
                 conveyor_bool = false;
                 syno_surf.visible = false; // hide overview
                 m_infos.msg = ""; // empty global stats
@@ -3331,7 +3338,14 @@ signals["default_sig"] <- function (str) {
             local offset = (str == "next_display" ? fe.list.display_index + 1 : fe.list.display_index - 1);
             if(offset > fe.displays.len() - 1 ) offset = 0;
             if(offset < 0 ) offset = fe.displays.len() - 1;
-            text_overlay.msg = fe.displays[offset].name;
+            text_overlay.msg = "";
+            img_overlay.file_name = medias_path + "Main Menu/Images/Wheel/" + fe.displays[offset].name + ".png";
+            if(img_overlay.file_name == "") text_overlay.msg = fe.displays[offset].name;
+            img_overlay.width = flw * 0.3;
+            img_overlay.height = img_overlay.width  / ( img_overlay.texture_width.tofloat() / img_overlay.texture_height.tofloat() );
+            img_overlay.x = flw * 0.5 - img_overlay.width * 0.5;
+            img_overlay.y = flh * 0.5 - img_overlay.texture_height * 0.5;
+            img_overlay.visible = true;
         break;
 
         case "next_game":
