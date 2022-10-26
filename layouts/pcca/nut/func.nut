@@ -473,7 +473,7 @@ function set_type(val, ref){
             try{ val = val.tointeger() } catch(e){val = 0}
         break;
         case "bool":
-            val = (val == "true" ? true : false);
+            val = (val == "true" || val == "yes" ? true : false);
         break;
     }
     return val;
