@@ -219,17 +219,17 @@ local flv_transitions = fe.add_image("",0,0,flw,flh);
 flv_transitions.video_flags = Vid.NoLoop;
 
 // Z-orders
-ArtObj.artwork4.zorder = -2
-ArtObj.artwork3.zorder = -3
-ArtObj.artwork2.zorder = -4
-ArtObj.snap.zorder = -7
 ArtObj.artwork1.zorder = -8
+ArtObj.artwork2.zorder = -4
+ArtObj.artwork3.zorder = -3
+ArtObj.artwork4.zorder = -2
+ArtObj.artwork5.zorder = -9
+ArtObj.artwork6.zorder = -9
+ArtObj.snap.zorder = -7
 ArtObj.bezel.zorder = -1
 ArtObj.background.zorder = -10
 flv_transitions.zorder = 0
 start_background.zorder = -11
-ArtObj.artwork5.zorder = -9
-ArtObj.artwork6.zorder = -9
 surf_ginfos.zorder = 1
 wheel_surf.zorder = 0
 
@@ -2127,7 +2127,7 @@ menus.push({
                 set_list( { "title":_selected_row.title, "slot_pos":(xml_root.getChild("video").attr["overlaybelow"] ? 0 : 1),
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
-                            xml_root.getChild("video").addAttr("overlaybelow", (selected_row.target == "yes" ? "true" : "false") );
+                            xml_root.getChild("video").addAttr("overlaybelow", (selected_row.target == "yes" ? true : false) );
                             video_transform()
                         }
                 });
