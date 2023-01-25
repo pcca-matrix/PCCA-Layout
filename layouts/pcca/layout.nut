@@ -402,15 +402,16 @@ for (local i=0; i<sound_buffer_size+1; i++) Wheelclick.push(fe.add_sound(""));
 local sid = 0;
 
 // dialog
-local dialog = fe.add_surface(flw*0.180, flh*0.08);
+local dialog = fe.add_surface(flw*0.280, flh*0.08);
 dialog.set_pos(-flw, flh*0.025);
 dialog.zorder=10;
-local dialog_text = dialog.add_text("", 0, 0, flw*0.180, flh*0.05);
+local dialog_text = dialog.add_text("", 0, 0, flw*0.280, flh*0.05);
 dialog_text.charsize = flh*0.022;
 dialog_text.set_bg_rgb(91,91,91);
 dialog_text.bg_alpha = 35;
+dialog_text.align = Align.Left;
 local dialog_anim = PresetAnimation(dialog)
-.from({x=-flw * 0.180})
+.from({x=-flw * 0.280})
 .to({x=0})
 .yoyo(true)
 .loops_delay(1200)
@@ -560,9 +561,6 @@ local extraArtworks = {
 
         // if it's a video choose a overlay depending on the date or use simple frame
         if(surf_img.video_duration){
-            surf_img.height = flh*0.85;
-            surf_img.width = flw*0.85;
-
             if(lists[num].find("Commercial") != null){
                local year = strip_ext(lists[num]).slice(strip_ext(lists[num]).len()-4, strip_ext(lists[num]).len());
                try{year = year.tointeger()}catch(e){year = 0;}
@@ -622,7 +620,7 @@ local extraArtworks = {
         if( !lists.len() ){
             surf_img.file_name = "";
             surf_arrow.visible = false;
-            surf_txt.msg = "";
+            surf_txt.msg = LnG.M_inf_No_Artworks;
             return false;
         }
 
@@ -3234,27 +3232,40 @@ function main_signal(str){
 
 signals["move_sig"] <- function (str) {
     switch (str){
-        case "back":
-            surf_txt.set_rgb( 241, 250, 200 ); //restore surf_txt when leaving move mode
-            if(sel_menu._edit_type == "edit_obj"){
-                sel_menu._edit_type = null;
+        case my_config["extra_artworks_key"]:
+            if(sel_menu._edit_type != "edit_obj"){
+                globs.signal = "default_sig";
+                sel_menu.reset();
+                surf_inf_anim.reverse(true).play();
                 return true;
             }
-            globs.signal = "default_sig";
-            sel_menu.reset();
-            surf_inf_anim.reverse(true).play();
+        break;
+
+        case "back":
+             if(sel_menu._edit_type == "edit_obj"){
+                sel_menu._edit_type = null;
+                surf_txt.set_rgb( 241, 250, 200 ); //restore surf_txt when leaving move mode
+                return true;
+            }else{
+                globs.signal = "default_sig";
+                sel_menu.reset();
+                surf_inf_anim.reverse(true).play();
+                return true;
+            }
             return true;
         break;
 
         case "select":
             if(sel_menu._edit_type == "edit_obj"){
                 sel_menu._edit_type = null;
+                surf_txt.set_rgb( 241, 250, 200 ); //restore surf_txt when leaving move mode
                 return true;
             }else{
                 sel_menu._edit_datas.name <- "spec_art";
                 sel_menu._current_list.object <- surf_img;
                 sel_menu._edit_type = "edit_obj";
                 surf_txt.set_rgb( 255, 10, 10 ); // set txt in red to specify we are on move mode
+                surf_img.preserve_aspect_ratio = true;
             }
         break;
 
@@ -3367,7 +3378,7 @@ signals["default_sig"] <- function (str) {
             local spec_list = extraArtworks.getLists();
             if(!spec_list.len()){
                 dialog_anim.cancel("origin"); // cancel dialog animation if in progress
-                dialog_text.msg = "No additional artworks";
+                dialog_text.msg = LnG.M_inf_No_Artworks;
                 dialog_anim.play();
                 break;
             }
@@ -3540,8 +3551,16 @@ function edit_obj(obj, datas){ // edit for pos/size/rotate of object
 
     if(datas.name != "game text" && datas.name != "m_infos"){
         if(obj.preserve_aspect_ratio == true){
-            if( g_input("ZWP") || g_input("ZHP")) set = w+=step;
-            if( g_input("ZWM") || g_input("ZHM")) set = w-=step;
+            if( g_input("ZWP") || g_input("ZHP")){
+                set = w+=step;
+                x -= step * 0.5
+                y -= step * 0.5
+            }
+            if( g_input("ZWM") || g_input("ZHM")){
+                set = w-=step;
+                x += step * 0.5
+                y += step * 0.5
+            }
             h = w / ( obj.texture_width.tofloat() / obj.texture_height.tofloat() );
         }else{
             if( g_input("ZWP") ){
