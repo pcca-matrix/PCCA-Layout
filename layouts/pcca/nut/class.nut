@@ -2,32 +2,36 @@
 elem : surface
 Tickness: 1.0-5.0
 msg: text
-data: {x, y, w, h, font-size}
+data: {x, y, w, font-size}
 set : set any of the add_text properties : ("align" , Align.Left)
 stroke_rgb : thick_rgb( [0,0,255] )
 */
 class OutlinedText
 {
-    constructor(elem, msg, datas, thickness)
+    constructor(elem, msg, datas, thick)
     {
-        thickness = clamp(thickness, 1.0, 5.0);
-        outl = datas.size * 0.00080 * thickness;
-        x_offset = datas.x * outl;
-        y_offset = datas.y * (outl * 0.40);
+        thickness = clamp(thick, 0.5, 5.0) * 0.5;
+        x_offset = thickness;
+        y_offset = thickness;
 
-        _title_l = elem.add_text( msg, datas.x - x_offset, datas.y, datas.w, datas.size );
+        _title_l = elem.add_text(msg,0,0,0,0);
+        _title_l.set_pos(datas.x - x_offset, datas.y, datas.w, datas.size);
         _title_l.set_rgb( 0, 0, 0 );
 
-        _title_r = elem.add_text( msg, datas.x + x_offset , datas.y, datas.w, datas.size );
+        _title_r = elem.add_text(msg,0,0,0,0);
+        _title_r.set_pos(datas.x + x_offset , datas.y, datas.w, datas.size);
         _title_r.set_rgb( 0, 0, 0 );
 
-        _title_d = elem.add_text( msg, datas.x, datas.y + y_offset, datas.w, datas.size );
+        _title_d = elem.add_text(msg,0,0,0,0);
+        _title_d.set_pos(datas.x, datas.y + y_offset, datas.w, datas.size);
         _title_d.set_rgb( 0, 0, 0 );
 
-        _title_u = elem.add_text( msg, datas.x, datas.y - y_offset, datas.w, datas.size );
+        _title_u = elem.add_text(msg,0,0,0,0);
+        _title_u.set_pos(datas.x, datas.y - y_offset, datas.w, datas.size);
         _title_u.set_rgb( 0, 0, 0 );
 
-        _title = elem.add_text( msg, datas.x, datas.y, datas.w, datas.size );
+        _title = elem.add_text(msg,0,0,0,0);
+        _title.set_pos(datas.x, datas.y, datas.w, datas.size);
         _title.set_rgb( datas.color[0],datas.color[1], datas.color[2]  );
     }
 
@@ -37,6 +41,22 @@ class OutlinedText
         _title_d[param] = val;
         _title_u[param] = val;
         _title[param] = val;
+    }
+
+    function x(val){
+      _title_l.x = (val - thickness);
+      _title_r.x = (val + thickness);
+      _title_u.x = (val);
+      _title_d.x = (val);
+      _title.x = val;
+    }
+
+    function y(val){
+      _title_l.y = (val);
+      _title_r.y = (val);
+      _title_u.y = (val - thickness);
+      _title_d.y = (val + thickness);
+      _title.y = val;
     }
 
     function thick_rgb(tbl){
@@ -49,16 +69,17 @@ class OutlinedText
     function text_color(tbl){
        _title.set_rgb( tbl[0], tbl[1], tbl[2] );
     }
-    
-    function visible(bool){ 
+
+    function visible(bool){
         _title.visible = bool;
         _title_l.visible = bool;
         _title_r.visible = bool;
         _title_u.visible = bool;
-        _title_d.visible = bool;       
+        _title_d.visible = bool;
     }
-    
-    outl = null;
+
+
+    thickness = null;
     x_offset = null;
     y_offset = null;
 
@@ -76,14 +97,17 @@ class SelMenu
     {
         _slot = [];
         for ( local i = 0; i < 38; i++){
-          _slot.push(surface.add_text( "", flw * 0.006, flh * 0.041 + (row_space * i), flw * 0.17, flh * 0.022 ));
+          _slot.push(surface.add_text("",0,0,0,0));
+          _slot[i].set_pos( flw * 0.006, flh * 0.041 + (row_space * i), flw * 0.17, flh * 0.022);
           _slot[i].align = Align.Left;
           _slot[i].set_bg_rgb(100,100,100);
           _slot[i].bg_alpha=0;
         }
-        _list_title = surface.add_text("", flw * 0.008, flh * 0.002, flw * 0.24, flw * 0.008 );
+        _list_title = surface.add_text("",0,0,0,0);
+        _list_title.set_pos(flw * 0.008, flh * 0.002, flw * 0.24, flw * 0.008);
         _list_title.align = Align.Left;
-        _list_info = surface.add_text("", flw * 0.008, flh * 0.022, flw * 0.24, flw * 0.0085 );
+        _list_info = surface.add_text("",0,0,0,0);
+        _list_info.set_pos(flw * 0.008, flh * 0.022, flw * 0.24, flw * 0.0085);
         _list_info.align = Align.Left;
         _list_info.style = Style.Italic
         _list_info.set_rgb( 230, 230, 200 );

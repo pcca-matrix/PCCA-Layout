@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.65
+// PCCA v2.72
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -101,7 +101,7 @@ flh <- fe.layout.height.tofloat();
 
 fe.layout.font = "ArialCEMTBlack.ttf";
 
-surf_ginfos <- fe.add_surface(flw, flh*0.22);
+surf_ginfos <- fe.add_surface(flw, flh*0.25);
 surf_ginfos.visible = false;
 
 local start_background = fe.add_image("images/Backgrounds/Background.jpg",0,0,flw,flh);
@@ -131,11 +131,12 @@ LnG <- _LL[ my_config["user_lang"] ];
 prev_back <- { ox = 0, oy = 0, bw = flw, bh = flh }; // previous background table infos ( transitions )
 
 // overlay helper (screen center)
-img_overlay <- fe.add_image("", 0, 0, 0, 0);
+img_overlay <- fe.add_image("");
 img_overlay.visible = false;
 img_overlay.zorder = 15;
 
-text_overlay <- fe.add_text("", 0, flh * 0.4, flw, flh * 0.10);
+text_overlay <- fe.add_text("",0,0,0,0);
+text_overlay.set_pos(0, flh * 0.4, flw, flh * 0.10);
 text_overlay.charsize = 100;
 text_overlay.set_rgb( 220, 220, 220 );
 text_overlay.alpha = 230;
@@ -167,12 +168,13 @@ local glob_time = 0;
 local rtime = 0;
 local reverse = 0;
 local visi = false;
-local letters = fe.add_image("", flw * 0.5 - (flw*0.140 * 0.5), flh * 0.5 - (flh*0.280 * 0.5), flw*0.140, flh*0.280);
+local letters = fe.add_image("");
+letters.set_pos(flw * 0.5 - (flw*0.140 * 0.5), flh * 0.5 - (flh*0.280 * 0.5), flw*0.140, flh*0.280);
 conveyor_bool <- false; // fading conveyor
 
 wheel_surf <- fe.add_surface(flw * 1.15, flh * 1.15); // wheel surface
 wheel_surf.set_pos(0,0);
-point <- fe.add_image("",0,0,0,0);
+point <- fe.add_image("");
 point.alpha = 255;
 
 point_animation <- PresetAnimation(point)
@@ -405,7 +407,8 @@ local sid = 0;
 local dialog = fe.add_surface(flw*0.280, flh*0.08);
 dialog.set_pos(-flw, flh*0.025);
 dialog.zorder=10;
-local dialog_text = dialog.add_text("", 0, 0, flw*0.280, flh*0.05);
+local dialog_text = dialog.add_text("",0,0,0,0);
+dialog_text.set_pos(0, 0, flw*0.280, flh*0.05);
 dialog_text.charsize = flh*0.022;
 dialog_text.set_bg_rgb(91,91,91);
 dialog_text.bg_alpha = 35;
@@ -431,60 +434,77 @@ function dialog_datas(type){
 
 // Game Infos surface
 local ttfont = "ArialCEMTBlack.ttf";
-local Tags = surf_ginfos.add_image("[!get_media_tag]", flw*0.006, 0, flw*0.063, flh*0.036)
+local Tags = surf_ginfos.add_image("[!get_media_tag]")
+Tags.set_pos(flw*0.006, 0, flw*0.063, flh*0.036);
 
-local favo = surf_ginfos.add_text( "[Favourite]", flw*0.004, flh*0.000, flw*0.050, flh*0.035 );
+local favo = surf_ginfos.add_text("[Favourite]",0,0,0,0);
+favo.set_pos(flw*0.004, flh*0.000, flw*0.050, flh*0.035);
 favo.font = "fontello.ttf";
 favo.align = Align.Left;
 favo.set_rgb( 255, 170, 0 );
 
-local pl_i = surf_ginfos.add_image( "images/players.png", flw*0.007, flh*0.040, flw*0.027, flh*0.042 ); //51.84*44.28
-local pl_t = surf_ginfos.add_text( "[Players]", -flw*0.001, flh*0.061, flw*0.0415 , flh*0.0160);
+local pl_i = surf_ginfos.add_image( "images/players.png");
+pl_i.set_pos(flw*0.007, flh*0.040, flw*0.027, flh*0.042);
+local pl_t = surf_ginfos.add_text( "[Players]",0,0,0,0);
+pl_t.set_pos(-flw*0.001, flh*0.061, flw*0.0415 , flh*0.0160);
 pl_t.align = Align.Centre;
 pl_t.set_rgb( 100,100,100 );
 
-local Ctrl = surf_ginfos.add_image( "[!periph]", flw*0.037, flh*0.040, flw*0.027, flh*0.042 );
-local Ctrl2 = surf_ginfos.add_image( "[!periph2]", flw*0.067, flh*0.040, flw*0.027, flh*0.042 );
-local cate =  surf_ginfos.add_image("[!category]", flw*0.097, flh*0.040, flw*0.027, flh*0.042 );
-local cate2 =  surf_ginfos.add_image("[!category2]", flw*0.127, flh*0.040, flw*0.027, flh*0.042 );
+local Ctrl = surf_ginfos.add_image( "[!periph]");
+Ctrl.set_pos(flw*0.037, flh*0.040, flw*0.027, flh*0.042);
+local Ctrl2 = surf_ginfos.add_image( "[!periph2]");
+Ctrl2.set_pos(flw*0.067, flh*0.040, flw*0.027, flh*0.042);
+local cate =  surf_ginfos.add_image("[!category]");
+cate.set_pos(flw*0.097, flh*0.040, flw*0.027, flh*0.042);
+local cate2 =  surf_ginfos.add_image("[!category2]");
+cate2.set_pos(flw*0.127, flh*0.040, flw*0.027, flh*0.042);
 
 Lang <- {};
 local lng_x = flw*0.134;
+local lng_v = {"y":flh*0.045, "w":flw*0.0220, "h":flh*0.0350};
 for ( local i = 0; i < 17; i++ ) {
     lng_x += flw*0.0230;
-    Lang[i] <- surf_ginfos.add_image("", lng_x, flh*0.045, flw*0.0220, flh*0.0350 );
+    Lang[i] <- surf_ginfos.add_image("");
+    Lang[i].set_pos(lng_x, lng_v.y, lng_v.w, lng_v.h);
 }
 
-local Title = OutlinedText(surf_ginfos, "[Title]", {"color":[255,255,255], "x":flw*0.027, "y":flh*0.077, "w": flw*0.9375 , "size":flh*0.037}, 1.5);
+local Title_v = {"color":[255,255,255], "x":flw*0.027, "y":flh*0.077, "w": flw*0.9375 , "size":flh*0.037};
+local Title = OutlinedText(surf_ginfos, "[Title]", Title_v, 1.6);
 Title.set("align" , Align.Left);
 Title.set("font" , ttfont);
 
-local list_entry = OutlinedText(surf_ginfos, "[ListEntry]/[ListSize] " + LnG.display + ": [FilterName]", {"color":[255,255,255], "x":flw*0.030, "y":flh*0.134, "w": flw*0.3125 , "size":flh*0.021}, 1.0);
+local list_entry_v = {"color":[255,255,255], "x":flw*0.030, "y":flh*0.135, "w": flw*0.3125 , "size":flh*0.021};
+local list_entry = OutlinedText(surf_ginfos, "[ListEntry]/[ListSize] " + LnG.display + ": [FilterName]", list_entry_v, 0.8);
 list_entry.set("align" , Align.Left);
 list_entry.set("font" , ttfont);
 
-local Copy = OutlinedText(surf_ginfos, "[!copyright]", {"color":[255,255,150], "x":flw*0.028, "y":flh*0.111, "w": flw*0.9375 , "size":flh*0.025}, 1.1);
+local Copy_v = {"color":[255,255,150], "x":flw*0.030, "y":flh*0.111, "w": flw*0.9375 , "size":flh*0.025};
+local Copy = OutlinedText(surf_ginfos, "[!copyright]", Copy_v, 0.5);
 Copy.set("align" , Align.Left);
 Copy.set("font" , ttfont);
 
-local PCount = OutlinedText(surf_ginfos, LnG.counter + " [PlayedCount] / " + LnG.playedtime + " [PlayedTime]", {"color":[255,255,255], "x":flw*0.030, "y":flh*0.152, "w": flw*0.3325 , "size":flh*0.021} , 1.0);
+local PCount_v = {"color":[255,255,255], "x":flw*0.030, "y":flh*0.155, "w": flw*0.3325 , "size":flh*0.021} ;
+local PCount = OutlinedText(surf_ginfos, LnG.counter + " [PlayedCount] / " + LnG.playedtime + " [PlayedTime]", PCount_v, 0.8);
 PCount.set("align" , Align.Left);
 PCount.set("font" , ttfont);
 
-local flags = surf_ginfos.add_image("images/flags/[!region]", flw*0.007, flh*0.081, flw*0.0240, flh*0.036);
-local rating = surf_ginfos.add_image("images/rating/[Rating]", flw*0.007, flh*0.119, flw*0.0240, flh*0.053 );
+local flags = surf_ginfos.add_image("images/flags/[!region]");
+flags.set_pos(flw*0.007, flh*0.081, flw*0.0240, flh*0.036);
+local rating = surf_ginfos.add_image("images/rating/[Rating]");
+rating.set_pos(flw*0.007, flh*0.119, flw*0.0240, flh*0.053);
 
 /* Main SettingsOverlay */
 local surf_menu = fe.add_surface(flw * 0.20, flh);
 surf_menu.zorder = 2;
 local surf_menu_bck = surf_menu.add_image("images/Backgrounds/faded.png", 0, 0, flw, flh );
 surf_menu_bck.alpha = 80;
-local surf_menu_img = surf_menu.add_image("", flw*0.044, flh * 0.82, flw * 0.16, flh * 0.17 );
+local surf_menu_img = surf_menu.add_image("");
+surf_menu_img.set_pos(flw*0.044, flh * 0.82, flw * 0.16, flh * 0.17);
 surf_menu_img.visible = false;
 surf_menu_img.preserve_aspect_ratio = true;
-local surf_menu_title = surf_menu.add_text("", flw * 0.008, flh*0.002, flw * 0.24, flw * 0.009 );
-surf_menu_title.align = Align.Left;
-local surf_menu_info = surf_menu.add_text("", flw * 0.005, flh - (flh * 0.046), flw * 0.26, flw * 0.012 );
+
+local surf_menu_info = surf_menu.add_text("",0,0,0,0);
+surf_menu_info.set_pos(flw * 0.005, flh - (flh * 0.046), flw * 0.26, flw * 0.012);
 surf_menu_info.align = Align.Left;
 surf_menu_info.set_bg_rgb(62,62,62);
 surf_menu_info.alpha = 200;
@@ -494,13 +514,15 @@ surf_menu.visible = false;
 /* Extra Artworks and startup infos Screen Overlay */
 surf_inf <- fe.add_surface(flw, flh);
 surf_bck <- surf_inf.add_image("images/Backgrounds/faded.png", 0, 0, flw, flh );
-surf_img <- surf_inf.add_image("", 0, 0, 0, flh * 0.82 );
+surf_img <- surf_inf.add_image("");
+surf_img.height = flh * 0.082;
 surf_img.mipmap = true;
-local surf_arrow = surf_inf.add_image("images/double_arrow.png", flw * 0.5 - ( flw * 0.083 * 0.5), flh * 0.942, flw * 0.083, flh * 0.037);
+local surf_arrow = surf_inf.add_image("images/double_arrow.png");
+surf_arrow.set_pos(flw * 0.5 - ( flw * 0.083 * 0.5), flh * 0.942, flw * 0.083, flh * 0.037);
 surf_arrow.visible = false;
 surf_img.preserve_aspect_ratio = false;
 
-local crt_sh = surf_inf.add_image("images/frame.png", 0, 0, 0, 0 );
+local crt_sh = surf_inf.add_image("images/frame.png");
 crt_sh.visible = false;
 local surf_shader = fe.add_shader( Shader.Fragment, "shaders/crt.frag");
 surf_img.shader = surf_shader;
@@ -510,10 +532,12 @@ surf_shader.set_texture_param("Tex1", crt_sh);
 
 surf_inf.visible = false;
 surf_inf.zorder = 2;
-surf_txt <- surf_inf.add_text( "", flw * 0.007, flh * 0.018, flw, flh * 0.046)
+surf_txt <- surf_inf.add_text("",0,0,0,0);
+surf_txt.set_pos(flw * 0.007, flh * 0.018, flw, flh * 0.046);
 surf_txt.font = ttfont;
 surf_txt.align = Align.Left;
-surf_infos <- surf_inf.add_text( "", flw*0.01, flh * 0.58, flw*0.99, flh * 0.36)
+surf_infos <- surf_inf.add_text("",0,0,0,0);
+surf_infos.set_pos(flw*0.01, flh * 0.58, flw*0.99, flh * 0.36);
 surf_infos.font = ttfont;
 surf_infos.align = Align.Left;
 surf_infos.charsize = 15;
@@ -687,7 +711,8 @@ extraArtworks.init()
 main_infos <- {};
 local game_elapse = 0;
 
-m_infos <- wheel_surf.add_text("",(flw*0.878), flh*0.537, flw*0.12, flh*0.046);
+m_infos <- wheel_surf.add_text("",0,0,0,0);
+m_infos.set_pos(flw*0.878, flh*0.537, flw*0.12, flh*0.046);
 m_infos.visible = false;
 m_infos.align = Align.Left;
 m_infos.word_wrap = true;
@@ -719,7 +744,8 @@ syno_surf <- fe.add_surface(fe.layout.width , flh*0.022);
 syno_surf_bg <- syno_surf.add_image( "images/pixel.png", 0, 0, syno_surf.width, syno_surf.height );
 syno_surf_bg.alpha = 75;
 syno_surf_bg.set_rgb(20,0,0);
-syno <- syno_surf.add_text("", flw, -flh*0.001, flw , syno_surf.height);
+syno <- syno_surf.add_text("",0,0,0,0);
+syno.set_pos(flw, -flh*0.001, flw , syno_surf.height);
 syno.charsize = syno_surf.height * 0.96;
 syno.align = Align.Left;
 
@@ -1265,7 +1291,8 @@ overlay_list.font = "SF Slapstick Comic Bold Oblique.ttf";
 overlay_list.align = Align.Centre;
 SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
 
-overlay_title <- custom_overlay.add_text("", 0, flh*0.324, flw, flh*0.046);
+overlay_title <- custom_overlay.add_text("",0,0,0,0);
+overlay_title.set_pos(0, flh*0.324, flw, flh*0.046);
 overlay_title.set_rgb(192, 192, 192); // global
 overlay_title.charsize = flw * 0.022; // global
 
@@ -1289,10 +1316,12 @@ function overlay_message(img=false, icon_pos=false){
 
 fe.overlay.set_custom_controls( overlay_title, overlay_list ); // should be called set_custom_style instead of control ...
 
-wheel_art <- custom_overlay.add_image( "[!ret_wheel]", flw*0.425, flh*0.192, flw*0.156, flh*0.138);
+wheel_art <- custom_overlay.add_image( "[!ret_wheel]");
+wheel_art.set_pos(flw*0.425, flh*0.192, flw*0.156, flh*0.138);
 wheel_art.visible = false;
 
-overlay_icon <- custom_overlay.add_image( "", 0, 0, flw * 0.104, flh * 0.185 );
+overlay_icon <- custom_overlay.add_image("");
+overlay_icon.set_pos( 0, 0, flw * 0.104, flh * 0.185);
 overlay_icon.visible = false;
 
 //-- KeyboardSearch
@@ -3845,19 +3874,20 @@ function game_surface(){
         surf_ginfos.visible = false;
         return;
     }
+
     // reset to default pos
     local lng_x = flw*0.134;
     for ( local i = 0; i < 17; i++ ) {
         lng_x += flw*0.0230;
-        Lang[i] <- surf_ginfos.add_image("", lng_x, flh*0.045, flw*0.0220, flh*0.0350 );
+        Lang[i].set_pos(lng_x, lng_v.y, lng_v.w, lng_v.h);
     }
 
-    Title.set("x", flw*0.027);
-    Title.set("y", flh*0.077);
-    list_entry.set("x", flw*0.030);
-    list_entry.set("y", flh*0.134);
-    PCount.set("x", flw*0.030);
-    PCount.set("y", flh*0.152);
+    Title.x(Title_v.x);
+    Title.y(Title_v.y);
+    list_entry.x(list_entry_v.x);
+    list_entry.y(list_entry_v.y);
+    PCount.x(PCount_v.x);
+    PCount.y(PCount_v.y);
 
     // set user settings
     rating.visible = !Ini_settings["game text"]["hide_rating"]
@@ -3886,23 +3916,23 @@ function game_surface(){
         }
     }
 
-    local order = [flh*0.111, flh*0.134, flh*0.152];
+    local order = [Copy_v.y, list_entry_v.y, PCount_v.y];
 
     local i=0;
     foreach(k,v in  [Copy, list_entry, PCount]) {
         if(v._title.visible){
-            v.set("y", order[i]);
+            v.y(order[i]);
             i++;
         }
     }
 
     if(!rating.visible){
-        Copy.set("x", 0.0);
-        list_entry.set("x", 0.0);
-        PCount.set("x", 0.0);
+        Copy.x(0.0);
+        list_entry.x(0.0);
+        PCount.x(0.0);
     }
 
-    if(!flags.visible) Title.set("x", -flw * 0.004);
+    if(!flags.visible) Title.x(-flw * 0.004);
 }
 
 function fade_objects(){
