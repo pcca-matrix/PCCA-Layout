@@ -177,17 +177,24 @@ class SelMenu
     }
 
     function select(){
-        if(_selected_row.rawin("type")){ // save and reload theme if select pressed on rows that have type attr
+        local onselect = false;
+        if(_selected_row.rawin("type") ){ // save and reload theme if select pressed on rows that have type attr
             save_xml(xml_root, path);
             triggers.theme.start = true;
+            if(_current_list.rawin("onselect") ){ // if onselect function exist 
+                onselect = _current_list.onselect;
+                if(typeof(onselect) == "function" ){
+                    if( !onselect(_current_list, _selected_row) ) return false;
+                }
+            }
         }
-
-        if(_selected_row.rawin("type") || _edit_type != null) return false; // do not enter if we are on these item (prevent changing menu selected_row)
+        // do not continue if we are on these item (prevent changing menu selected_row)
+        if( _selected_row.rawin("type") || _edit_type != null ) return false; 
         _list_info.msg = "";
         _current_list.slot_pos = _slot_pos; // set the current list position
         local prev_list = _current_list;
         _selected_row = clone(_current_list.rows[_slot_pos]);
-        local onselect = false;
+
         if(_current_list.rawin("onselect") ) onselect = _current_list.onselect;
         if(_selected_row.rawin("onselect") ) onselect = _selected_row.onselect;
         if(typeof(onselect) == "function" ){
