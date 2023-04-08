@@ -181,7 +181,7 @@ class SelMenu
         if(_selected_row.rawin("type") ){ // save and reload theme if select pressed on rows that have type attr
             save_xml(xml_root, path);
             triggers.theme.start = true;
-            if(_current_list.rawin("onselect") ){ // if onselect function exist 
+            if(_current_list.rawin("onselect") ){ // if onselect function exist
                 onselect = _current_list.onselect;
                 if(typeof(onselect) == "function" ){
                     if( !onselect(_current_list, _selected_row) ) return false;
@@ -189,7 +189,7 @@ class SelMenu
             }
         }
         // do not continue if we are on these item (prevent changing menu selected_row)
-        if( _selected_row.rawin("type") || _edit_type != null ) return false; 
+        if( _selected_row.rawin("type") || _edit_type != null ) return false;
         _list_info.msg = "";
         _current_list.slot_pos = _slot_pos; // set the current list position
         local prev_list = _current_list;
@@ -306,3 +306,435 @@ class SelMenu
     _list_title = null;
     _list_info = null;
 }
+
+class PCCA_Conveyor {
+
+    progress = null;
+    offset = null;
+    r_offset = null;
+    wheel_elems = null;
+    flw = null;
+    flh = null;
+    ft = null;
+    angle = null;
+    tjump = 0;
+    step = null;
+    config_speed = 40; // config speed from attract.cfg
+    max_speed = 0;
+    fast_start = false;
+    spin_start = false;
+
+    // fade
+    w_time = 0;
+    fade_time = 4000;
+    fade_delay = 4000;
+    fade_alpha = 0;
+    fade_on = false;
+    wheel_frame = false;
+    frame_img = null;
+    timer = 0
+    timer2 = 0
+    stop = false;
+    artwork = "Wheel";
+
+    constructor( init=false )
+    {
+        flw = ::fe.layout.width.tofloat();
+        flh = ::fe.layout.height.tofloat();
+        surface = ::fe.add_surface( flw, flh );
+        surface.set_pos(0,0);
+        if(init) Init(null);
+        fe.add_transition_callback( this, "on_transition" );
+        fe.add_ticks_callback( this, "on_tick" )
+        fe.add_signal_handler(this, "main_signal")
+        frame_img = surface.add_image("")
+        frame_img.visible = false;
+    }
+
+    function set_slots(nbr_slot){
+        local wlen = w_slots.len();
+        if(wlen < nbr_slot){
+            for ( local i=0; i<nbr_slot - wlen; i++ ){
+                w_slots.push({
+                    art = surface.add_image(""),
+                    frame = surface.add_clone(frame_img),
+                    origin_x = 0,
+                    origin_y = 0,
+                    origin_r = 0,
+                    origin_a = 0,
+                    origin_w = 0,
+                    origin_h = 0,
+                });
+            }
+        }else if(wlen > nbr_slot){
+            for ( local i=wlen-1; i>0; i-- ){
+                w_slots[i].art.file_name = "";
+                w_slots[i].art.visible = false;
+                w_slots[i].frame.visible = false;
+            }
+        }
+    }
+
+    function Init(opts){
+        flh = surface.height
+        flw = surface.width
+        Rad = flh * 0.5
+        reset_fade();
+        if(opts){
+            try{ speed = (opts.transition_ms < 150 ? 150 :  opts.transition_ms) } catch(err){}
+            try{ nbr_slot = opts.slots } catch(err){}
+            try{ fade_alpha = opts.alpha } catch(err){}
+            try{ fade_time = opts.fade_time * 1000 } catch(err){}
+            try{ Rad = opts.curve * flh * 0.5 } catch(err){}
+            try{ rounded = (opts.type == "rounded" ? true : false) } catch(err){}
+        }
+
+        if(fade_time) fade_on = true;
+        max_speed = (speed - config_speed);
+        ft = 1.0 / round( speed / (1000.0 / ScreenRefreshRate), 0);
+        offset = 0;
+        progress = 0.0;
+        wheel_elems = { "x":[], "y":[], "w":[], "h":[], "r":[] }
+
+        local ww = flw * 0.15;
+        local wh = (flh / nbr_slot);
+        local pad = wh * 0.1;
+        wh-=pad
+        local y = -wh - pad * 0.5;
+
+        if(nbr_slot % 2 == 0 ){ // if slot is even
+            nbr_slot+=1;
+            y = -wh * 1.5 - pad;
+        }
+
+        nbr_slot+=2; // add the 2 offscreen wheel
+        wheel_x = flw + Rad - ww * 2
+        wheel_y = flh * 0.5 - (wh * 0.5);
+        r_offset = floor(nbr_slot * 0.5);
+
+        angle = curve_points(Rad);
+
+        for ( local i=0; i<nbr_slot; i++ ){
+            local tot = 1.0 / nbr_slot;
+            if(rounded){
+                local mr = PI * angle[i] / 180;
+                wheel_elems.x.push(wheel_x + Rad * cos( mr ) - (cos( mr ) * (-ww * 0.5) - sin( mr ) * (-wh * 0.5) - ww * 0.5) )
+                wheel_elems.y.push(wheel_y + Rad * sin( mr ) - (sin( mr ) * (-ww * 0.5) + cos( mr ) * (-wh * 0.5) - wh * 0.5) )
+                wheel_elems.r.push(angle[i] - 180)
+            }else{
+                wheel_elems.x.push(flw * 0.85);
+                wheel_elems.y.push(y)
+                wheel_elems.r.push(0)
+            }
+
+            wheel_elems.w.push(ww)
+            wheel_elems.h.push(wh)
+
+            y+=wh+pad
+        }
+
+        set_slots(nbr_slot);
+
+        for ( local i=0; i<nbr_slot; i++ ){
+            local mr = PI * angle[i] / 180;
+            w_slots[i].origin_x = wheel_elems.x[i]
+            w_slots[i].origin_y = wheel_elems.y[i]
+            w_slots[i].origin_r = wheel_elems.r[i]
+            w_slots[i].origin_a = angle[i]
+            w_slots[i].origin_w = wheel_elems.w[i]
+            w_slots[i].origin_h = wheel_elems.h[i]
+
+            w_slots[i].art.preserve_aspect_ratio = true;
+            w_slots[i].art.mipmap = true
+            w_slots[i].art.zorder = -1;
+            w_slots[i].art.visible = true;
+
+            // frame
+            if(wheel_frame) w_slots[i].frame.visible = true;
+            w_slots[i].art.zorder = 1;
+        }
+
+        draw_wheel();
+
+        if(spin_start){
+            local rd = rnd_int(5, nbr_slot * 2 - 1);
+            buffer.push(rd);
+            offset+=rd;
+            adjust = max_speed * 0.9;
+            fast_start = true;
+        }
+    }
+
+    function draw_wheel(offset=null){
+        if(fe.game_info(Info.Emulator) == "@"){
+            m_path = medias_path + "Main Menu/Images/" + artwork + "/";
+        }else{
+            m_path = medias_path + fe.list.name + "/Images/" + artwork + "/";
+        }
+
+        if(offset == null){
+            offset = ceil(nbr_slot * 0.5) - 1;
+        }
+
+        for ( local i=0; i<nbr_slot; i++ ){
+            w_slots[i].art.file_name = m_path + fe.game_info(Info.Name, i - offset ) + ".png";
+            w_slots[i].art.set_pos(wheel_elems.x[i], w_slots[i].origin_y, w_slots[i].origin_w, w_slots[i].origin_h);
+            w_slots[i].art.rotation = w_slots[i].origin_r;
+
+            w_slots[i].frame.set_pos(wheel_elems.x[i], w_slots[i].origin_y, w_slots[i].origin_w, w_slots[i].origin_h);
+            w_slots[i].frame.rotation = w_slots[i].origin_r;
+        }
+    }
+
+
+    function curve_points(Rad){
+        local angle = [];
+        if(Rad){
+            local a = Rad
+            local b = Rad
+            local c = flh - wh
+            local aa=acos((b*b+c*c-a*a)/(2*b*c));
+            aa=(aa*180/PI)
+            local bb=acos((c*c+a*a-b*b)/(2*c*a));
+            bb=(bb*180/PI)
+            local cc=180.0-aa-bb;
+            local ab = cc / nbr_slot;
+            // calc elems pos in ° on wheel
+            local start_point = -(180-(cc * 0.5));
+            local seg = -cc / (nbr_slot - 1);
+            for ( local i=0; i<nbr_slot; i++ ){
+                angle.push(start_point);
+                start_point+=seg
+            }
+        }
+        return angle;
+    }
+
+    function main_signal( signal_str )
+    {
+        switch ( signal_str )
+        {
+            case "random_game" :
+                ::fe.list.index = ::fe.list.index + rnd_int(50, 150)
+                local rd = rnd_int(100, 250);
+                buffer.push(rd);
+                offset+=rd;
+                adjust = max_speed
+                fast_start = true;
+
+            break;
+
+            case "next_letter":
+            case "prev_letter":
+                adjust = max_speed
+                fast_start = true;
+            break;
+        }
+
+       return false;
+    }
+
+    function on_transition( ttype, var, ttime )
+    {
+        switch ( ttype )
+        {
+            case Transition.ToNewSelection:
+                buffer.push(var);
+                offset+=var;
+                surface.alpha = 255;
+            break;
+
+            case Transition.ToNewList:
+                reset_fade();
+            break;
+
+            case Transition.EndNavigation:
+            break;
+
+            case Transition.FromOldSelection:
+            break;
+        }
+
+        return false;
+    }
+
+    function on_tick( ttime ){
+
+        if( fe.get_input_state("down") != false || fe.get_input_state("up") != false){
+            k_hold++;
+        }else{
+            k_hold=0;
+        }
+
+        if( buffer.len() ){
+            timer = ttime
+            stop = false
+            if(!fast_start){
+                tjump = buffer.reduce( function(previousValue, currentValue){
+                    return ( previousValue + currentValue );
+                });
+            }
+
+            if(progress == 1){
+                step = 1
+                if(k_hold > 20){
+                    local max = max_speed * 0.6;
+                    if(adjust < max){
+                        adjust = max;
+                    }
+                }
+                if(tjump>timer2)adjust+=speed * 0.01
+                if(tjump<timer2)adjust-=speed * 0.01
+                timer2 = tjump
+                adjust = clamp(adjust , 0, max_speed );
+
+                if( abs(tjump) > nbr_slot * 2){
+                    buffer.clear();
+                    buffer.push(tjump);
+                }
+
+                if( abs(buffer[0]) >= nbr_slot * 2  ){
+                    step = abs(buffer[0]) - nbr_slot;
+                }
+
+                ft = 1.0 /  round( (speed-adjust) / (1000.0 / ScreenRefreshRate), 0 );
+
+                if(buffer[0] > 0){ // key down
+                    offset-=step
+                    for ( local i = 1; i < nbr_slot; i++ ) w_slots[i].art.swap( w_slots[i-1].art );
+                    w_slots[nbr_slot-1].art.file_name = m_path + fe.game_info(Info.Name, r_offset-offset  ) + ".png";
+                }else if(buffer[0] < 0){
+                    offset+=step
+                    for ( local i = nbr_slot - 1; i > 0; i-- ) w_slots[i].art.swap( w_slots[i - 1].art );
+                    w_slots[0].art.file_name = m_path + fe.game_info(Info.Name, -offset-r_offset ) + ".png";
+
+                }
+
+                for ( local i=0; i<nbr_slot; i++ ){ // reset original pos
+                    w_slots[i].art.set_pos(w_slots[i].origin_x, w_slots[i].origin_y);
+                    w_slots[i].art.rotation = w_slots[i].origin_r;
+
+                    w_slots[i].frame.set_pos(w_slots[i].origin_x, w_slots[i].origin_y);
+                    w_slots[i].frame.rotation = w_slots[i].origin_r;
+                }
+
+                if(abs(buffer[0]) < 2){
+                    buffer.remove(0)
+                    w_time = ttime
+                }else{
+                    if(buffer[0]<0) buffer[0]+=step else buffer[0]-=step
+                    if(abs(buffer[0]) <= 0) buffer.remove(0)
+                }
+
+                progress = 0.0
+            }
+
+            if(buffer.len()){
+
+                progress = clamp(progress+=ft, 0.0, 1.0);
+
+                if(buffer[0] < 0){
+                    for ( local a = 0; a < nbr_slot - 1; a++ ){
+
+                        if(rounded){
+                            local angle = ( w_slots[a+1].origin_a - w_slots[a].origin_a ) * progress / 1.0 + w_slots[a].origin_a
+                            w_slots[a].art.x = wheel_x + Rad * cos( angle * PI / 180.0 )
+                            w_slots[a].art.y = wheel_y + Rad * sin( angle * PI / 180.0 )
+                            w_slots[a].art.rotation = angle - 180;
+                            set_rotation(angle, w_slots[a].art);
+                        }else{
+                            w_slots[a].art.y = ( w_slots[a+1].origin_y - w_slots[a].origin_y ) * progress / 1.0 + w_slots[a].origin_y
+                            w_slots[a].art.x = ( w_slots[a+1].origin_x - w_slots[a].origin_x) * progress / 1.0 + w_slots[a].origin_x
+                            w_slots[a].art.rotation = ( w_slots[a+1].origin_r - w_slots[a].origin_r) * progress / 1.0 + w_slots[a].origin_r
+                        }
+                            w_slots[a].frame.set_pos(w_slots[a].art.x, w_slots[a].art.y);
+                            w_slots[a].frame.rotation = w_slots[a].art.rotation;
+                    }
+                }else if(buffer[0] > 0){ // key down
+                    for ( local a = 1; a < nbr_slot; a++ ){
+                        if(rounded){
+                            local angle = ( w_slots[a-1].origin_a - w_slots[a].origin_a ) * progress / 1.0 + w_slots[a].origin_a
+                            w_slots[a].art.x = wheel_x + Rad * cos( angle * PI / 180.0 )
+                            w_slots[a].art.y = wheel_y + Rad * sin( angle * PI / 180.0 )
+                            w_slots[a].art.rotation = angle - 180;
+                            set_rotation(angle, w_slots[a].art);
+                        }else{
+                            w_slots[a].art.y = ( w_slots[a-1].origin_y - w_slots[a].origin_y ) * progress / 1.0 + w_slots[a].origin_y
+                            w_slots[a].art.x = ( w_slots[a-1].origin_x - w_slots[a].origin_x) * progress / 1.0 + w_slots[a].origin_x
+                            w_slots[a].art.rotation = ( w_slots[a-1].origin_r - w_slots[a].origin_r) * progress / 1.0 + w_slots[a].origin_r
+                        }
+                            w_slots[a].frame.set_pos(w_slots[a].art.x, w_slots[a].art.y);
+                            w_slots[a].frame.rotation = w_slots[a].art.rotation;
+                    }
+                }
+            }
+        }else{
+            if(ttime - timer > 100){
+                ft = 1.0 / round( speed / (1000.0 / ScreenRefreshRate) , 0);
+                adjust = 0.0;
+                tjump = 0
+                fast_start = false;
+                spin_start = false;
+                fade();
+                stop = true
+            }
+        }
+    }
+
+    function reset_fade() {surface.alpha = 255; w_time = ::fe.layout.time;}
+
+    function fade(){
+        if(!fade_on) return false;
+        local alpha;
+        if(!fade_time) fade_time = 0.01;
+        local from = 255;
+        local to = clamp( fade_alpha * 255 , 0.0 , 255.0);
+        local elapsed = ::fe.layout.time - w_time;
+        if( elapsed > fade_delay && fade_time > 0) {
+            alpha = (from * (fade_time - elapsed + fade_delay)) / fade_time;
+            alpha = (alpha < 0 ? 0 : alpha);
+            if(alpha <= to || alpha == 0) return false;
+            surface.alpha = alpha;
+        }
+    }
+
+    //clamp a value from min to max
+    function clamp(value, min, max) {
+        if (value < min) value = min; if (value > max) value = max; return value
+    }
+
+    function rnd_int(min, max){
+        srand( rand() * time() );
+        return (rand() * (max - min + 1) / (RAND_MAX + 1)) + min;
+    }
+
+
+    function set_rotation(r, obj) {
+        local mr = PI * r / 180;
+        obj.x -= cos( mr ) * (-obj.width * 0.5) - sin( mr ) * (-obj.height * 0.5) - obj.width * 0.5;
+        obj.y -= sin( mr ) * (-obj.width * 0.5) + cos( mr ) * (-obj.height * 0.5) - obj.height * 0.5;
+    }
+
+    function round(nbr, dec){ //Round Number as decimal
+        local f = pow(10, dec) * 1.0;
+        local newNbr = nbr.tofloat() * f;
+        newNbr = floor(newNbr + 0.5)
+        newNbr = (newNbr * 1.0) / f;
+        return newNbr;
+    }
+
+    wh = 0;
+    rounded = true;
+    Rad = 0;
+    adjust = 0;
+    surface = {};
+    buffer = [];
+    k_hold = false;
+    nbr_slot = 6;
+    speed = 170;
+    wheel_x = 0
+    wheel_y = 0
+    m_path = "";
+    w_slots = [];
+}
+

@@ -1,12 +1,12 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.72
+// PCCA v2.80
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
 // the terms of the GNU General Public License, version 3 or later.
 //
-// PCCA-Matrix 2022
+// PCCA-Matrix 2023
 //
 ////////////////////////////////////////////////////////////////////
 local start = clock();
@@ -120,7 +120,6 @@ offset_y <- 0;
 // Modules
 fe.do_nut("nut/func.nut");
 fe.load_module("hs-animate");
-fe.load_module("conveyor");
 fe.do_nut("nut/keyboard-search/module.nut");
 fe.do_nut("nut/class.nut");
 fe.load_module("file");
@@ -170,10 +169,11 @@ local reverse = 0;
 local visi = false;
 local letters = fe.add_image("");
 letters.set_pos(flw * 0.5 - (flw*0.140 * 0.5), flh * 0.5 - (flh*0.280 * 0.5), flw*0.140, flh*0.280);
-conveyor_bool <- false; // fading conveyor
 
-wheel_surf <- fe.add_surface(flw * 1.15, flh * 1.15); // wheel surface
-wheel_surf.set_pos(0,0);
+pcca_wheel <- PCCA_Conveyor();
+wheel_surf <- pcca_wheel.surface;
+wheel_surf.visible = false;
+
 point <- fe.add_image("");
 point.alpha = 255;
 
@@ -1182,92 +1182,6 @@ function hide_art(){
     }
 }
 
-// Wheels
-local wheel_count,wheel_x,wheel_y,wheel_h,wheel_w,wheel_r,wheel_a
-
-function set_wheel(){
-    wheel_count = Ini_settings.wheel["slots"];
-    local ww = flw*0.15;
-    local wh = flh*0.10;
-    wheel_x = [ flw*0.94, flw*0.935, flw*0.896, flw*0.865, flw*0.84, flw*0.82, flw*0.78, flw*0.82, flw*0.84, flw*0.865, flw*0.896, flw*0.90, ];
-    wheel_y = [ -flh*0.22, -flh*0.105, flh*0.0, flh*0.105, flh*0.215, flh*0.325, flh*0.436, flh*0.61, flh*0.72 flh*0.83, flh*0.935, flh*0.99, ];
-    wheel_h = [ wh, wh, wh, wh, wh, wh, flh*0.11, wh, wh, wh, wh, wh, ];
-    wheel_w = [ ww, ww, ww, ww, ww, ww, flw*0.17, ww, ww, ww, ww, ww, ];
-    wheel_r = [  30,  25,  20,  15,  10,   5,   0, -10, -15, -20, -25, -30, ];
-    wheel_a = [  255,  255,  255,  255,  255,  255,  255  ,  255,  255,  255,  255,  255, ];
-
-    if ( Ini_settings.wheel["type"] == "vertical" ) // Vertical wheel
-    {
-        local wx = flw*0.874;
-        ww = flw*0.12;
-        wh = flh*0.075;
-        wheel_x = [ wx, wx, wx, wx, wx, wx, wx, wx, wx, wx, wx, wx, ];
-        wheel_y = [ -flh*0.22, -flh*0.105, flh*0.0, flh*0.105, flh*0.215, flh*0.325, flh*0.466, flh*0.61, flh*0.72 flh*0.83, flh*0.935, flh*0.99, ];
-        wheel_w = [ ww, ww, ww, ww, ww, ww, ww, ww, ww, ww, ww, ww, ];
-        wheel_h = [ wh, wh, wh, wh, wh, wh, wh, wh, wh, wh, wh, wh, ];
-        wheel_r = [  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ];
-        wheel_a = [  255,  255, 255,  255,  255,  255,   255   ,  255,  255,  255,  255,  255, ];
-    }
-}
-
-set_wheel();
-
-class WheelEntry extends ConveyorSlot
-{
-    constructor()
-    {
-        base.constructor( ::wheel_surf.add_image( "[!ret_wheel]" ) );
-    }
-
-    function on_progress( progress, var )
-    {
-        local p = progress / 0.1;
-        local slot = p.tointeger();
-        p -= slot;
-        slot++;
-        if ( slot < 0 ) slot=0;
-        if ( slot >=10 ) slot=10;
-
-        m_obj.x = wheel_x[slot] + p * ( wheel_x[slot+1] - wheel_x[slot] );
-        m_obj.y = wheel_y[slot] + p * ( wheel_y[slot+1] - wheel_y[slot] );
-        m_obj.width = wheel_w[slot] + p * ( wheel_w[slot+1] - wheel_w[slot] );
-        m_obj.height = wheel_h[slot] + p * ( wheel_h[slot+1] - wheel_h[slot] );
-        m_obj.rotation = wheel_r[slot] + p * ( wheel_r[slot+1] - wheel_r[slot] );
-        m_obj.alpha = wheel_a[slot] + p * ( wheel_a[slot+1] - wheel_a[slot] );
-        m_obj.preserve_aspect_ratio = true;
-    }
-}
-
-local wheel_entries = [];
-for ( local i=0; i < wheel_count * 0.5; i++ )
-    wheel_entries.push( WheelEntry() );
-
-// we do it this way so that the last wheelentry created is the middle one showing the current
-// selection (putting it at the top of the draw order)
-for ( local i=0; i<wheel_count - wheel_entries.len(); i++ )
-    wheel_entries.insert( wheel_count * 0.5, WheelEntry() );
-
-local conveyor = Conveyor();
-conveyor.set_slots( wheel_entries );
-conveyor.transition_ms = Ini_settings.wheel["transition_ms"];
-
-function conveyor_tick( ttime )
-{
-    local alpha;
-    local delay = globs.delay * 4;
-    local fade_time = Ini_settings.wheel["fade_time"] * 1000;
-    if(!fade_time) fade_time = 0.01;
-    local from = 255; local to = clamp( Ini_settings.wheel["alpha"] * 255 , 0.0 , 255.0);
-    local elapsed = glob_time - rtime;
-    if( !conveyor_bool && elapsed > delay && fade_time > 0 ) {
-        alpha = (from * (fade_time - elapsed + delay)) / fade_time;
-        alpha = (alpha < 0 ? 0 : alpha);
-        wheel_surf.alpha = alpha;
-        if(alpha <= to || alpha == 0) conveyor_bool = true;
-    }
-}
-fe.add_ticks_callback( "conveyor_tick" );
-
 /* OVERLAY SCREEN */
 local custom_overlay = fe.add_surface(flw, flh);
 custom_overlay.zorder = 10
@@ -1371,7 +1285,7 @@ fe.add_transition_callback( "game_in_out" );
 function game_in_out( ttype, var, ttime ) {
     switch ( ttype ) {
         case Transition.ToGame:
-            globs.tofade = fade_objects();
+            globs.tofade = fade_objects(); // store elems alpha value
             Background_Music.playing = false;
             Sound_System_In_Out.playing = false;
             if(file_exist(medias_path + curr_sys + "/Sound/Game Start/" + fe.game_info(Info.Name) + ".mp3") ){
@@ -1409,8 +1323,7 @@ function hs_transition( ttype, var, ttime )
                 ArtObj.background2.video_playing = true;
                 ArtObj.snap.video_playing = true;
                 global_fade( 500, 500, true); // security to be sure that 100% alpha is passed to function
-                rtime = glob_time + 3000 // add 3 seconds before fading wheel
-                conveyor_bool = false; // do not restore alpha on conveyor
+                pcca_wheel.reset_fade();
                 // update stats for this system only if Track Usage is set to Yes in AM!
                 if( fe.game_info(Info.PlayedTime) != "" ){
                     game_elapse = fe.game_info(Info.PlayedTime).tointeger() - game_elapse;
@@ -1476,9 +1389,8 @@ function hs_transition( ttype, var, ttime )
         case Transition.ToNewSelection: //2
             foreach(a,b in artwork_list ){
                 if(curr_theme != "Default" || availables[b] == false ) anims[a].stop(); // used to stop hideart when navigating !
-                if(pause_animation.find(anims[a].opts.preset) != null ) anims[a].pause(); // pause some looping animation
+                //if(pause_animation.find(anims[a].opts.preset) != null ) anims[a].pause(); // pause some looping animation
             }
-            wheel_surf.alpha = 255;
             ArtObj.snap.video_flags = Vid.NoAudio;
             if(curr_theme != "Default" && !Background_Music.file_name.find("Default.mp3")){ // keep playing music on default
                 Background_Music.playing = false;
@@ -1488,7 +1400,6 @@ function hs_transition( ttype, var, ttime )
             if(curr_sys != "Main Menu") syno.x = syno_surf.width; // reset scrolling test position
             if(glob_time - rtime > 150) hide_art(); // 150ms between re-pooling hide_art when navigating fast in wheel (change !!)
             rtime = glob_time;
-            conveyor_bool = false; // reset conveyor fade
             flv_transitions.visible = false;
             flv_transitions.file_name = "";
             if(curr_sys == "Main Menu") stats_text_update( fe.game_info(Info.Title, 1) );
@@ -1518,12 +1429,13 @@ function hs_transition( ttype, var, ttime )
             }
 
             foreach(a,b in artwork_list ){
-                if( pause_animation.find(anims[a].opts.preset) != null) anims[a].unpause(); // unpause looping animations
+                //if( pause_animation.find(anims[a].opts.preset) != null) anims[a].unpause(); // unpause looping animations
             }
             if(Ini_settings["game text"]["game_text_hide"] && Ini_settings["game text"]["game_text_active"]) surf_ginfos.visible = true;
         break;
 
         case Transition.StartLayout: //0
+            globs.tofade = fade_objects(); // store elems alpha value
             if( !glob_time ){  // glob_time == 0 on first start layout
                 if( ttime <= 255  && fe.game_info (Info.Emulator) == "@" ){ // fade when back to display menu or start layout
                     global_fade(ttime, 255, true);
@@ -1543,13 +1455,10 @@ function hs_transition( ttype, var, ttime )
             curr_sys = ( fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.list.name );
             Ini_settings = get_ini_values(curr_sys); // get settings ini value
             point.x = flw; // fix no theme (temp)
-            set_wheel();
-            conveyor.set_slots( wheel_entries );
-            wheel_surf.alpha = 255;
+            pcca_wheel.Init(Ini_settings.wheel); // slots, transition_ms, type, fade_time, alpha, curve, first_pos
             if(curr_sys != "Main Menu"){
                 if( fe.game_info(Info.PlayedTime) == "" ) PCount.set("visible", false); else PCount.set("visible", true); //show game stats surface only if Track Usage is set to Yes in AM!
                 if(glob_time - rtime > 550) hide_art(); // 500ms between re-pooling hide_art when navigating fast in system
-                conveyor_bool = false;
                 syno_surf.visible = false; // hide overview
                 m_infos.msg = ""; // empty global stats
                 // Update and save stats if list size change and we are not on a filter !!
@@ -1712,7 +1621,7 @@ function hs_tick( ttime )
     if( glob_time - rtime > globs.delay + 350) letters.visible = false; // if visible , hide letter search with a small delay
 
     // load medias after globs.delay
-    if( (glob_time - rtime > globs.delay) && triggers.theme.start){
+    if( (glob_time - rtime > globs.delay) && triggers.theme.start && (pcca_wheel.stop || pcca_wheel.spin_start)){
         hd = false;
         if( Ini_settings.themes["bezels"] && Ini_settings.themes["aspect"] == "center" ){ // Systems bezels!  only if aspect center
             if( file_exist(globs.script_dir + "images/Bezels/" + curr_sys + ".png") ){
@@ -2629,14 +2538,12 @@ menus.push({
     "rows":[{
         "title":"Wheel type",
         "onselect":function(current_list, selected_row){
-            conveyor_bool = true; // stop fading conveyor
             wheel_surf.alpha = 255;
             set_list( { "title":_selected_row.title, "target":"ini", "object":"wheel", "slot_pos":(Ini_settings.wheel["type"] == "rounded" ? 0 : 1),
                 "rows":[{"title":"Rounded","target":"rounded"},{"title":"Vertical","target":"vertical"}],
                     "onselect":function(current_list, selected_row){
                         Ini_settings.wheel["type"] = selected_row.target;
-                        set_wheel();
-                        conveyor.set_slots( wheel_entries );
+                        pcca_wheel.Init(Ini_settings.wheel);
                     }
             });
             return true;
@@ -2669,7 +2576,9 @@ menus.push({
     {
         "title":"Wheel transition time", "type":"int",
         "onselect":function(current_list, selected_row){
-            set_list( { "id":"transition_ms", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [0,400,1], "rows":[{"title":Ini_settings.wheel["transition_ms"]}] });
+            set_list( { "id":"transition_ms", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [100,500,1],
+            "rows":[{"title":Ini_settings.wheel["transition_ms"]}],
+            "onselect":function(current_list, selected_row){ pcca_wheel.speed = Ini_settings.wheel["transition_ms"]; }});
             return true;
         },
         "infos" : LnG.M_inf_wheel_speed
@@ -2677,7 +2586,12 @@ menus.push({
     {
         "title":"Wheel fade time", "type":"float",
         "onselect":function(current_list, selected_row){
-            set_list( { "id":"fade_time", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [-1.0,60.0,0.5], "rows":[ {"title":format("%.1f", Ini_settings.wheel["fade_time"]) }] });
+            set_list( { "id":"fade_time", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [-1.0,60.0,0.5],
+            "rows":[ {"title":format("%.1f", Ini_settings.wheel["fade_time"]) }],
+            "onselect":function(current_list, selected_row){
+                pcca_wheel.fade_time = Ini_settings.wheel["fade_time"] * 1000;
+                pcca_wheel.reset_fade();
+            }});
             return true;
         },
         "infos" : LnG.M_inf_wheel_fade
@@ -2685,7 +2599,8 @@ menus.push({
     {
         "title":"Wheel fade alpha", "type":"float",
         "onselect":function(current_list, selected_row){
-            set_list( { "id":"alpha", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [0.0,1.0,0.1], "rows":[ {"title":format("%.1f", Ini_settings.wheel["alpha"]) } ]});
+            set_list( { "id":"alpha", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [0.0,1.0,0.1],
+            "rows":[ {"title":format("%.1f", Ini_settings.wheel["alpha"])}], "onselect":function(current_list, selected_row){ pcca_wheel.fade_alpha = Ini_settings.wheel["alpha"]; }});
             return true;
         },
         "infos" : LnG.M_inf_wheel_fade_val
@@ -2693,10 +2608,22 @@ menus.push({
     {
         "title":"Number of wheel", "type":"int",
         "onselect":function(current_list, selected_row){
-            set_list( { "id":"slots", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [4,12,1], "rows":[{"title":Ini_settings.wheel["slots"]}]});
+            set_list( { "id":"slots", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [4,12,1],
+            "rows":[{"title":Ini_settings.wheel["slots"]}], "onselect":function(current_list, selected_row){ pcca_wheel.Init(Ini_settings.wheel); }
+            });
             return true;
         },
         "infos" : LnG.M_inf_wheel_slots
+    },
+    {
+        "title":"Curve", "type":"float",
+        "onselect":function(current_list, selected_row){
+            set_list( { "id":"curve", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [1,5,0.1],
+            "rows":[{"title":Ini_settings.wheel["curve"]}], "onselect":function(current_list, selected_row){ pcca_wheel.Init(Ini_settings.wheel); }
+            });
+            return true;
+        },
+        "infos" : "Curvature of the wheel"
     },
     {
         "title":"Main stats", "object":m_infos, "hide":"!Main Menu"
@@ -2716,15 +2643,18 @@ menus.push({
     {
         "title":"Position", "object":wheel_surf,
             "onselect":function(current_list, selected_row){
+                wheel_surf.alpha = 255;
+                pcca_wheel.fade_on = false;
                 _slot[_slot_pos].set_bg_rgb(30, 240, 40); // set cell color on the menu
                 current_list.object = selected_row.object;
                 globs.signal = "edit_sig";
                 wheel_surf.alpha = 255;
                 _edit_type = "edit_obj";
                 _edit_datas.name <- "wheel";
+                surf_menu_info.visible = true;
             },
             "onback":function(selected_row, current_list){
-                Ini_settings["wheel"]["offset"] = (wheel_surf.x / flw) + "," + (wheel_surf.y / flh) + "," + wheel_surf.rotation;
+                Ini_settings["wheel"]["coord"] = (wheel_surf.x / flw) + "," + (wheel_surf.y / flh) + "," + (wheel_surf.width / flw) + "," + (wheel_surf.height / flh) + "," + wheel_surf.rotation;
             },
             "infos":LnG.M_inf_wheel_pos
     }]
@@ -3033,7 +2963,6 @@ menus.push({
             _edit_type = "edit_obj";
             _edit_datas.name <- "pointer";
             surf_menu_info.visible = true;
-            conveyor_bool = true; // stop fading conveyor
             wheel_surf.alpha = 255;
             // set pointer to final position
             point_animation.set_state("to");
@@ -3393,13 +3322,11 @@ signals["default_sig"] <- function (str) {
             if(triggers.theme.start && prev_tr == Transition.ToNewList) return true; // disable wheel navigation until the theme is fully loaded
             letters.visible = false;
             if(globs.keyhold < 1 && Ini_settings.pointer.animated) point_animation.play();
-            conveyor.transition_ms = Ini_settings.wheel["transition_ms"]; // restore conveyor transition time
             if( globs.keyhold < 1 &&  Ini_settings.sounds["wheel_click"] ) Sound_Click.playing = true;
         break;
 
         case "next_letter":
         case "prev_letter":
-            conveyor.transition_ms = 150; // smooth conveyor on letter jump
             triggers.letter.start = true;
         break;
 
@@ -3817,17 +3744,17 @@ function set_custom_value(Ini_settings) {
         local rgbC = dec2rgb(Ini_settings["game text"]["text_stroke_color"]);
         Title.thick_rgb([rgbC[0], rgbC[1], rgbC[2]]);
 
-        local g_c = split( Ini_settings["wheel"]["offset"], ",").map(function(v){return v.tofloat()}); // %
-        if( g_c.len() == 3 ) {
+        local g_c = split( Ini_settings["wheel"]["coord"], ",").map(function(v){return v.tofloat()}); // %
+        if( g_c.len() == 5 ) {
             local x=g_c[0] * flw;
             local y=g_c[1] * flh;
-            local width = flw * 1.15;
-            local height = flh * 1.15;
-            local mr = PI * g_c[2] / 180;
-            x -= cos( mr ) * (-width * 0.5) - sin( mr ) * (-height * 0.5) + width * 0.5;
-            y -= sin( mr ) * (-width * 0.5) + cos( mr ) * (-height * 0.5) + height * 0.5;
-            wheel_surf.rotation = g_c[2];
-            wheel_surf.set_pos(x, y);
+            local width = g_c[2] * flw;
+            local height = g_c[3] * flh;
+            //local mr = PI * g_c[2] / 180;
+            //x -= cos( mr ) * (-width * 0.5) - sin( mr ) * (-height * 0.5) + width * 0.5;
+            //y -= sin( mr ) * (-width * 0.5) + cos( mr ) * (-height * 0.5) + height * 0.5;
+            wheel_surf.rotation = g_c[4];
+            wheel_surf.set_pos(x, y, width, height);
         }
 
         if(Ini_settings["wheel"]["animation"] != "none"){

@@ -14,14 +14,15 @@ function global_default_settings(){
     Ini_settings["themes"]["scroll_speed"] <- 1.0;
 
     Ini_settings["wheel"] <- {}
-    Ini_settings["wheel"]["transition_ms"] <- 50;
+    Ini_settings["wheel"]["transition_ms"] <- 170;
     Ini_settings["wheel"]["animation"] <- "ease";
     Ini_settings["wheel"]["fade_time"] <- 3.0;
     Ini_settings["wheel"]["alpha"] <- 0.0;
-    Ini_settings["wheel"]["slots"] <- 10;
+    Ini_settings["wheel"]["slots"] <- 8;
     Ini_settings["wheel"]["type"] <- "rounded"; // rounded
-    Ini_settings["wheel"]["offset"] <- "0.0,0.0,0"; // in %
+    Ini_settings["wheel"]["coord"] <- "0.07,0.0,1.0,1.0,0"; // in %
     Ini_settings["wheel"]["system stats"] <- "0.780,0.531,0"; // in %
+    Ini_settings["wheel"]["curve"] <- 1.0;
 
     Ini_settings["game text"] <- {}
     Ini_settings["game text"]["animation"] <- "elastic";
