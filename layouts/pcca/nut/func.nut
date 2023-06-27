@@ -18,11 +18,26 @@ function global_default_settings(){
     Ini_settings["wheel"]["animation"] <- "ease";
     Ini_settings["wheel"]["fade_time"] <- 3.0;
     Ini_settings["wheel"]["alpha"] <- 0.0;
-    Ini_settings["wheel"]["slots"] <- 8;
-    Ini_settings["wheel"]["type"] <- "rounded"; // rounded
-    Ini_settings["wheel"]["coord"] <- "0.07,0.0,1.0,1.0,0"; // in %
-    Ini_settings["wheel"]["system stats"] <- "0.780,0.531,0"; // in %
-    Ini_settings["wheel"]["curve"] <- 1.0;
+    Ini_settings["wheel"]["slots"] <- 7;
+    Ini_settings["wheel"]["rounded"] <- true;
+    Ini_settings["wheel"]["type"] <- "right";
+    Ini_settings["wheel"]["coord"] <- "0,0,1,1,0"; // in %
+    Ini_settings["wheel"]["system stats"] <- "0.7126,0.5517,0"; // in %
+    Ini_settings["wheel"]["curve"] <- 1.2;
+    Ini_settings["wheel"]["frame"] <- false;
+    Ini_settings["wheel"]["spin_start"] <- true;
+    Ini_settings["wheel"]["scale"] <- 1.0;
+    Ini_settings["wheel"]["center_zoom"] <- 1.0;
+    Ini_settings["wheel"]["media"] <- "wheel";
+
+   // Attract-Mode
+    Ini_settings["wheel"]["AM_Enabled"] <- true;
+    Ini_settings["wheel"]["AM_WaitVideo"] <- true;
+    Ini_settings["wheel"]["AM_MaxSpinTime"] <- 170;
+    Ini_settings["wheel"]["AM_AttractTime"] <- 80;
+    Ini_settings["wheel"]["AM_MaxSpinTime"] <- 5;
+    Ini_settings["wheel"]["AM_all_systems"] <- true;
+    Ini_settings["wheel"]["AM_system_loop"] <- 3;
 
     Ini_settings["game text"] <- {}
     Ini_settings["game text"]["animation"] <- "elastic";
@@ -753,6 +768,98 @@ function SetListBox(obj, p) {
                 obj[key] = val;
             }
         } catch(e) {}
+}
+
+function unset_rotation(r, obj) {
+    local mr = PI * r / 180;
+    obj.x -= cos( mr ) * (-obj.width * 0.5) - sin( mr ) * (-obj.height * 0.5) + obj.width * 0.5;
+    obj.y -= sin( mr ) * (-obj.width * 0.5) + cos( mr ) * (-obj.height * 0.5) + obj.height * 0.5;
+}
+
+function pointer_coord(set=false){
+    local pointer_coord = Ini_settings["pointer"]["coord"];
+    switch(set){
+        case "left":
+            pointer_coord = "0.0,0.401,0.100,0.200,180";
+        break;
+
+        case "right":
+            pointer_coord = "0.910,0.401,0.100,0.200,0";
+        break;
+
+        case "bottom":
+            pointer_coord = "0.449,0.831,0.1,0.2,90";
+        break;
+
+        case "top":
+            pointer_coord = "0.451,-0.0286,0.1,0.2,270";;
+        break;
+    }
+
+    local g_c = split( pointer_coord, ",").map(function(v){return v.tofloat()}); // %
+    if( g_c.len() == 5 ) {
+            if(set) Ini_settings["pointer"]["coord"] = g_c[0]+","+g_c[1]+","+g_c[2]+","+g_c[3]+","+g_c[4];
+            point.width = g_c[2] * flw;
+            point.height = g_c[3] * flh;
+            point.x = g_c[0] * flw;
+            point.y = g_c[1] * flh;
+            point.alpha = 255;
+            local start = {"x":flw, "y":point.y}
+            if(Ini_settings["wheel"]["type"] == "left") { start.y = point.y, start.x = point.x-point.width }
+            if(Ini_settings["wheel"]["type"] == "top") { start.y = -point.height; start.x = point.x; }
+            if(Ini_settings["wheel"]["type"] == "bottom"){ start.y = flh + point.height, start.x = point.x }
+            point_animation.opts.from = {x=start.x y=start.y, rotation=g_c[4]}
+            point_animation.opts.to = {x=point.x, y=point.y, rotation=g_c[4] }
+            point.set_pos(start.x, start.y);
+            point.rotation = g_c[4];
+    }
+}
+
+function wheel_coord(set=false){
+    local wheel_coord = Ini_settings["wheel"]["coord"];
+    if(set) wheel_coord = "0,0,1,1,0";
+    local g_c = split( wheel_coord, ",").map(function(v){return v.tofloat()}); // %
+    if( g_c.len() == 5 ) {
+        if(set) Ini_settings["wheel"]["coord"] = g_c[0]+","+g_c[1]+","+g_c[2]+","+g_c[3]+","+g_c[4];
+        local x=g_c[0] * flw;
+        local y=g_c[1] * flh;
+        local width = g_c[2] * flw;
+        local height = g_c[3] * flh;
+        //local mr = PI * g_c[2] / 180;
+        //x -= cos( mr ) * (-width * 0.5) - sin( mr ) * (-height * 0.5) + width * 0.5;
+        //y -= sin( mr ) * (-width * 0.5) + cos( mr ) * (-height * 0.5) + height * 0.5;
+        wheel_surf.rotation = g_c[4];
+        wheel_surf.set_pos(x, y, width, height);
+    }
+}
+
+function system_stats_coord(set=false){
+    local sys_stats_coord = Ini_settings["wheel"]["system stats"];
+    switch(set){
+        case "left":
+            sys_stats_coord = "0.1979,0.5587,0";
+        break;
+
+        case "right":
+            sys_stats_coord = "0.7126,0.5517,0";
+        break;
+
+        case "bottom":
+            sys_stats_coord = "0.445,0.8535,0";
+        break;
+
+        case "top":
+            sys_stats_coord = "0.445,0.105,0";
+        break;
+    }
+
+   local g_c = split( sys_stats_coord, ",").map(function(v){return v.tofloat()}); // %
+    if( g_c.len() == 3 ) {
+        if(set) Ini_settings["wheel"]["system stats"] = g_c[0]+","+g_c[1]+","+g_c[2];
+        m_infos.x = g_c[0]*flw;
+        m_infos.y = g_c[1]*flh;
+        m_infos.rotation = g_c[2];
+    }
 }
 
 // named transitions

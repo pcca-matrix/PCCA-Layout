@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.80
+// PCCA v2.85
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -144,7 +144,6 @@ text_overlay.visible = false;
 
 // Globals
 local tr_directory_cache  = get_dir_lists( medias_path + "Frontend/Video/Transitions" ); // cached table of global transitions files
-local pause_animation = ["rain float", "chase", "arc shrink", "arc grow", "bounce around 3d", "bounce random", "scroll"];
 
 Ini_settings <- get_ini_values("Main Menu"); // initialize and set settings ini value for main menu
 
@@ -179,8 +178,8 @@ point.alpha = 255;
 
 point_animation <- PresetAnimation(point)
 .name("pointer")
-.from({x=flw,y=flh})
-.to({x=0,y=0})
+.from({x=flw,y=flh,rotation=0})
+.to({x=0,y=0,rotation=0})
 .duration( 150 )
 .yoyo()
 
@@ -494,7 +493,7 @@ local rating = surf_ginfos.add_image("images/rating/[Rating]");
 rating.set_pos(flw*0.007, flh*0.119, flw*0.0240, flh*0.053);
 
 /* Main SettingsOverlay */
-local surf_menu = fe.add_surface(flw * 0.20, flh);
+surf_menu <- fe.add_surface(flw * 0.20, flh);
 surf_menu.zorder = 2;
 local surf_menu_bck = surf_menu.add_image("images/Backgrounds/faded.png", 0, 0, flw, flh );
 surf_menu_bck.alpha = 80;
@@ -719,11 +718,6 @@ m_infos.word_wrap = true;
 m_infos.charsize = flh*0.014;
 m_infos.set_rgb(205, 205, 195);
 
-if ( Ini_settings.wheel["type"] != "vertical"){
-    m_infos.set_pos( flw*0.785, flh*0.546 );
-    m_infos.rotation = -4.2;
-}
-
 if( my_config["stats_main"].tolower() == "yes" ){
     m_infos.visible = true;
     if( !file_exist(globs.script_dir + "pcca.stats") ) refresh_stats();
@@ -896,10 +890,12 @@ function background_transitions(transition, File, animation = null){
 }
 
 function load_theme(name, theme_content, prev_def){
+    if(Ini_settings["game text"]["game_text_active"] && curr_sys != "Main Menu") surf_ginfos.visible = true;
+    if(Ini_settings["game text"]["animation"] != "none" && Ini_settings["game text"]["game_text_hide"]) surf_ginfos_animation.play();
     // hide overlay helper
     text_overlay.visible = false;
     img_overlay.visible = false;
-
+    wheel_surf.visible = true;
     set_custom_value(Ini_settings);
     local back_tr = 99; // 99=fade background only , array = random trough array , null=full transitions random
     xml_root = null;
@@ -1083,7 +1079,6 @@ function load_theme(name, theme_content, prev_def){
 
     if(!Ini_settings.themes["animated_backgrounds"] ) back_tr = 99;
     background_transitions(back_tr, backg, back_anim);
-    wheel_surf.visible = true;
 }
 
 function clean_art(obj){
@@ -1383,13 +1378,16 @@ function hs_transition( ttype, var, ttime )
 
         case Transition.FromOldSelection: //3
             if(curr_sys == "Main Menu") stats_text_update( fe.game_info(Info.Title) );
-            if(Ini_settings["game text"]["game_text_hide"]) surf_ginfos.visible = false;
+            if(Ini_settings["game text"]["game_text_hide"]) {
+                surf_ginfos.visible = false;
+                if(Ini_settings["game text"]["animation"] != "none") surf_ginfos_animation.cancel("from");
+            }
         break;
 
         case Transition.ToNewSelection: //2
+            m_infos.visible = false;
             foreach(a,b in artwork_list ){
                 if(curr_theme != "Default" || availables[b] == false ) anims[a].stop(); // used to stop hideart when navigating !
-                //if(pause_animation.find(anims[a].opts.preset) != null ) anims[a].pause(); // pause some looping animation
             }
             ArtObj.snap.video_flags = Vid.NoAudio;
             if(curr_theme != "Default" && !Background_Music.file_name.find("Default.mp3")){ // keep playing music on default
@@ -1404,8 +1402,10 @@ function hs_transition( ttype, var, ttime )
             flv_transitions.file_name = "";
             if(curr_sys == "Main Menu") stats_text_update( fe.game_info(Info.Title, 1) );
             if(curr_theme != "Default") background_anim.resting = false; // stop background resting when we are not on a default theme
-            if(Ini_settings["game text"]["animation"] != "none") surf_ginfos_animation.start();
-            if(Ini_settings["game text"]["game_text_hide"]) surf_ginfos.visible = false;
+            if(Ini_settings["game text"]["game_text_hide"]){
+                surf_ginfos.visible = false;
+                if(Ini_settings["game text"]["animation"] != "none") surf_ginfos_animation.cancel("from");
+            }
         break;
 
         case Transition.EndNavigation: //7
@@ -1427,11 +1427,6 @@ function hs_transition( ttype, var, ttime )
                 Wheelclick[sid].file_name = wsound;
                 Wheelclick[sid].playing = true;
             }
-
-            foreach(a,b in artwork_list ){
-                //if( pause_animation.find(anims[a].opts.preset) != null) anims[a].unpause(); // unpause looping animations
-            }
-            if(Ini_settings["game text"]["game_text_hide"] && Ini_settings["game text"]["game_text_active"]) surf_ginfos.visible = true;
         break;
 
         case Transition.StartLayout: //0
@@ -1454,8 +1449,6 @@ function hs_transition( ttype, var, ttime )
         case Transition.ToNewList: //6
             curr_sys = ( fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.list.name );
             Ini_settings = get_ini_values(curr_sys); // get settings ini value
-            point.x = flw; // fix no theme (temp)
-            pcca_wheel.Init(Ini_settings.wheel); // slots, transition_ms, type, fade_time, alpha, curve, first_pos
             if(curr_sys != "Main Menu"){
                 if( fe.game_info(Info.PlayedTime) == "" ) PCount.set("visible", false); else PCount.set("visible", true); //show game stats surface only if Track Usage is set to Yes in AM!
                 if(glob_time - rtime > 550) hide_art(); // 500ms between re-pooling hide_art when navigating fast in system
@@ -1622,6 +1615,9 @@ function hs_tick( ttime )
 
     // load medias after globs.delay
     if( (glob_time - rtime > globs.delay) && triggers.theme.start && (pcca_wheel.stop || pcca_wheel.spin_start)){
+
+        if( my_config["stats_main"].tolower() == "yes" ) m_infos.visible = true;
+        if(prev_tr == Transition.ToNewList) pcca_wheel.Init(Ini_settings.wheel); // slots, transition_ms, type, fade_time, alpha, curve, first_pos
         hd = false;
         if( Ini_settings.themes["bezels"] && Ini_settings.themes["aspect"] == "center" ){ // Systems bezels!  only if aspect center
             if( file_exist(globs.script_dir + "images/Bezels/" + curr_sys + ".png") ){
@@ -1780,6 +1776,8 @@ local rest_tab = [{"title":"Shake", "target":"shake"}, {"title":"Rock", "target"
 rest_tab.sort(@(a,b) a.title <=> b.title)
 rest_tab.insert(0,{"title":"None", "target":"none"});
 
+local wheel_pos_tab = [{"title":"Left","target":"left"},{"title":"Right","target":"right"},{"title":"Top","target":"top"},{"title":"Bottom","target":"bottom"}];
+local wheel_media_tab = [{"title":"Wheel","target":"wheel"},{"title":"Cover","target":"artwork5"},{"title":"Support","target":"artwork6"}];
 local YesNo_menu = [{"title":LnG.Yes,"target":"yes"},{"title":LnG.No,"target":"no"}];
 
 local menus = [];
@@ -1882,9 +1880,10 @@ menus.push ({
     "title":"Theme Settings", "id":"theme_setting",
     "rows":[{"title":"Global settings", "target":"glob_theme_setting"},
             {"title":"Wheel", "target":"wheel", "target":"wheel_settings"},
+            {"title":"Attract-Mode", "target":"attract_mode"},
             {"title":"Sounds", "target":"sound"},
             {"title":"Pointer","target":"pointer"},
-            {"title":"Game Text", "target":"game text", "target":"game_text", "infos":"Game info surface options" , "hide":"Main Menu"}, // (should not be displayed on main menu)
+            {"title":"Game Text", "target":"game_text", "infos":"Game info surface options" , "hide":"Main Menu"}, // (should not be displayed on main menu)
             {"title":"Special Artworks", "target":"special_list",
                 "onselect":function(current_list, selected_row){
                     if(my_config["special_artworks"].tolower() == "no"){
@@ -2536,19 +2535,56 @@ menus.push({
 menus.push({
     "title":"Wheel Settings", "id":"wheel_settings", "object":"",
     "rows":[{
-        "title":"Wheel type",
+        "title":"Wheel Type",
+        "onselect":function(current_list, selected_row){
+            local elem = Ini_settings.wheel["type"];
+            local sel = 0;
+            foreach(a,b in wheel_pos_tab){ if(b.target == elem) sel = a; }
+            set_list( {"title":"Type", "rows":wheel_pos_tab,"slot_pos":sel,
+                "onselect":function(current_list, selected_row){
+                    Ini_settings.wheel["type"] = selected_row.target;
+                    pointer_coord(Ini_settings.wheel["type"]);
+                    wheel_coord(Ini_settings.wheel["type"]);
+                    system_stats_coord(Ini_settings.wheel["type"]);
+                    pcca_wheel.Init(Ini_settings.wheel);
+                    //triggers.theme.start = true;
+                }
+            })
+            return true;
+        },
+        "infos" : LnG.M_inf_wheel_type
+    },
+    {
+        "title":"Rounded",
         "onselect":function(current_list, selected_row){
             wheel_surf.alpha = 255;
-            set_list( { "title":_selected_row.title, "target":"ini", "object":"wheel", "slot_pos":(Ini_settings.wheel["type"] == "rounded" ? 0 : 1),
-                "rows":[{"title":"Rounded","target":"rounded"},{"title":"Vertical","target":"vertical"}],
+            set_list( { "title":selected_row.title, "slot_pos":(Ini_settings.wheel["rounded"] == true ? 0 : 1),
+                "rows":YesNo_menu,
                     "onselect":function(current_list, selected_row){
-                        Ini_settings.wheel["type"] = selected_row.target;
+                        Ini_settings.wheel["rounded"] = (selected_row.target == "yes" ? true : false);
                         pcca_wheel.Init(Ini_settings.wheel);
+                        //triggers.theme.start = true;
                     }
             });
             return true;
         },
-        "infos" : LnG.M_inf_wheel_type
+        "infos" : LnG.M_inf_wheel_round
+    },
+    {
+        "title":"Spin start",
+        "onselect":function(current_list, selected_row){
+            wheel_surf.alpha = 255;
+            set_list( { "title":selected_row.title, "slot_pos":(Ini_settings.wheel["spin_start"] == true ? 0 : 1),
+                "rows":YesNo_menu,
+                    "onselect":function(current_list, selected_row){
+                        Ini_settings.wheel["spin_start"] = (selected_row.target == "yes" ? true : false);
+                        pcca_wheel.Init(Ini_settings.wheel);
+                        triggers.theme.start = true;
+                    }
+            });
+            return true;
+        },
+        "infos" : LnG.M_inf_wheel_spinstart
     },
     {"title":"Animations",
         "onselect":function(current_list, selected_row){
@@ -2562,7 +2598,7 @@ menus.push({
                         wheel_surf.alpha = 255;
                         wheel_animation
                         .preset(Ini_settings["wheel"]["animation"])
-                        .starting("right")
+                        .starting(Ini_settings["wheel"]["type"])
                         .duration(globs.delay)
                         .delay(triggers.wheel_anim.delay)
                         wheel_animation.play()
@@ -2571,7 +2607,8 @@ menus.push({
                 }
             })
             return true;
-        }
+        },
+        "infos" : LnG.M_inf_wheel_anim
     },
     {
         "title":"Wheel transition time", "type":"int",
@@ -2618,15 +2655,69 @@ menus.push({
     {
         "title":"Curve", "type":"float",
         "onselect":function(current_list, selected_row){
+            wheel_surf.alpha = 255;
             set_list( { "id":"curve", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [1,5,0.1],
             "rows":[{"title":Ini_settings.wheel["curve"]}], "onselect":function(current_list, selected_row){ pcca_wheel.Init(Ini_settings.wheel); }
             });
             return true;
         },
-        "infos" : "Curvature of the wheel"
+        "infos" : LnG.M_inf_wheel_curve
     },
     {
-        "title":"Main stats", "object":m_infos, "hide":"!Main Menu"
+        "title":"Elements Size", "type":"float",
+        "onselect":function(current_list, selected_row){
+            wheel_surf.alpha = 255;
+            set_list( { "id":"scale", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [0.5,5.0,0.05],
+            "rows":[{"title":Ini_settings.wheel["scale"]}],"onselect":function(current_list, selected_row){ pcca_wheel.Init(Ini_settings.wheel); }
+            });
+            return true;
+        }
+    },
+    {
+        "title":"Center Zoom", "type":"float",
+        "onselect":function(current_list, selected_row){
+            wheel_surf.alpha = 255;
+            set_list( { "id":"center_zoom", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [0.5,5.0,0.1],
+            "rows":[{"title":Ini_settings.wheel["center_zoom"]}],"onselect":function(current_list, selected_row){ pcca_wheel.Init(Ini_settings.wheel); triggers.theme.start = true; }
+            });
+            return true;
+        },
+        "infos" : LnG.M_inf_wheel_center_zoom
+    },
+    {"title":"Medias",
+        "onselect":function(current_list, selected_row){
+            wheel_surf.alpha = 255;
+            local elem = Ini_settings.wheel["media"];
+            local sel = 0;
+            foreach(a,b in wheel_media_tab){ if(b.target == elem) sel = a; }
+            set_list( {"title":"Animation", "rows":wheel_media_tab,"slot_pos":sel,
+                "onselect":function(current_list, selected_row){
+                    Ini_settings.wheel["media"] = selected_row.target;
+                    pcca_wheel.Init(Ini_settings.wheel);
+                    //triggers.theme.start = true;
+                }
+            })
+            return true;
+        },
+        "infos" : LnG.M_inf_wheel_media
+    },
+    {
+        "title":"Frame",
+        "onselect":function(current_list, selected_row){
+            set_list( { "title":selected_row.title, "slot_pos":(Ini_settings.wheel["frame"] == true ? 0 : 1),
+                "rows":YesNo_menu,
+                    "onselect":function(current_list, selected_row){
+                        Ini_settings.wheel["frame"] = (selected_row.target == "yes" ? true : false);
+                        pcca_wheel.Init(Ini_settings.wheel);
+                        //triggers.theme.start = true;
+                    }
+            });
+            return true;
+        },
+        "infos" : LnG.M_inf_wheel_frame
+    },
+    {
+        "title":"Main stats", "object":m_infos, "hide":"!Main Menu",
             "onselect":function(current_list, selected_row){
                 surf_menu_info.visible = true;
                 current_list.object = selected_row.object; // assign m_infos object
@@ -2637,7 +2728,7 @@ menus.push({
                 _edit_datas.name <- "m_infos";
             },
             "onback":function(selected_row, current_list){
-                Ini_settings["wheel"]["system stats"] = (m_infos.x / flw) + "," + (m_infos.y / flh) + "," + m_infos.rotation;
+                Ini_settings["wheel"]["system stats"] = round(m_infos.x / flw, 4) + "," + round(m_infos.y / flh, 4) + "," + round(m_infos.rotation, 4);
             },"infos":LnG.M_inf_wheel_stats
     },
     {
@@ -2654,7 +2745,7 @@ menus.push({
                 surf_menu_info.visible = true;
             },
             "onback":function(selected_row, current_list){
-                Ini_settings["wheel"]["coord"] = (wheel_surf.x / flw) + "," + (wheel_surf.y / flh) + "," + (wheel_surf.width / flw) + "," + (wheel_surf.height / flh) + "," + wheel_surf.rotation;
+                Ini_settings["wheel"]["coord"] = round(wheel_surf.x / flw, 4) + "," + round(wheel_surf.y / flh, 4) + "," + round(wheel_surf.width / flw, 4) + "," + round(wheel_surf.height / flh, 4) + "," + round(wheel_surf.rotation, 4);
             },
             "infos":LnG.M_inf_wheel_pos
     }]
@@ -2673,7 +2764,7 @@ menus.push({
                 _edit_datas.name <- "game text";
             },
             "onback":function(selected_row, current_list){
-                Ini_settings["game text"]["coord"] = (surf_ginfos.x / flw) + "," + (surf_ginfos.y / flh) + "," + surf_ginfos.rotation;
+                Ini_settings["game text"]["coord"] = round(surf_ginfos.x / flw, 4) + "," + round(surf_ginfos.y / flh, 4) + "," + round(surf_ginfos.rotation, 4);
                 if(Ini_settings["game text"]["animation"] != "none") triggers.theme.start = true;
             },"infos":LnG.M_inf_gsurf_pos
         },
@@ -2965,13 +3056,13 @@ menus.push({
             surf_menu_info.visible = true;
             wheel_surf.alpha = 255;
             // set pointer to final position
-            point_animation.set_state("to");
+            point_animation.yoyo(false);
+            point_animation.play();
         },
         "onback":function(selected_row, current_list){
-            Ini_settings.pointer.coord = (point.x / flw) + "," + (point.y / flh) + "," + (point.width /flw) + "," + (point.height / flh) + "," + point.rotation
-            point_animation.opts.from = {x=flw, y=point.y, rotation = 0}
-            point_animation.opts.to = {x=point.x, y=point.y, rotation=point.rotation}
-            point.x = point_animation.opts.from.x
+            unset_rotation(point.rotation, point);
+            Ini_settings.pointer.coord = round(point.x / flw, 4) + "," + round(point.y / flh, 4) + "," + round(point.width /flw, 4) + "," + round(point.height / flh, 4) + "," + round(point.rotation, 4)
+            pointer_coord();
             triggers.theme.start = true;
         },
         "infos" : LnG.M_inf_pointer_pos
@@ -2983,8 +3074,9 @@ menus.push({
                 "rows":YesNo_menu,
                     "onselect":function(current_list, selected_row){
                         Ini_settings.pointer["animated"] = (selected_row.target == "yes" ? true : false);
-                        if(selected_row.target == "yes") point_animation.play();
                         triggers.theme.start = true;
+                        if(selected_row.target == "yes") point_animation.yoyo(true); else point_animation.yoyo(false);
+                        point_animation.play();
                     }
             });
             return true;
@@ -3352,6 +3444,9 @@ signals["default_sig"] <- function (str) {
             sel_menu.set_list( menus[0] );
             return true;
         break;
+        case "random_game":
+            surf_ginfos.visible = false;
+        break;
     }
     return false
 }
@@ -3421,6 +3516,10 @@ function incdec(type, datas,  dir ){
         xml_root.getChild(object).addAttr(sel_menu._current_list.id, val )
     }else if(fsetting == "ini"){
         Ini_settings[object][sel_menu._current_list.id] = val;
+    }
+
+    if(sel_menu._current_list.id.find("scale") != null){ // update scale of the wheel elems in real time
+        pcca_wheel.Init(Ini_settings.wheel);
     }
 }
 
@@ -3711,12 +3810,7 @@ function set_custom_value(Ini_settings) {
     if(prev_tr == Transition.ToNewList){
         syno_surf.visible = Ini_settings.themes["synopsis"];
 
-        local g_c = split( Ini_settings["wheel"]["system stats"], ",").map(function(v){return v.tofloat()}); // %
-        if( g_c.len() == 3 ) {
-            m_infos.x = g_c[0]*flw;
-            m_infos.y = g_c[1]*flh;
-            m_infos.rotation = g_c[2];
-        }
+        system_stats_coord();
 
         local g_c = split( Ini_settings["game text"]["coord"], ",").map(function(v){return v.tofloat()});; // %
         if( g_c.len() == 3 ) {
@@ -3725,18 +3819,18 @@ function set_custom_value(Ini_settings) {
             surf_ginfos.alpha = 255;
         }
 
-        if(Ini_settings["game text"]["game_text_active"]) surf_ginfos.visible = ( curr_sys == "Main Menu" ? false : true ); // Game infos surface
-
-        if(Ini_settings["game text"]["animation"] != "none"){
-            Ini_settings["game text"]["game_text_hide"] = false;
-            surf_ginfos_animation
-            .preset(Ini_settings["game text"]["animation"])
-            .starting(Ini_settings["game text"]["anim_start"])
-            .duration(Ini_settings["game text"]["anim_time"] * 1000)
-            .delay( globs.delay + (Ini_settings["game text"]["anim_delay"] * 1000) )
-            surf_ginfos_animation.start()
-            surf_ginfos_animation.cancel("from")
-            surf_ginfos_animation.start();
+        if(Ini_settings["game text"]["game_text_active"] && curr_sys != "Main Menu"){
+            surf_ginfos.visible = true; // Game infos surface
+            if(Ini_settings["game text"]["animation"] != "none" && Ini_settings["game text"]["game_text_hide"]){
+                surf_ginfos_animation
+                .preset(Ini_settings["game text"]["animation"])
+                .starting(Ini_settings["game text"]["anim_start"])
+                .duration(Ini_settings["game text"]["anim_time"] * 1000)
+                .delay( globs.delay + (Ini_settings["game text"]["anim_delay"] * 1000) )
+                surf_ginfos_animation.start()
+                surf_ginfos_animation.cancel("from")
+                surf_ginfos_animation.start();
+            }
         }
 
         local rgbC = dec2rgb(Ini_settings["game text"]["text_color"]);
@@ -3744,23 +3838,12 @@ function set_custom_value(Ini_settings) {
         local rgbC = dec2rgb(Ini_settings["game text"]["text_stroke_color"]);
         Title.thick_rgb([rgbC[0], rgbC[1], rgbC[2]]);
 
-        local g_c = split( Ini_settings["wheel"]["coord"], ",").map(function(v){return v.tofloat()}); // %
-        if( g_c.len() == 5 ) {
-            local x=g_c[0] * flw;
-            local y=g_c[1] * flh;
-            local width = g_c[2] * flw;
-            local height = g_c[3] * flh;
-            //local mr = PI * g_c[2] / 180;
-            //x -= cos( mr ) * (-width * 0.5) - sin( mr ) * (-height * 0.5) + width * 0.5;
-            //y -= sin( mr ) * (-width * 0.5) + cos( mr ) * (-height * 0.5) + height * 0.5;
-            wheel_surf.rotation = g_c[4];
-            wheel_surf.set_pos(x, y, width, height);
-        }
+        wheel_coord(); // set wheel surface coord
 
         if(Ini_settings["wheel"]["animation"] != "none"){
             wheel_animation
             .preset(Ini_settings["wheel"]["animation"])
-            .starting("right")
+            .starting(Ini_settings["wheel"]["type"])
             .duration(globs.delay)
             .delay(triggers.wheel_anim.delay)
             wheel_animation.start()
@@ -3768,21 +3851,13 @@ function set_custom_value(Ini_settings) {
             wheel_animation.start();
         }
 
-        local g_c = split( Ini_settings["pointer"]["coord"], ",").map(function(v){return v.tofloat()}); // %
-        if( g_c.len() == 5 ) {
-            point.width = g_c[2] * flw;
-            point.height = g_c[3] * flh;
-            point.x = g_c[0] * flw;
-            point.y = g_c[1] * flh;
-            point.alpha = 255;
-            point_animation.opts.from = {x=flw,y=point.y, rotation = 0}
-            point_animation.opts.to = {x=point.x, y=point.y, rotation=g_c[4] }
-            point.x = point_animation.opts.from.x
-        }
+        pointer_coord(); // set pointer pos
 
         if(!Ini_settings.pointer.animated){
-            point.x = point_animation.opts.to; // or g_c[0]*flw
+            point_animation.yoyo(false);
+            point_animation.play();
         }
+
         if(!Ini_settings.wheel["fade_time"]) m_infos.alpha = 255;
 
         local g_c = split( Ini_settings["themes"]["scroll_pos"], ",").map(function(v){return v.tofloat()}); // %
@@ -3797,11 +3872,7 @@ function set_custom_value(Ini_settings) {
 }
 
 function game_surface(){
-    if(!Ini_settings["game text"]["game_text_active"] || curr_sys == "Main Menu"){
-        surf_ginfos.visible = false;
-        return;
-    }
-
+    if(!Ini_settings["game text"]["game_text_active"] || curr_sys == "Main Menu") return;
     // reset to default pos
     local lng_x = flw*0.134;
     for ( local i = 0; i < 17; i++ ) {
@@ -3870,4 +3941,3 @@ function fade_objects(){
     return tofade;
 }
 
-//print( "load time:"+(clock() - start)+"\n")

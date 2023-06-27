@@ -309,20 +309,50 @@ class SelMenu
 
 class PCCA_Conveyor {
 
-    progress = null;
-    offset = null;
-    r_offset = null;
-    wheel_elems = null;
-    flw = null;
-    flh = null;
-    ft = null;
-    angle = null;
+    progress = 0.0;
+    offset = 0;
+    r_offset = 0;
+    type = "right";
+    surface_w = 0.0;
+    surface_h = 0.0;
+    ft = 0.0;
     tjump = 0;
     step = null;
-    config_speed = 40; // config speed from attract.cfg
-    max_speed = 0;
-    fast_start = false;
-    spin_start = false;
+    config_speed = 40.0; // config speed from attract.cfg
+    max_speed = 0.0;
+    fast_nav = false;
+    spin_start = true;
+    wheel_frame = false;
+    frame_img = null;
+    timer = 0;
+    stop = false;
+    media = "wheel";
+    rounded = true;
+    Rad = 0;
+    Curve = 1.0;
+    adjust = 0.0;
+    surface = {};
+    buffer = [];
+    buff = 0;
+    nbr_slot = 6;
+    speed = 170;
+    wheel_center_x = 0.0;
+    wheel_center_y = 0.0;
+    scale = 1.0;
+    el_rot = 0.0;
+    m_path = "";
+    w_slots = [];
+    new_val = 0.0;
+    center_zoom = 1.5;
+    // attract
+    AttractEnabled = true
+    attract_time = 80000;
+    MaxSpinTime = 5000;
+    am_counter = 0;
+    am_WaitVideo = true; // true disable timer
+    last_selected = "";
+    AM_all_systems = true;
+    AM_system_loop = 3
 
     // fade
     w_time = 0;
@@ -330,178 +360,357 @@ class PCCA_Conveyor {
     fade_delay = 4000;
     fade_alpha = 0;
     fade_on = false;
-    wheel_frame = false;
-    frame_img = null;
-    timer = 0
-    timer2 = 0
-    stop = false;
-    artwork = "Wheel";
 
-    constructor( init=false )
+    constructor( ... )
     {
-        flw = ::fe.layout.width.tofloat();
-        flh = ::fe.layout.height.tofloat();
-        surface = ::fe.add_surface( flw, flh );
+        surface = ::fe.add_surface( ::fe.layout.width.tofloat(), ::fe.layout.height.tofloat() );
         surface.set_pos(0,0);
-        if(init) Init(null);
         fe.add_transition_callback( this, "on_transition" );
         fe.add_ticks_callback( this, "on_tick" )
         fe.add_signal_handler(this, "main_signal")
         frame_img = surface.add_image("")
-        frame_img.visible = false;
+        frame_img.visible = false
     }
 
     function set_slots(nbr_slot){
+        nbr_slot+=2;
+        if(nbr_slot % 2 == 0 ) nbr_slot+=1;
         local wlen = w_slots.len();
         if(wlen < nbr_slot){
             for ( local i=0; i<nbr_slot - wlen; i++ ){
                 w_slots.push({
                     art = surface.add_image(""),
                     frame = surface.add_clone(frame_img),
-                    origin_x = 0,
-                    origin_y = 0,
-                    origin_r = 0,
-                    origin_a = 0,
-                    origin_w = 0,
-                    origin_h = 0,
+                    x = 0.0,
+                    y = 0.0,
+                    r = 0.0,
+                    width = 0.0,
+                    height = 0.0,
                 });
             }
         }else if(wlen > nbr_slot){
-            for ( local i=wlen-1; i>0; i-- ){
+            for ( local i=nbr_slot; i<wlen; i++ ){
                 w_slots[i].art.file_name = "";
                 w_slots[i].art.visible = false;
                 w_slots[i].frame.visible = false;
             }
         }
+
+        for ( local i=0; i<nbr_slot; i++ ){
+            w_slots[i].art.visible = true;
+            w_slots[i].frame.visible = true;
+            w_slots[i].art.preserve_aspect_ratio = true;
+            w_slots[i].frame.preserve_aspect_ratio = true;
+            w_slots[i].art.zorder = 1;
+        }
     }
 
     function Init(opts){
-        flh = surface.height
-        flw = surface.width
-        Rad = flh * 0.5
+        buffer.clear()
+        surface_h = surface.height
+        surface_w = surface.width
+        Rad = surface_h * 0.5
         reset_fade();
         if(opts){
             try{ speed = (opts.transition_ms < 150 ? 150 :  opts.transition_ms) } catch(err){}
             try{ nbr_slot = opts.slots } catch(err){}
             try{ fade_alpha = opts.alpha } catch(err){}
             try{ fade_time = opts.fade_time * 1000 } catch(err){}
-            try{ Rad = opts.curve * flh * 0.5 } catch(err){}
-            try{ rounded = (opts.type == "rounded" ? true : false) } catch(err){}
+            try{ Curve = opts.curve } catch(err){}
+            try{ rounded = opts.rounded } catch(err){}
+            try{ wheel_frame = opts.frame } catch(err){}
+            try{ type = opts.type } catch(err){}
+            try{ spin_start = opts.spin_start } catch(err){}
+            try{ media = opts.media } catch(err){}
+            try{ scale = opts.scale.tofloat() } catch(err){}
+            try{ center_zoom = opts.center_zoom } catch(err){}
+            // attract-mode
+            try{ attract_time = opts.AM_AttractTime.tointeger() * 1000 } catch(err){}
+            try{ MaxSpinTime = opts.AM_MaxSpinTime.tointeger() * 1000 } catch(err){}
+            try{ am_WaitVideo = opts.AM_WaitVideo } catch(err){}
+            try{ AttractEnabled = opts.AM_Enabled } catch(err){}
+            try{ AM_all_systems = opts.AM_all_systems } catch(err){}
+            try{ AM_system_loop = opts.AM_system_loop } catch(err){}
         }
 
         if(fade_time) fade_on = true;
-        max_speed = (speed - config_speed);
+        max_speed = (speed - config_speed) * 0.95;
         ft = 1.0 / round( speed / (1000.0 / ScreenRefreshRate), 0);
         offset = 0;
         progress = 0.0;
-        wheel_elems = { "x":[], "y":[], "w":[], "h":[], "r":[] }
 
-        local ww = flw * 0.15;
-        local wh = (flh / nbr_slot);
-        local pad = wh * 0.1;
-        wh-=pad
-        local y = -wh - pad * 0.5;
+        Type(type)
 
-        if(nbr_slot % 2 == 0 ){ // if slot is even
-            nbr_slot+=1;
-            y = -wh * 1.5 - pad;
-        }
-
-        nbr_slot+=2; // add the 2 offscreen wheel
-        wheel_x = flw + Rad - ww * 2
-        wheel_y = flh * 0.5 - (wh * 0.5);
-        r_offset = floor(nbr_slot * 0.5);
-
-        angle = curve_points(Rad);
-
-        for ( local i=0; i<nbr_slot; i++ ){
-            local tot = 1.0 / nbr_slot;
-            if(rounded){
-                local mr = PI * angle[i] / 180;
-                wheel_elems.x.push(wheel_x + Rad * cos( mr ) - (cos( mr ) * (-ww * 0.5) - sin( mr ) * (-wh * 0.5) - ww * 0.5) )
-                wheel_elems.y.push(wheel_y + Rad * sin( mr ) - (sin( mr ) * (-ww * 0.5) + cos( mr ) * (-wh * 0.5) - wh * 0.5) )
-                wheel_elems.r.push(angle[i] - 180)
+        // frame
+        frame_img.file_name = "";
+        if(wheel_frame){
+            if(fe.game_info(Info.Emulator) == "@"){
+                frame_img.file_name = medias_path + "Main Menu/Images/WheelFrame/frame.png";
             }else{
-                wheel_elems.x.push(flw * 0.85);
-                wheel_elems.y.push(y)
-                wheel_elems.r.push(0)
+                frame_img.file_name = medias_path + fe.list.name + "/Images/Wheel/Frame/frame.png";
             }
-
-            wheel_elems.w.push(ww)
-            wheel_elems.h.push(wh)
-
-            y+=wh+pad
+            if(frame_img.file_name == "") frame_img.file_name = ::fe.script_dir + "\\images\\Wheel\\frame.png";
         }
 
+        if(spin_start && !::surf_menu.visible){
+            for ( local i=1; i<nbr_slot + 2; i++ ){
+                buffer.push(1);
+                offset+=1;
+            }
+            adjust = max_speed;
+            fast_nav = true;
+        }
+
+        draw_wheel(offset);
+    }
+
+    function Type(pos){
+        local x,y,wh,ww,pad,angle;
+        //local hor = surface.add_image("F:/line.png", 0, surface_h * 0.5, surface.width, 1) // debug center hor
+        //local ver = surface.add_image("F:/line.png", surface_w * 0.5, 0, 1, surface_h) // debug center ver
         set_slots(nbr_slot);
 
-        for ( local i=0; i<nbr_slot; i++ ){
-            local mr = PI * angle[i] / 180;
-            w_slots[i].origin_x = wheel_elems.x[i]
-            w_slots[i].origin_y = wheel_elems.y[i]
-            w_slots[i].origin_r = wheel_elems.r[i]
-            w_slots[i].origin_a = angle[i]
-            w_slots[i].origin_w = wheel_elems.w[i]
-            w_slots[i].origin_h = wheel_elems.h[i]
+        switch (pos) {
+            case "top":
+                ww = surface_w / nbr_slot
+                wh = ww / 2.5
+                pad = ww / nbr_slot
+                ww-=pad
+                x = -ww * 0.5 - pad * 0.5
+                if(nbr_slot % 2 == 0 ){ // if slot is even
+                    nbr_slot+=1
+                    x = -ww - pad;
+                }
 
-            w_slots[i].art.preserve_aspect_ratio = true;
-            w_slots[i].art.mipmap = true
-            w_slots[i].art.zorder = -1;
-            w_slots[i].art.visible = true;
+                nbr_slot+=2 // add the 2 offscreen wheel
+                r_offset = floor(nbr_slot * 0.5);
+                if(rounded){
+                    Rad = surface_w * 0.7
+                    wheel_center_x = surface_w * 0.5
+                    wheel_center_y = -Rad + surface_h * 0.2 - (Curve - 1.0) * Rad
+                    Rad*=Curve
+                    el_rot = 90
+                    angle = curve_points(Rad, surface_w * 1.3,  270 )
+                    local len = (angle[0] - angle[angle.len()-1])
+                    if (len > 180) {
+                        len -= 360
+                    } else if (len < -180) {
+                        len += 360
+                    }
 
-            // frame
-            if(wheel_frame) w_slots[i].frame.visible = true;
-            w_slots[i].art.zorder = 1;
+                    len =  (2 * PI * (Rad - wh ) ) * (len / 360.0);
+                    ww = (len / nbr_slot);
+                    wh = ww / 2.5;
+                }
+
+                ww*=scale
+                wh*=scale
+                if(!rounded){
+                    for ( local i=0; i<nbr_slot; i++ ){
+                        w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
+                        w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
+                        w_slots[i].x = x - ww * 0.5;
+                        w_slots[i].y = surface_h * 0.12 - wh * 0.5;
+                        w_slots[i].r = 0;
+                        x+=(ww/scale)+pad
+                    }
+                }
+            break;
+
+            case "bottom":
+                ww = surface_w / nbr_slot;
+                wh = ww / 2.5;
+                pad = ww / nbr_slot;
+                ww-=pad
+                x = -ww * 0.5 - pad * 0.5
+                if(nbr_slot % 2 == 0 ){ // if slot is even
+                    nbr_slot+=1;
+                    x = -ww - pad;
+                }
+
+                nbr_slot+=2; // add the 2 offscreen wheel
+                r_offset = floor(nbr_slot * 0.5);
+                if(rounded){
+                    Rad = surface_w * 0.7
+                    wheel_center_x = surface_w * 0.5
+                    wheel_center_y = Rad + surface_h * 0.8 + (Curve - 1.0) * Rad
+                    Rad*=Curve;
+                    el_rot = -90.0
+                    angle = curve_points(Rad, surface_w * 1.3,  90.0 )
+                    print(table_as_string(angle))
+                    local len = (angle[0] - angle[angle.len()-1])
+                    if (len > 180) {
+                        len -= 360
+                    } else if (len < -180) {
+                        len += 360
+                    }
+
+                    len =  (2 * PI * (Rad - ww ) ) * (len / 360.0)
+                    ww = (len / nbr_slot)
+                    wh = ww / 2.5  // standard ratio for a hs wheel
+                }
+
+                ww*=scale
+                wh*=scale
+
+                if(!rounded){
+                    for ( local i=0; i<nbr_slot; i++ ){
+                        w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
+                        w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
+                        w_slots[i].x = x - ww * 0.5;
+                        w_slots[i].y = surface_h * 0.88 - wh * 0.5;
+                        w_slots[i].r = 0;
+                        x+=(ww/scale)+pad
+                    }
+                }
+            break;
+
+            case "left":
+                wh = surface_h / nbr_slot
+                pad = wh / nbr_slot
+                wh-=pad
+                ww = wh * 2.5
+                y = -wh * 0.5 - pad * 0.5
+                if(nbr_slot % 2 == 0 ){ // if slot is even
+                    nbr_slot+=1
+                    y = -wh - pad
+                }
+
+                nbr_slot+=2; // add the 2 offscreen wheel
+                r_offset = floor(nbr_slot * 0.5);
+                if(rounded){
+                    Rad = surface_h * 0.7
+                    wheel_center_x = -Rad + surface_w * 0.2 - (Curve - 1.0) * Rad
+                    wheel_center_y = surface_h * 0.5
+                    Rad*=Curve;
+                    el_rot = 0
+                    angle = curve_points(Rad, surface_h * 1.3, 0);
+                    local len = (angle[0] - angle[angle.len()-1]);
+                    if (len > 180) {
+                        len -= 360;
+                    } else if (len < -180) {
+                        len += 360;
+                    }
+
+                    len =  (2 * PI * (Rad - wh ) ) * (len / 360.0);
+                    wh = (len / nbr_slot);
+                    ww = wh * 2.5  // standard ratio for a hs wheel
+                }
+
+                ww*=scale
+                wh*=scale
+
+                if(!rounded){
+                    for ( local i=0; i<nbr_slot; i++ ){
+                        w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
+                        w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
+                        w_slots[i].x = surface_w * 0.12 - ww * 0.5;
+                        w_slots[i].y = y - wh * 0.5;
+                        w_slots[i].r = 0;
+                        y+=(wh/scale)+pad
+                    }
+                }
+            break;
+
+            default: // right
+                wh = surface_h / nbr_slot;
+                pad = wh / nbr_slot;
+                wh-=pad
+                ww = wh * 2.5
+                y = -wh * 0.5 - pad * 0.5;
+                if(nbr_slot % 2 == 0 ){ // if slot is even
+                    nbr_slot+=1;
+                    y = -wh - pad;
+                }
+
+                nbr_slot+=2; // add the 2 offscreen whee
+                r_offset = floor(nbr_slot * 0.5);
+                if(rounded){
+                    Rad = surface_h * 0.7
+                    wheel_center_x = Rad + surface_w * 0.8 + (Curve - 1.0) * Rad
+                    wheel_center_y = surface_h * 0.5;
+                    Rad*=Curve
+                    el_rot = 180.0
+                    angle = curve_points(Rad, surface_h * 1.3, 180.0)
+                    local len = (angle[0] - angle[angle.len()-1])
+                    if (len > 180) {
+                        len -= 360
+                    } else if (len < -180) {
+                        len += 360
+                    }
+
+                    len =  (2 * PI * (Rad - wh ) ) * (len / 360.0)
+                    wh = (len / nbr_slot)
+                    ww = wh * 2.5  // standard ratio for a hs wheel
+                }
+
+                ww*=scale
+                wh*=scale
+
+                if(!rounded){
+                    for ( local i=0; i<nbr_slot; i++ ){
+                        w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
+                        w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
+                        w_slots[i].x = surface_w * 0.88 - w_slots[i].width * 0.5
+                        w_slots[i].y = y - w_slots[i].height * 0.5
+                        w_slots[i].r = 0.0
+                        y+=(w_slots[i].height/scale)+pad
+                    }
+                }
+            break;
         }
 
-        draw_wheel();
-
-        if(spin_start){
-            local rd = rnd_int(5, nbr_slot * 2 - 1);
-            buffer.push(rd);
-            offset+=rd;
-            adjust = max_speed * 0.9;
-            fast_start = true;
+        if(rounded){
+            for ( local i=0; i<nbr_slot; i++ ){
+                w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
+                w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
+                local mr = PI * angle[i] / 180;
+                w_slots[i].x = wheel_center_x  + (Rad * cos(mr)) - w_slots[i].width * 0.5
+                w_slots[i].y = wheel_center_y  + (Rad * sin(mr)) - w_slots[i].height * 0.5
+                set_rotation(angle[i] - el_rot, w_slots[i]);
+                w_slots[i].r = angle[i] - el_rot;
+            }
         }
     }
 
-    function draw_wheel(offset=null){
+
+    function draw_wheel(offset){
         if(fe.game_info(Info.Emulator) == "@"){
-            m_path = medias_path + "Main Menu/Images/" + artwork + "/";
+            m_path = medias_path + "Main Menu/Images/" + media + "/";
         }else{
-            m_path = medias_path + fe.list.name + "/Images/" + artwork + "/";
+            m_path = medias_path + fe.list.name + "/Images/" + media + "/";
         }
 
-        if(offset == null){
-            offset = ceil(nbr_slot * 0.5) - 1;
-        }
+        offset += ceil(nbr_slot * 0.5) - 1;
 
         for ( local i=0; i<nbr_slot; i++ ){
             w_slots[i].art.file_name = m_path + fe.game_info(Info.Name, i - offset ) + ".png";
-            w_slots[i].art.set_pos(wheel_elems.x[i], w_slots[i].origin_y, w_slots[i].origin_w, w_slots[i].origin_h);
-            w_slots[i].art.rotation = w_slots[i].origin_r;
+            w_slots[i].art.set_pos(w_slots[i].x, w_slots[i].y, w_slots[i].width, w_slots[i].height);
+            w_slots[i].art.rotation = w_slots[i].r;
 
-            w_slots[i].frame.set_pos(wheel_elems.x[i], w_slots[i].origin_y, w_slots[i].origin_w, w_slots[i].origin_h);
-            w_slots[i].frame.rotation = w_slots[i].origin_r;
+            local frame_x = w_slots[i].art.x - (w_slots[i].art.width * 0.025);
+            local frame_y = w_slots[i].art.y - (w_slots[i].art.height * 0.025);
+            w_slots[i].frame.set_pos(frame_x, frame_y, w_slots[i].width * 1.05, w_slots[i].height * 1.05);
+            w_slots[i].frame.rotation = w_slots[i].r;
         }
     }
 
 
-    function curve_points(Rad){
+    function curve_points(Rad, surf, middle){
         local angle = [];
         if(Rad){
             local a = Rad
             local b = Rad
-            local c = flh - wh
+            local c = surf
             local aa=acos((b*b+c*c-a*a)/(2*b*c));
             aa=(aa*180/PI)
             local bb=acos((c*c+a*a-b*b)/(2*c*a));
             bb=(bb*180/PI)
-            local cc=180.0-aa-bb;
-            local ab = cc / nbr_slot;
+            local cc=180.0 - aa-bb;
+            //local ab = cc / nbr_slot - 1;
             // calc elems pos in ° on wheel
-            local start_point = -(180-(cc * 0.5));
-            local seg = -cc / (nbr_slot - 1);
+            local start_point = -(middle-(cc * 0.5));
+            local seg = -cc / (nbr_slot - 1.0);
             for ( local i=0; i<nbr_slot; i++ ){
                 angle.push(start_point);
                 start_point+=seg
@@ -512,22 +721,11 @@ class PCCA_Conveyor {
 
     function main_signal( signal_str )
     {
+        last_selected = signal_str
         switch ( signal_str )
         {
             case "random_game" :
-                ::fe.list.index = ::fe.list.index + rnd_int(50, 150)
-                local rd = rnd_int(100, 250);
-                buffer.push(rd);
-                offset+=rd;
-                adjust = max_speed
-                fast_start = true;
-
-            break;
-
-            case "next_letter":
-            case "prev_letter":
-                adjust = max_speed
-                fast_start = true;
+                if(!stop) return false; // return if wheel is still spining
             break;
         }
 
@@ -538,20 +736,35 @@ class PCCA_Conveyor {
     {
         switch ( ttype )
         {
+
+            case Transition.StartLayout:
+            case Transition.FromGame:
+            case Transition.ToGame:
+                am_counter = 0; // reset attract counter
+                timer = ::fe.layout.time;
+            break;
+
             case Transition.ToNewSelection:
-                buffer.push(var);
-                offset+=var;
                 surface.alpha = 255;
+                fast_nav = false
+                if(last_selected == "random_game"){
+                    local rd = rnd_int( 4000 / config_speed, MaxSpinTime / config_speed);
+                    for ( local i=1; i<rd; i++ ){
+                        buffer.push(1);
+                        offset+=1;
+                    }
+                    buff = buffer.len();
+                    fast_nav = true;
+                }else{
+                    offset+=var;
+                    buffer.push(var);
+                }
             break;
 
             case Transition.ToNewList:
                 reset_fade();
-            break;
-
-            case Transition.EndNavigation:
-            break;
-
-            case Transition.FromOldSelection:
+                am_counter = 0; // reset attract counter
+                timer = ::fe.layout.time;
             break;
         }
 
@@ -560,41 +773,44 @@ class PCCA_Conveyor {
 
     function on_tick( ttime ){
 
-        if( fe.get_input_state("down") != false || fe.get_input_state("up") != false){
-            k_hold++;
-        }else{
-            k_hold=0;
-        }
-
         if( buffer.len() ){
             timer = ttime
             stop = false
-            if(!fast_start){
-                tjump = buffer.reduce( function(previousValue, currentValue){
-                    return ( previousValue + currentValue );
-                });
+            tjump = buffer.reduce( function(previousValue, currentValue){
+                return ( previousValue + currentValue );
+            });
+
+            if(last_selected != "random_game"){
+                if( abs(tjump) > 3 ){
+                    adjust = (max_speed - adjust) * 0.04 + adjust
+                    fast_nav = true;
+                }
+                if( abs(tjump) < 3 && fast_nav){
+                    adjust-=10
+                }
+            }else{
+                if(new_val <= buff * 0.5){
+                    adjust = (max_speed - adjust) * 0.05 + adjust
+                }
+
+                if(new_val > buff * 0.7){
+                    adjust = expo_speed(( (new_val - buff * 0.7) / (buff * 0.3) ), max_speed,  -config_speed * 2.0, 1.0);
+                }
+
+                new_val = (buff - buffer.len()).tofloat();
             }
+
+            adjust = clamp(adjust , -config_speed * 2.0, max_speed);
 
             if(progress == 1){
                 step = 1
-                if(k_hold > 20){
-                    local max = max_speed * 0.6;
-                    if(adjust < max){
-                        adjust = max;
+
+                if(last_selected != "random_game"){
+                    if( abs(tjump) > nbr_slot * 2){
+                        buffer.clear();
+                        buffer.push(tjump);
+                        step = abs(buffer[0]) - nbr_slot;
                     }
-                }
-                if(tjump>timer2)adjust+=speed * 0.01
-                if(tjump<timer2)adjust-=speed * 0.01
-                timer2 = tjump
-                adjust = clamp(adjust , 0, max_speed );
-
-                if( abs(tjump) > nbr_slot * 2){
-                    buffer.clear();
-                    buffer.push(tjump);
-                }
-
-                if( abs(buffer[0]) >= nbr_slot * 2  ){
-                    step = abs(buffer[0]) - nbr_slot;
                 }
 
                 ft = 1.0 /  round( (speed-adjust) / (1000.0 / ScreenRefreshRate), 0 );
@@ -605,17 +821,18 @@ class PCCA_Conveyor {
                     w_slots[nbr_slot-1].art.file_name = m_path + fe.game_info(Info.Name, r_offset-offset  ) + ".png";
                 }else if(buffer[0] < 0){
                     offset+=step
-                    for ( local i = nbr_slot - 1; i > 0; i-- ) w_slots[i].art.swap( w_slots[i - 1].art );
+                    for ( local i = nbr_slot - 1; i > 0; i-- ) w_slots[i].art.swap( w_slots[i-1].art );
                     w_slots[0].art.file_name = m_path + fe.game_info(Info.Name, -offset-r_offset ) + ".png";
-
                 }
 
-                for ( local i=0; i<nbr_slot; i++ ){ // reset original pos
-                    w_slots[i].art.set_pos(w_slots[i].origin_x, w_slots[i].origin_y);
-                    w_slots[i].art.rotation = w_slots[i].origin_r;
+                for ( local i = 0; i < nbr_slot; i++ ){ // reset to prev pos
+                    w_slots[i].art.set_pos(w_slots[i].x, w_slots[i].y, w_slots[i].width, w_slots[i].height);
+                    w_slots[i].art.rotation = w_slots[i].r;
 
-                    w_slots[i].frame.set_pos(w_slots[i].origin_x, w_slots[i].origin_y);
-                    w_slots[i].frame.rotation = w_slots[i].origin_r;
+                    local frame_x = w_slots[i].art.x - (w_slots[i].art.width * 0.025);
+                    local frame_y = w_slots[i].art.y - (w_slots[i].art.height * 0.025);
+                    w_slots[i].frame.set_pos(frame_x, frame_y , w_slots[i].width * 1.05, w_slots[i].height * 1.05);
+                    w_slots[i].frame.rotation = w_slots[i].r;
                 }
 
                 if(abs(buffer[0]) < 2){
@@ -630,75 +847,156 @@ class PCCA_Conveyor {
             }
 
             if(buffer.len()){
-
+                ft = 1.0 /  round( (speed-adjust) / (1000.0 / ScreenRefreshRate), 0 );
                 progress = clamp(progress+=ft, 0.0, 1.0);
 
                 if(buffer[0] < 0){
                     for ( local a = 0; a < nbr_slot - 1; a++ ){
 
                         if(rounded){
-                            local angle = ( w_slots[a+1].origin_a - w_slots[a].origin_a ) * progress / 1.0 + w_slots[a].origin_a
-                            w_slots[a].art.x = wheel_x + Rad * cos( angle * PI / 180.0 )
-                            w_slots[a].art.y = wheel_y + Rad * sin( angle * PI / 180.0 )
-                            w_slots[a].art.rotation = angle - 180;
-                            set_rotation(angle, w_slots[a].art);
+                            local angle = ( ( w_slots[a+1].r - w_slots[a].r ) * progress / 1.0 + w_slots[a].r ) + el_rot;
+                            local mr = PI * angle / 180;
+                            local orig_W = w_slots[a].width
+                            local orig_H = w_slots[a].height
+                            local new_W = (w_slots[a+1].width - w_slots[a].width) * progress / 1.0 + w_slots[a].width
+                            local new_H = (w_slots[a+1].height - w_slots[a].height) * progress / 1.0 + w_slots[a].height
+                            local off_X = (orig_W - new_W) * 0.5
+                            local off_Y = (orig_H - new_H) * 0.5
+                            w_slots[a].art.x = wheel_center_x + Rad * cos( mr ) - orig_W * 0.5 + off_X
+                            w_slots[a].art.y = wheel_center_y + Rad * sin( mr ) - orig_H * 0.5 + off_Y
+                            w_slots[a].art.width = new_W
+                            w_slots[a].art.height = new_H
+                            w_slots[a].art.rotation = angle - el_rot;
+
+
+                            set_rotation(angle - el_rot, w_slots[a].art);
                         }else{
-                            w_slots[a].art.y = ( w_slots[a+1].origin_y - w_slots[a].origin_y ) * progress / 1.0 + w_slots[a].origin_y
-                            w_slots[a].art.x = ( w_slots[a+1].origin_x - w_slots[a].origin_x) * progress / 1.0 + w_slots[a].origin_x
-                            w_slots[a].art.rotation = ( w_slots[a+1].origin_r - w_slots[a].origin_r) * progress / 1.0 + w_slots[a].origin_r
+                            w_slots[a].art.y = ( w_slots[a+1].y - w_slots[a].y ) * progress / 1.0 + w_slots[a].y
+                            w_slots[a].art.x = ( w_slots[a+1].x - w_slots[a].x) * progress / 1.0 + w_slots[a].x
+                            w_slots[a].art.rotation = ( w_slots[a+1].r - w_slots[a].r) * progress / 1.0 + w_slots[a].r
+                            w_slots[a].art.width = ( w_slots[a+1].width - w_slots[a].width ) * progress / 1.0 + w_slots[a].width;
+                            w_slots[a].art.height = ( w_slots[a+1].height - w_slots[a].height ) * progress / 1.0 + w_slots[a].height;
                         }
-                            w_slots[a].frame.set_pos(w_slots[a].art.x, w_slots[a].art.y);
-                            w_slots[a].frame.rotation = w_slots[a].art.rotation;
+
+                        local frame_x = w_slots[a].art.x - (w_slots[a].art.width * 0.025);
+                        local frame_y = w_slots[a].art.y - (w_slots[a].art.height * 0.025);
+                        w_slots[a].frame.set_pos(frame_x, frame_y, w_slots[a].art.width * 1.05, w_slots[a].art.height * 1.05 );
+                        w_slots[a].frame.rotation = w_slots[a].art.rotation;
                     }
                 }else if(buffer[0] > 0){ // key down
+
                     for ( local a = 1; a < nbr_slot; a++ ){
                         if(rounded){
-                            local angle = ( w_slots[a-1].origin_a - w_slots[a].origin_a ) * progress / 1.0 + w_slots[a].origin_a
-                            w_slots[a].art.x = wheel_x + Rad * cos( angle * PI / 180.0 )
-                            w_slots[a].art.y = wheel_y + Rad * sin( angle * PI / 180.0 )
-                            w_slots[a].art.rotation = angle - 180;
-                            set_rotation(angle, w_slots[a].art);
+                            local angle = ( ( w_slots[a-1].r - w_slots[a].r ) * progress / 1.0 + w_slots[a].r ) + el_rot
+                            local mr = PI * angle / 180;
+                            local orig_W = w_slots[a].width
+                            local orig_H = w_slots[a].height
+                            local new_W = (w_slots[a-1].width - w_slots[a].width) * progress / 1.0 + w_slots[a].width
+                            local new_H = (w_slots[a-1].height - w_slots[a].height) * progress / 1.0 + w_slots[a].height
+                            local off_X = (orig_W - new_W) * 0.5
+                            local off_Y = (orig_H - new_H) * 0.5
+                            w_slots[a].art.x = wheel_center_x + Rad * cos( mr ) - orig_W * 0.5 + off_X
+                            w_slots[a].art.y = wheel_center_y + Rad * sin( mr ) - orig_H * 0.5 + off_Y
+                            w_slots[a].art.width = new_W
+                            w_slots[a].art.height = new_H
+
+                            w_slots[a].art.rotation = angle - el_rot;
+                            set_rotation(angle - el_rot, w_slots[a].art);
+
                         }else{
-                            w_slots[a].art.y = ( w_slots[a-1].origin_y - w_slots[a].origin_y ) * progress / 1.0 + w_slots[a].origin_y
-                            w_slots[a].art.x = ( w_slots[a-1].origin_x - w_slots[a].origin_x) * progress / 1.0 + w_slots[a].origin_x
-                            w_slots[a].art.rotation = ( w_slots[a-1].origin_r - w_slots[a].origin_r) * progress / 1.0 + w_slots[a].origin_r
+                            w_slots[a].art.width = ( w_slots[a-1].width - w_slots[a].width ) * progress / 1.0 + w_slots[a].width;
+                            w_slots[a].art.height = ( w_slots[a-1].height - w_slots[a].height ) * progress / 1.0 + w_slots[a].height;
+
+                            w_slots[a].art.y = ( w_slots[a-1].y - w_slots[a].y ) * progress / 1.0 + w_slots[a].y
+                            w_slots[a].art.x = ( w_slots[a-1].x - w_slots[a].x) * progress / 1.0 + w_slots[a].x
+                            w_slots[a].art.rotation = ( w_slots[a-1].r - w_slots[a].r) * progress / 1.0 + w_slots[a].r
                         }
-                            w_slots[a].frame.set_pos(w_slots[a].art.x, w_slots[a].art.y);
-                            w_slots[a].frame.rotation = w_slots[a].art.rotation;
+
+                        local frame_x = w_slots[a].art.x - (w_slots[a].art.width * 0.025);
+                        local frame_y = w_slots[a].art.y - (w_slots[a].art.height * 0.025);
+                        w_slots[a].frame.set_pos(frame_x, frame_y, w_slots[a].art.width * 1.05, w_slots[a].art.height * 1.05 );
+                        w_slots[a].frame.rotation = w_slots[a].art.rotation;
                     }
                 }
             }
         }else{
             if(ttime - timer > 100){
-                ft = 1.0 / round( speed / (1000.0 / ScreenRefreshRate) , 0);
                 adjust = 0.0;
                 tjump = 0
-                fast_start = false;
+                fast_nav = false;
                 spin_start = false;
-                fade();
+                if(fade_on) fade();
                 stop = true
+                buff = 0;
+                if(AttractEnabled) attract_start(ttime);
             }
         }
     }
 
+    function attract_start(ttime){
+        if(::surf_menu.visible) timer = ttime; // disable on edit mode
+        if(ttime - timer < 4000) return false; // wait minimum 4 secs
+        local VideoWait = am_WaitVideo;
+        local start = false;
+
+        if(VideoWait){
+            if( (::ArtObj.snap.video_duration && ::ArtObj.snap.video_playing) || (
+                (::ArtObj.background1.video_duration && ::ArtObj.background1.video_playing) ||
+                (::ArtObj.background2.video_duration && ::ArtObj.background2.video_playing) ) )
+            {
+                start = false;
+            }else{
+                if(ttime - timer > attract_time)  start = true;
+            }
+        }else{
+            if(ttime - timer > attract_time){
+                start = true;
+                timer = ttime;
+            }else{
+                start = false;
+            }
+        }
+
+        if(!start) return false;
+
+        if(fe.game_info(Info.Emulator) == "@"){
+            if(am_counter > 1 ){
+                fe.signal("select");
+                am_counter = 0;
+            }else{
+                fe.signal("random_game");
+            }
+        }else{
+            if(am_counter < AM_system_loop ) fe.signal("random_game");
+        }
+
+        am_counter++;
+
+        if(am_counter > AM_system_loop && AM_all_systems){
+            local rnd_disp = rnd_int(0, ::fe.displays.len() - 1);
+            if(fe.displays.len() > 1 ){
+                while( rnd_disp  == ::fe.list.display_index) rnd_disp = rnd_int(0, ::fe.displays.len() - 1);
+            }
+            fe.set_display( rnd_disp );
+        }
+    }
+
+    function expo_speed (progress, from, to, bas) { if ( progress == 0) return from; return to * pow( 2, 10 * ( progress / bas - 1) ) + from; }
+
     function reset_fade() {surface.alpha = 255; w_time = ::fe.layout.time;}
 
     function fade(){
-        if(!fade_on) return false;
         local alpha;
-        if(!fade_time) fade_time = 0.01;
-        local from = 255;
-        local to = clamp( fade_alpha * 255 , 0.0 , 255.0);
+        local to = clamp( fade_alpha * 255.0 , 0.0 , 255.0);
         local elapsed = ::fe.layout.time - w_time;
         if( elapsed > fade_delay && fade_time > 0) {
-            alpha = (from * (fade_time - elapsed + fade_delay)) / fade_time;
+            alpha = (255.00 * (fade_time - elapsed + fade_delay)) / fade_time;
             alpha = (alpha < 0 ? 0 : alpha);
             if(alpha <= to || alpha == 0) return false;
             surface.alpha = alpha;
         }
     }
 
-    //clamp a value from min to max
     function clamp(value, min, max) {
         if (value < min) value = min; if (value > max) value = max; return value
     }
@@ -711,11 +1009,11 @@ class PCCA_Conveyor {
 
     function set_rotation(r, obj) {
         local mr = PI * r / 180;
-        obj.x -= cos( mr ) * (-obj.width * 0.5) - sin( mr ) * (-obj.height * 0.5) - obj.width * 0.5;
-        obj.y -= sin( mr ) * (-obj.width * 0.5) + cos( mr ) * (-obj.height * 0.5) - obj.height * 0.5;
+        obj.x += cos( mr ) * (-obj.width * 0.5) - sin( mr ) * (-obj.height * 0.5) + obj.width * 0.5;
+        obj.y += sin( mr ) * (-obj.width * 0.5) + cos( mr ) * (-obj.height * 0.5) + obj.height * 0.5;
     }
 
-    function round(nbr, dec){ //Round Number as decimal
+    function round(nbr, dec){ // Round Number as decimal
         local f = pow(10, dec) * 1.0;
         local newNbr = nbr.tofloat() * f;
         newNbr = floor(newNbr + 0.5)
@@ -723,18 +1021,4 @@ class PCCA_Conveyor {
         return newNbr;
     }
 
-    wh = 0;
-    rounded = true;
-    Rad = 0;
-    adjust = 0;
-    surface = {};
-    buffer = [];
-    k_hold = false;
-    nbr_slot = 6;
-    speed = 170;
-    wheel_x = 0
-    wheel_y = 0
-    m_path = "";
-    w_slots = [];
 }
-
