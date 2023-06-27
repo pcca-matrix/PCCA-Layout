@@ -1,6 +1,6 @@
 # PCCA Hyperspin and Hyper-Theme conversion for Attract-Mode
 
-### Version 2.70 beta
+### Version 2.80 beta
 
 This script is intended to work with Attract-Mode http://attractmode.org/ , it intends to reproduce the real hyperspin experience in HD as precise as possible using the same themes and folder structure as a real Hyperspin setup.
 
@@ -20,8 +20,6 @@ Read the [Wiki](https://github.com/pcca-matrix/PCCA-Layout/wiki) for full docume
 Particles animation
 
 Sprite animation
-
-AA in shader to fix jagged edges when object is rotated !
 
 more animatios
 
