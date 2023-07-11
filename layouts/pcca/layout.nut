@@ -25,6 +25,14 @@ class UserConfig {
     </ label="Search Key", help="Choose the key to initiate a search", options="custom1,custom2,custom3,custom4,custom5,custom6,none", order=M_order++ />keyboard_search_key="custom1";
     </ label="Search Results", help="Choose the search method", options="show_results,next_match", order=M_order++ />keyboard_search_method="show_results";
     </ label="Keyboard Layout", help="Choose the keyboard layout", options="qwerty,azerty,alpha", order=M_order++ />keyboard_layout="alpha";
+    </ label="--- Attract-Mode ---", help="", options="", order=M_order++ />mt1=""
+    </ label="Enabled", help="Enable attract-mode", options="Yes, No", order=M_order++ />AM_Enabled="Yes";
+    </ label="Wait Video", help="Wait end of video before starting attract-mode", options="Yes, No", order=M_order++ />AM_WaitVideo="Yes";
+    </ label="Max Spin Time", help="Spin for a random amount of time between 3 secs and max spin time", options="", order=M_order++ />AM_MaxSpinTime="5";
+    </ label="Wait Time", help="Time to wait before Attract-Mode starts", options="", order=M_order++ />AM_AttractTime="80";
+    </ label="All Systems", help="Random in all systems", options="Yes, No", order=M_order++ />AM_all_systems="Yes";
+    </ label="Loop by system", help="How many random loop by system", options="", order=M_order++ />AM_system_loop="3";
+    </ label="--- Scraper ---", help="", options="", order=M_order++ />mt2=""
     </ label="Scraper User name", help="PCCA Scraper user name", options="", order=M_order++ />scraper_username="test";
     </ label="Scraper password", help="PCCA Scraper password", options="", order=M_order++ />scraper_password="test";
     </ label="Scraper Region", help="PCCA Scraper prefered region", options="", order=M_order++ />scraper_region="Europe";
@@ -1880,7 +1888,6 @@ menus.push ({
     "title":"Theme Settings", "id":"theme_setting",
     "rows":[{"title":"Global settings", "target":"glob_theme_setting"},
             {"title":"Wheel", "target":"wheel", "target":"wheel_settings"},
-            {"title":"Attract-Mode", "target":"attract_mode"},
             {"title":"Sounds", "target":"sound"},
             {"title":"Pointer","target":"pointer"},
             {"title":"Game Text", "target":"game_text", "infos":"Game info surface options" , "hide":"Main Menu"}, // (should not be displayed on main menu)
@@ -3239,7 +3246,6 @@ menus.push ({
                     "onselect":function(current_list, selected_row){
                         xml_root.getChild(current_list.object).addAttr("rest", (selected_row.target));
                         save_xml(xml_root, path);
-                        XML().display(xml_root);
                         triggers.theme.start = true;
                     }
                 })

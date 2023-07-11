@@ -30,15 +30,6 @@ function global_default_settings(){
     Ini_settings["wheel"]["center_zoom"] <- 1.0;
     Ini_settings["wheel"]["media"] <- "wheel";
 
-   // Attract-Mode
-    Ini_settings["wheel"]["AM_Enabled"] <- true;
-    Ini_settings["wheel"]["AM_WaitVideo"] <- true;
-    Ini_settings["wheel"]["AM_MaxSpinTime"] <- 170;
-    Ini_settings["wheel"]["AM_AttractTime"] <- 80;
-    Ini_settings["wheel"]["AM_MaxSpinTime"] <- 5;
-    Ini_settings["wheel"]["AM_all_systems"] <- true;
-    Ini_settings["wheel"]["AM_system_loop"] <- 3;
-
     Ini_settings["game text"] <- {}
     Ini_settings["game text"]["animation"] <- "elastic";
     Ini_settings["game text"]["anim_time"] <- 1.0;

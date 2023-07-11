@@ -425,12 +425,12 @@ class PCCA_Conveyor {
             try{ scale = opts.scale.tofloat() } catch(err){}
             try{ center_zoom = opts.center_zoom } catch(err){}
             // attract-mode
-            try{ attract_time = opts.AM_AttractTime.tointeger() * 1000 } catch(err){}
-            try{ MaxSpinTime = opts.AM_MaxSpinTime.tointeger() * 1000 } catch(err){}
-            try{ am_WaitVideo = opts.AM_WaitVideo } catch(err){}
-            try{ AttractEnabled = opts.AM_Enabled } catch(err){}
-            try{ AM_all_systems = opts.AM_all_systems } catch(err){}
-            try{ AM_system_loop = opts.AM_system_loop } catch(err){}
+            try{ attract_time = my_config["AM_AttractTime"].tointeger() * 1000 } catch(err){}
+            try{ MaxSpinTime = my_config["AM_MaxSpinTime"].tointeger() * 1000 } catch(err){}
+            try{ am_WaitVideo = (my_config["AM_WaitVideo"].tolower() == "yes" ? true : false) } catch(err){}
+            try{ AttractEnabled = (my_config["AM_Enabled"].tolower() == "yes" ? true : false) } catch(err){}
+            try{ AM_all_systems = (my_config["AM_all_systems"].tolower() == "yes" ? true : false) } catch(err){}
+            try{ AM_system_loop = my_config["AM_system_loop"].tointeger() } catch(err){}
         }
 
         if(fade_time) fade_on = true;
@@ -537,7 +537,6 @@ class PCCA_Conveyor {
                     Rad*=Curve;
                     el_rot = -90.0
                     angle = curve_points(Rad, surface_w * 1.3,  90.0 )
-                    print(table_as_string(angle))
                     local len = (angle[0] - angle[angle.len()-1])
                     if (len > 180) {
                         len -= 360
