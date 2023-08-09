@@ -176,7 +176,7 @@ class SelMenu
         _list_title.msg = tmp;
     }
 
-    function select(){
+    function select(path){
         local onselect = false;
         if(_selected_row.rawin("type") ){ // save and reload theme if select pressed on rows that have type attr
             save_xml(xml_root, path);

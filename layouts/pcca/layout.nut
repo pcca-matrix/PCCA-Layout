@@ -958,6 +958,7 @@ function load_theme(name, theme_content, prev_def){
 
     set_xml_datas(); // format xml datas
 
+    Sound_Click.file_name = medias_path + "Main Menu/Sound/Wheel Click.mp3";
     if(file_exist(medias_path + curr_sys + "/Sound/Wheel Click.mp3") ) Sound_Click.file_name = medias_path + curr_sys + "/Sound/Wheel Click.mp3"; // wheel_click found in media folder
 
     if(file_exist(medias_path + curr_sys + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3") ){ // background music found in media folder
@@ -2526,7 +2527,7 @@ menus.push({
             "onback":function(selected_row, current_list){
                Ini_settings["themes"]["scroll_pos"] = (syno_surf.x / flw) + "," + (syno_surf.y / flh) + "," + (syno_surf.width /flw) + "," + (syno_surf.height / flh) + "," + syno_surf.rotation;
             },
-            "infos":LnG.M_inf_syno_speed
+            "infos":LnG.M_inf_syno_pos
     },
     {
         "title":"Scrolling speed", "type":"float",
@@ -3479,7 +3480,7 @@ signals["menu_sig"] <- function (str) {
             show_menu_artwork( sel_menu, surf_menu_img, artwork_list );
         break;
         case "select":
-            local selected = sel_menu.select();
+            local selected = sel_menu.select(path);
             show_menu_artwork( sel_menu, surf_menu_img, artwork_list );
         break;
         case "back":
@@ -3814,6 +3815,7 @@ function set_custom_value(Ini_settings) {
     }
 
     if(prev_tr == Transition.ToNewList){
+        FE_Sound_Wheel_In.playing = true; // temp fix bug in AM  https://github.com/mickelson/attract/issues/747
         syno_surf.visible = Ini_settings.themes["synopsis"];
 
         system_stats_coord();
