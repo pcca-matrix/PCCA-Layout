@@ -24,12 +24,13 @@
            bshape="false"
            type="none"
            start="none"
-           rest="none"/>
+           rest="none"
+           random="false"/>
     <background time="1.0" delay ="0.0" type="none" rest="none" rest_speed="1.0"/>
-    <artwork1 hidden="false" x="200" y="200" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-8"/>
-    <artwork2 hidden="false" x="200" y="500" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-4"/>
-    <artwork3 hidden="false" x="600" y="200" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-3"/>
-    <artwork4 hidden="false" x="700" y="700" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-2"/>
-    <artwork5 hidden="false" x="800" y="400" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-9"/>
-    <artwork6 hidden="false" x="900" y="300" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-9"/>
+    <artwork1 random="none" hidden="false" x="200" y="200" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-8"/>
+    <artwork2 random="none" hidden="false" x="200" y="500" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-4"/>
+    <artwork3 random="none" hidden="false" x="600" y="200" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-3"/>
+    <artwork4 random="none" hidden="false" x="700" y="700" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-2"/>
+    <artwork5 random="none" hidden="false" x="800" y="400" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-9"/>
+    <artwork6 random="none" hidden="false" x="900" y="300" w="0" h="0" r="0" time="1.0" delay ="0.0" type="none" start="none" rest="none" keepaspect="false" zorder="-9"/>
 </Theme>

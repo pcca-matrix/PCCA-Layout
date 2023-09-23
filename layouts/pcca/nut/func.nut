@@ -63,7 +63,7 @@ function global_default_settings(){
     foreach( n in ["a","b","c"] ){
         Ini_settings["special art " + n] <- {
             "nbr":"", "cnt": 1, "in": 0.5, "out": 0.5, "length": 3, "delay": 0.1, "type": "linear", "start": "bottom",
-            "active" : true, "default" : true, "w": 0.0, "h": 0.0, "x": 0.0 , "y": 0.0, "r":0.0,  "syst" : "", "sys_global" : 0
+            "active" : true, "default" : true, "w": 0.0, "h": 0.0, "x": 0.0 , "y": 0.0, "r":0.0,  "syst" : "",
         }
         if( n == "b" ){
             Ini_settings["special art " + n].type = "fade";
@@ -147,9 +147,13 @@ function refresh_stats(system = "") {
         }
         if(romlist != ""){
             local text = txt.loadFile( FeConfigDirectory + "romlists\\" + romlist + ".txt" );
-            foreach( line in text.lines ) if( line != "" ) cnt++;
-            datas[display] <- {"cnt":cnt-1, "pl":0, "time":0};
-            g_cnt+=cnt-1;
+            foreach( line in text.lines ){
+                if( line != "" ){
+                    if(line[0] != 35) cnt++; // discard #
+                }
+            }
+            datas[display] <- {"cnt":cnt, "pl":0, "time":0};
+            g_cnt+=cnt;
         }
     }
 
@@ -225,8 +229,8 @@ function secondsToDhms(seconds) {
 // get media tags
 function get_media_tag(offset){
     local tags = fe.game_info(Info.Tags, offset).tolower();
-	local taglist = split (tags,";")
-	if ( (taglist.len() == 1) ) return "images/tags/" + taglist[0] + ".png";
+    local taglist = split (tags,";")
+    if ( (taglist.len() == 1) ) return "images/tags/" + taglist[0] + ".png";
     return;
 }
 
@@ -246,8 +250,9 @@ function get_dir_lists(path)
 //Check if file exist
 function file_exist(path)
 {
-    try { local a = file(path, "r" ); a.close(); return true; }
-    catch( e ){ return false; }
+    return fe.path_test(path, PathTest.IsFile);
+    //try { local a = file(path, "r" ); a.close(); return true; }
+    //catch( e ){ return false; }
 }
 
 //Round Number as decimal
@@ -321,10 +326,8 @@ function flipx( img ) { img.subimg_width = -1 * img.texture_width; img.subimg_x 
 function ext( name )
 {
     local s = split( name, "." );
-    if ( s.len() <= 1 )
-        return "";
-    else
-        return s[s.len()-1];
+    if ( s.len() <= 1 ) return "";
+    return s[s.len()-1];
 }
 
 //Return filename without ext
@@ -375,54 +378,36 @@ function region( offset ){
 
 function periph( offset ){
     local ctsp = split(fe.game_info(Info.Control, offset), "," );
-    if ( ctsp.len() <= 1 )
-        return "images/controller/" + fe.list.name + "/" + fe.game_info(Info.Control, offset);
-    else
-        return "images/controller/" + fe.list.name + "/" + ctsp[0];
+    if ( ctsp.len() <= 1 ) return "images/controller/" + fe.game_info(Info.Emulator) + "/" + fe.game_info(Info.Control, offset);
+    return "images/controller/" + fe.game_info(Info.Emulator) + "/" + ctsp[0];
 }
 
 function periph2( offset ){
     local ctsp = split(fe.game_info(Info.Control, offset), "," );
-    if ( ctsp.len() < 2 )
-        return "";
-    else
-        return "images/controller/" + fe.list.name + "/" + ctsp[1];
+    if ( ctsp.len() < 2 ) return "";
+    return "images/controller/" + fe.game_info(Info.Emulator) + "/" + ctsp[1];
 }
 
 function category( offset ){
     local ctsp = split(fe.game_info(Info.Category, offset), "," );
-    if ( ctsp.len() <= 1 )
-        return "images/category/" + fe.game_info(Info.Category, offset);
-    else
-        return "images/category/" + ctsp[0];
+    if ( ctsp.len() <= 1 ) return "images/category/" + fe.game_info(Info.Category, offset);
+    return "images/category/" + ctsp[0];
 }
 
 function category2( offset ){
     local ctsp = split(fe.game_info(Info.Category, offset), "," );
-    if ( ctsp.len() < 2 )
-        return "";
-    else
-        return "images/category/" + ctsp[1];
+    if ( ctsp.len() < 2 ) return "";
+    return "images/category/" + ctsp[1];
 }
 
 function ret_wheel( offset ){
-    local m;
-    if(fe.game_info(Info.Emulator) == "@"){
-        m  = medias_path + "Main Menu/Images/Wheel/[Name].png";
-    }else{
-        m = medias_path + fe.list.name + "/Images/Wheel/[Name].png";
-    }
-    return m;
+    if(fe.game_info(Info.Emulator) == "@") return medias_path + "Main Menu/Images/Wheel/[Name].png";
+    return medias_path + fe.game_info(Info.Emulator) + "/Images/Wheel/[Name].png";
 }
 
-function ret_snap(){
-    local m;
-    if(fe.game_info(Info.Emulator) == "@"){
-        m  = medias_path + "Main Menu/Video/" + fe.game_info(Info.Name) + ".mp4";
-    }else{
-        m = medias_path + fe.list.name + "/Video/" + fe.game_info(Info.Name) + ".mp4";
-    }
-    return m;
+function ret_favo( offset ){
+    if( fe.game_info(Info.Favourite) == "1" || fe.game_info(Info.Extra).find("f") != null || fe.list.name == "Favourites" ) return 1;
+    return "";
 }
 
 //clamp a value from min to max
@@ -458,7 +443,7 @@ function writeB(Line){
 }
 
 function merge_table(tb1,tb2){
-    foreach(a,b in tb2)tb1[a]<-b;
+    foreach(a,b in tb2) tb1[a]<-b;
     return tb1;
 }
 
@@ -489,9 +474,9 @@ function set_type(val, ref){
 
 function set_xml_datas(){
     local common = {"x":0.0,"y":0.0,"w":0.0,"h":0.0,"r":0.0,"time":0.0,"delay":0.0,"type":"none","start":"none","rest":"none","zorder":0,"ry":0.0,"rx":0.0,"keepaspect":true,
-    "hidden":false};
+    "hidden":false,"random":"none"};
     local video = merge_table (clone(common), {"bsize":0,"bsize2":0,"bsize3":0,"bcolor":0,"bcolor2":0,"bcolor3":0,"overlayoffsetx":0.0,"overlayoffsety":0.0,"overlaybelow":false,
-    "bshape":"square", "overlaywidth":0.0, "overlayheight":0.0, "below":false, "forceaspect":false, "crt_scanline":false} );
+    "bshape":"square", "overlaywidth":0.0, "overlayheight":0.0, "below":false, "forceaspect":false, "crt_scanline":false, "random":false} );
     video.rawdelete("hidden");
     video.rawdelete("keepaspect");
     local node = find_theme_node( xml_root );
@@ -657,34 +642,34 @@ function create_xml(){
     xml_root.getChild("hd").addAttr("lh", res_c[1]);
 }
 
-function get_infos_screen(curr_game, curr_sys, ttime){
+function get_infos_screen(curr_game, curr_emulator, ttime){
     local script_dir = globs.script_dir;
     local def = false, game = false, globals = false;
     overlay_title.charsize = flw*0.022;
     // check if infos is available for this systeme and for selected game
-    if(file_exist(script_dir + "Loader/" + curr_sys + "/Default/settings.ini")) def = true;
-    if(file_exist(script_dir + "Loader/" + curr_sys + "/" + curr_game + "/settings.ini")) game = true;
+    if(file_exist(script_dir + "Loader/" + curr_emulator + "/Default/settings.ini")) def = true;
+    if(file_exist(script_dir + "Loader/" + curr_emulator + "/" + curr_game + "/settings.ini")) game = true;
 
     SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.020 })
     if(def){
-        local def_ini = get_ini(script_dir + "Loader/" + curr_sys + "/Default/settings.ini");
+        local def_ini = get_ini(script_dir + "Loader/" + curr_emulator + "/Default/settings.ini");
         if(def_ini.main.globals == "true"){
-            overlay_background.file_name = script_dir + "Loader/" + curr_sys + "/Default/default.png";
+            overlay_background.file_name = script_dir + "Loader/" + curr_emulator + "/Default/default.png";
             overlay_background.set_pos(0,0,flw, flh);
             // type
             switch(def_ini.main.type){
                 case "select":
                     local opts = split( def_ini.main.options, "," );
                     opt_selected <- fe.overlay.list_dialog(opts, def_ini.main.select_title, 0, -1);
-                    fe.do_nut(script_dir + "Loader/" + curr_sys + "/Default/action.nut");
+                    fe.do_nut(script_dir + "Loader/" + curr_emulator + "/Default/action.nut");
                 break;
             }
         }
     }
 
     if(game){
-        local game_ini = get_ini(script_dir + "Loader/" + curr_sys + "/" + curr_game + "/settings.ini");
-        overlay_background.file_name = script_dir + "Loader/" + curr_sys + "/" + curr_game + "/default.png";
+        local game_ini = get_ini(script_dir + "Loader/" + curr_emulator + "/" + curr_game + "/settings.ini");
+        overlay_background.file_name = script_dir + "Loader/" + curr_emulator + "/" + curr_game + "/default.png";
         overlay_background.set_pos(0,0,flw, flh);
         overlay_title.visible = true;
         // type
@@ -692,7 +677,7 @@ function get_infos_screen(curr_game, curr_sys, ttime){
             case "select":
                 local opts = split( game_ini.main.options, "," );
                 opt_selected <- fe.overlay.list_dialog(opts, game_ini.main.select_title, 0, -1);
-                fe.do_nut(script_dir + "Loader/" + curr_sys + "/" + curr_game + "/action.nut");
+                fe.do_nut(script_dir + "Loader/" + curr_emulator + "/" + curr_game + "/action.nut");
             break;
 
             case "infos":
@@ -851,6 +836,372 @@ function system_stats_coord(set=false){
         m_infos.y = g_c[1]*flh;
         m_infos.rotation = g_c[2];
     }
+}
+
+function PadWithZero(value) {
+    return (value.tointeger() < 10 ? "0" : "") + value.tostring();
+}
+
+function implode(arr, sep="") {
+    local o = arr[0];
+    for (local i = 1; i < arr.len(); i++) o+= sep + arr[i];
+    return o;
+}
+
+function game_infos(){
+    local st = [Info.Name, Info.Title, Info.Emulator, Info.CloneOf, Info.Year, Info.Manufacturer, Info.Category, Info.Players, Info.Rotation, Info.Control, Info.Status, Info.DisplayCount,
+    Info.DisplayType, Info.AltRomname, Info.AltTitle, Info.Extra, Info.Buttons, Info.Series, Info.Language, Info.Region, Info.Rating];
+    local i = [];
+    foreach(v in st) i.push(fe.game_info(v))
+    return i;
+}
+
+function RealSplit(str, separator) {
+    local result = [];
+    local chars = "";
+    for (local i = 0; i < str.len(); i++){
+        if(str[i].tochar() != separator){
+            chars = chars + str[i].tochar();
+        }else{
+            result.push(chars);
+            chars = "";
+        }
+    }
+    if(chars != "") result.push(chars);
+    return result;
+}
+
+function check_display(name){
+    foreach(v in fe.displays ) if(v.name == name) return true;
+    return false;
+}
+
+function delete_display(disp_name){
+    fe.overlay.splash_message ("Deleting Romlist");
+    local cfg = file(fe.path_expand(FeConfigDirectory + "attract.cfg"), "rb")
+    local output = [];
+    local char
+    while (!cfg.eos()){
+        local ln = ""
+        char = 0
+        while (char != 10) {
+            char = cfg.readn('b')
+            if (char != 13 && char != 10) ln = ln + char.tochar()
+        }
+        output.push(ln)
+    }
+    cfg.close();
+
+    local cmd = ["layout","romlist","in_cycle","in_menu","filter","rule","sort_by","reverse_order"];
+    local c = false;
+    local new_output = [];
+    foreach(k,v in output){
+        local keep = true;
+        local ln = strip(v.tolower());
+        if(ln.len() > 6 && ln.slice(0,7) == "display"){
+            local found_disp = strip( ln.slice(7, ln.len()) );
+            c = (found_disp == disp_name.tolower());
+            if(c) keep = false;
+        }
+
+        if(c){
+            foreach (item in cmd) {
+                if ( ln.find(item) == 0 && ln[item.len()+1] == 32) {
+                    keep = false;
+                    break;
+                }
+            }
+        }
+        if (keep) new_output.append(v);
+    }
+
+    local f2 = file(  fe.path_expand( FeConfigDirectory + "attract.cfg" ), "w" );
+    foreach (v in new_output) f2.writeblob(writeB(v + "\n"));
+    f2.close()
+}
+
+function add_display(name, opts, filters){
+    fe.overlay.splash_message ("Creating romlist");
+    local cfg = file(fe.path_expand(FeConfigDirectory + "attract.cfg"), "rb")
+    local output = [];
+    local char
+    while (!cfg.eos()){
+        local ln = ""
+        char = 0
+        while (char != 10) {
+            char = cfg.readn('b')
+            if (char != 13 && char != 10) ln = ln + char.tochar()
+        }
+        output.push(ln)
+    }
+    cfg.close();
+
+    local new_disp = "display   " + name + "\n" +
+    "\tlayout               pcca\n"+
+    "\tromlist              " + name + "\n" +
+    "\tin_cycle             " + opts[0] + "\n" +
+    "\tin_menu              " + opts[1] + "\n";
+
+    foreach(k,v in filters){
+        new_disp+="\tfilter               "+v.name + "\n";
+        foreach(kk,vv in v){
+            if(kk != "name"){
+                local cnt = 21 - kk.len();
+                local sp = "";
+                for (local k = 0; k < cnt; k++) sp+=" "
+                new_disp+="\t\t"+kk+ sp + vv + "\n";
+            }
+        }
+    }
+    //check in array where is the first display block
+    for (local k = 0; k < output.len(); k++) {
+        local l = strip(output[k]);
+        if(l.len() > 6 && l.slice(0,7) == "display"){
+            output.insert(k, new_disp);
+            break;
+        }
+    }
+
+    local f2 = file(  fe.path_expand( FeConfigDirectory + "attract.cfg" ), "w" );
+    foreach (v in output) f2.writeblob(writeB(v + "\n"));
+    f2.close()
+}
+
+
+function update_most_played(){
+    local elapse = fe.game_info(Info.PlayedTime).tointeger();
+    if(elapse < 60) return false; // do not add if played less than 1 minute
+    local g_inf = game_infos();
+    g_inf.push(fe.game_info(Info.PlayedCount).tointeger());
+    g_inf.push(elapse);
+
+    // check if it's a favourites
+    if(ret_favo(0)== 1) g_inf[15] = "f";
+
+    local m_pl = [];
+    local ln = implode(g_inf, ";");
+    local game = {"sys":g_inf[2], "name":g_inf[0],"line":ln, "cnt":fe.game_info(Info.PlayedCount).tointeger(), "elapse":elapse};
+
+    local Mostpath = fe.path_expand(FeConfigDirectory + "romlists/Most Played.txt");
+    local tempf = ReadTextFile(Mostpath);
+    while (!tempf.eos()){
+        local tmpline = tempf.read_line();
+        if(tmpline == "") continue; // if empty line
+        local spl = RealSplit( tmpline, ";" );
+        if(spl.len() < 23) continue; // security if the romlist has missing element
+        if(spl[0] == g_inf[0] && spl[2] == g_inf[2]) continue; // discard if already exist in array
+        m_pl.push( { "line":tmpline, "cnt":spl[21].tointeger(), "elapse":spl[22].tointeger() } )
+    }
+
+    m_pl.push(game);
+    m_pl.sort(function(a, b) { if (b.cnt == a.cnt) return b.elapse <=> a.elapse; else  return b.cnt <=> a.cnt; } );
+    while( m_pl.len() > my_config["Most_Played_Entry"].tointeger() ) m_pl.pop();
+
+    local f2 = file(Mostpath, "w");
+    foreach(a,b in m_pl) f2.writeblob( writeB(b.line + "\n") );
+    f2.close();
+}
+
+
+function create_most_played()
+{
+    local m_pl = [];
+    local dirs = DirectoryListing( FeConfigDirectory + "stats", false );
+    foreach(display in dirs.results){
+        if(!check_display(display) || !file_exist(FeConfigDirectory + "romlists/" + display + ".txt")) continue; // check if display and romlist exist
+        local games = [];
+
+        // load romlist in games array
+        local romlist_file = ReadTextFile( fe.path_expand(FeConfigDirectory + "romlists/" + display + ".txt") );
+        while (!romlist_file.eos()){
+            local tmpline = romlist_file.read_line();
+            local splited = split( tmpline, ";" );
+            games.push({"name":splited[0],"line":tmpline, "cnt":0, "elapse":0});
+        }
+
+        if(!games.len()) continue; // if empty romlist
+
+        local files = DirectoryListing( FeConfigDirectory + "stats/" + display, false );
+        foreach(file in files.results){
+            if ( ext(file) == "stat" ){
+                local f_stat = ReadTextFile(FeConfigDirectory + "stats/" + display + "/" + file);
+                local stats = [];
+                for (local i = 0; !f_stat.eos(); i++) stats.push(f_stat.read_line().tointeger());
+
+                if(stats.len() && stats[1] > 60){ // do not add if played less than 1 minute
+                    local filename = strip_ext(file);
+                    foreach(k,v in games){
+                        if(v.name == filename){
+                            games[k].cnt = stats[0];
+                            games[k].elapse = stats[1];
+                        }
+                    }
+                }
+            }
+        }
+
+        // add favourites flag to extra inf
+        if(file_exist(FeConfigDirectory + "romlists/" + display + ".tag")){
+            local temp_favo = ReadTextFile(FeConfigDirectory + "romlists/" + display + ".tag");
+            while (!temp_favo.eos()){
+                local tmpline = temp_favo.read_line();
+                foreach(k,v in games){
+                    if(v.name == strip(tmpline)){
+                        local g_inf = RealSplit( v.line, ";" );
+                        g_inf[15] = "f";
+                        games[k].line = implode(g_inf , ";");
+                    }
+                }
+            }
+        }
+
+        foreach(k,v in games){
+            if(v.cnt > 0){
+                m_pl.push(v);
+                m_pl.sort(function(a, b) { if (b.cnt == a.cnt) return b.elapse <=> a.elapse; else  return b.cnt <=> a.cnt; } );
+                while( m_pl.len() > my_config["Most_Played_Entry"].tointeger() ) m_pl.pop();
+            }
+        }
+    }
+
+    local mostPlpath = fe.path_expand(FeConfigDirectory + "romlists/Most Played.txt");
+    local f2 = file(mostPlpath, "w");
+    foreach(b in m_pl) f2.writeblob( writeB(b.line + ";" + b.cnt + ";" + b.elapse + "\n") ); // add 2 new cols to the romlist (count and time) for the sorting order
+    f2.close()
+}
+
+function update_recent()
+{
+    local g_inf = game_infos();
+    // check if it's a favourites and add time to extra information
+    if(ret_favo(0)== 1) g_inf[15] = time() + ":f"; else g_inf[15] = time();
+    local Recentpath = fe.path_expand(FeConfigDirectory + "romlists/Recent.txt");
+    local tempf = ReadTextFile(Recentpath);
+    local ln = "";
+    ln+=implode(g_inf, ";") + "\n";
+    for (local i = 0; !tempf.eos(); i++) {
+        local templ = tempf.read_line();
+        local spl = RealSplit( templ, ";" );
+        if(spl[0] == g_inf[0] && spl[2] == g_inf[2]) continue;
+        if( i > my_config["Recent_Entry"].tointeger() ) break;
+        ln+=templ + "\n";
+    }
+
+    local f2 = file(  Recentpath, "w" );
+    f2.writeblob(writeB(ln));
+    f2.close()
+}
+
+function update_favourites(add){
+    local g_inf = game_infos();
+    local Favopath = fe.path_expand(FeConfigDirectory + "romlists/Favourites.txt");
+    local tempf = ReadTextFile(Favopath);
+    local ln = "";
+    while (!tempf.eos()){
+        local templ = tempf.read_line();
+        local spl = RealSplit( templ, ";" );
+        if(spl[0] == g_inf[0] && spl[2] == g_inf[2]) continue; // remove from favourites
+        ln+=templ + "\n";
+    }
+    if(add) ln+=implode(g_inf, ";") + "\n";
+    local f2 = file(  Favopath, "w" );
+    f2.writeblob(writeB(ln));
+    f2.close();
+
+    //update custom romlist
+    foreach( v in globs.custom_romlists ){
+        if(v == "Favourites") continue;
+            local Favopath = fe.path_expand(FeConfigDirectory + "romlists/" + v + ".txt");
+            local tempf = ReadTextFile(Favopath);
+            local ln = "";
+            while (!tempf.eos()){
+                local templ = tempf.read_line();
+                local spl = RealSplit( templ, ";" );
+                if(spl[0] == g_inf[0] && spl[2] == g_inf[2]){ // if game is in the list
+                    if(v == "Recent"){ // Recent romlist
+                       local datas = RealSplit(spl[15], ":");
+                       spl[15] = datas[0] + (add == true ? ":f" : "" );
+                    }else{ // other romlist
+                       spl[15] = (add == true ? "f" : "" );
+                    }
+                    ln+=implode(spl, ";") + "\n";
+                }else{
+                    ln+=templ + "\n";
+                }
+            }
+
+            local f2 = file(  Favopath, "w" );
+            f2.writeblob(writeB(ln));
+            f2.close();
+    }
+
+    return true;
+}
+
+function create_favourites(){
+    local Favourites = [];
+    local files = DirectoryListing( FeConfigDirectory + "romlists", false );
+    foreach(file in files.results){
+        if ( ext(file) == "tag" && globs.custom_romlists.find(strip_ext(file)) == null ){
+            local f = ReadTextFile(FeConfigDirectory + "romlists\\" + file);
+            local favo = [];
+            for (local i = 0; !f.eos(); i++) favo.push(strip(f.read_line()));
+            local romlist = ReadTextFile (FeConfigDirectory + "romlists\\" + strip_ext(file) + ".txt");
+            while (!romlist.eos()){
+                local tmpline = romlist.read_line();
+                local spl = split( tmpline, ";" );
+                if( favo.find( strip(spl[0])) != null ) Favourites.push(tmpline);
+            }
+        }
+    }
+    local favoPath = fe.path_expand(FeConfigDirectory + "romlists/Favourites.txt");
+    local f2 = file(favoPath, "w");
+    foreach(ln in Favourites) f2.writeblob( writeB(ln + "\n") );
+    f2.close()
+}
+
+
+function update_tags(path, name, add){
+    path = path + "\\" + name + ".tag";
+    local tabl = [];
+    local f = ReadTextFile(path);
+    local game = fe.game_info(Info.Name);
+    while ( !f.eos() ) {
+        local l = f.read_line()
+        if( l.len() && l == game) continue;
+        tabl.push(l);
+    }
+    if(add) tabl.push(game);
+
+    local f2 = file(  path, "w" );
+    foreach(ln in tabl) f2.writeblob( writeB(ln + "\n") );
+    f2.close()
+}
+
+function load_customs(){ // load custom romlist in array
+    local custom_lists = {};
+    foreach(a,v in globs.custom_romlists){
+        local lists = [];
+        local romlist_file = ReadTextFile( fe.path_expand(FeConfigDirectory + "romlists/" + v + ".txt") );
+        while (!romlist_file.eos()){
+            local tmpline = romlist_file.read_line();
+            local splited = split( tmpline, ";" );
+            lists.push( splited[0] + ";" + splited[2] );
+        }
+        if(!lists.len()) continue; // if empty romlist
+        custom_lists[v] <- lists;
+    }
+    return custom_lists;
+}
+
+function array_unique(arr) {
+    local uniqueArr = [];
+    foreach (item in arr) {
+        if (uniqueArr.find(item) == null) {
+            uniqueArr.append(item);
+        }
+    }
+    return uniqueArr;
 }
 
 // named transitions

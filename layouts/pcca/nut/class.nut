@@ -674,15 +674,15 @@ class PCCA_Conveyor {
 
 
     function draw_wheel(offset){
-        if(fe.game_info(Info.Emulator) == "@"){
-            m_path = medias_path + "Main Menu/Images/" + media + "/";
-        }else{
-            m_path = medias_path + fe.list.name + "/Images/" + media + "/";
-        }
 
         offset += ceil(nbr_slot * 0.5) - 1;
 
         for ( local i=0; i<nbr_slot; i++ ){
+            if(fe.game_info(Info.Emulator) == "@"){
+                m_path = medias_path + "Main Menu/Images/" + media + "/";
+            }else{
+                m_path = medias_path + fe.game_info(Info.Emulator, i - offset) + "/Images/" + media + "/";
+            }
             w_slots[i].art.file_name = m_path + fe.game_info(Info.Name, i - offset ) + ".png";
             w_slots[i].art.set_pos(w_slots[i].x, w_slots[i].y, w_slots[i].width, w_slots[i].height);
             w_slots[i].art.rotation = w_slots[i].r;
@@ -817,10 +817,24 @@ class PCCA_Conveyor {
                 if(buffer[0] > 0){ // key down
                     offset-=step
                     for ( local i = 1; i < nbr_slot; i++ ) w_slots[i].art.swap( w_slots[i-1].art );
+
+                    if(fe.game_info(Info.Emulator) == "@"){
+                        m_path = medias_path + "Main Menu/Images/" + media + "/";
+                    }else{
+                        m_path = medias_path + fe.game_info(Info.Emulator, r_offset-offset) + "/Images/" + media + "/";
+                    }
+
                     w_slots[nbr_slot-1].art.file_name = m_path + fe.game_info(Info.Name, r_offset-offset  ) + ".png";
                 }else if(buffer[0] < 0){
                     offset+=step
                     for ( local i = nbr_slot - 1; i > 0; i-- ) w_slots[i].art.swap( w_slots[i-1].art );
+
+                    if(fe.game_info(Info.Emulator) == "@"){
+                        m_path = medias_path + "Main Menu/Images/" + media + "/";
+                    }else{
+                        m_path = medias_path + fe.game_info(Info.Emulator, -offset-r_offset) + "/Images/" + media + "/";
+                    }
+
                     w_slots[0].art.file_name = m_path + fe.game_info(Info.Name, -offset-r_offset ) + ".png";
                 }
 

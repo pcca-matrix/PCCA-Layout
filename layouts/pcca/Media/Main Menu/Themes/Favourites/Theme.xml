@@ -1,0 +1,27 @@
+<Theme>
+    <hd lh="1080" lw="1920" />
+    <video bcolor="0" bcolor2="288511" bcolor3="2246684" below="false" bshape="false" bsize="0" bsize2="0" bsize3="0"
+        crt_scanline="false" delay="0.8" forceaspect="false" h="740.47" overlaybelow="false" overlayheight="748.04"
+        overlayoffsetx="0" overlayoffsety="0" overlaywidth="908.08" r="0" rest="none" rx="0" ry="0" start="bottom"
+        time="0.8" type="bounce" w="889.94" x="960" y="526.18" zorder="0"
+    />
+    <background delay="0" rest="none" rest_speed="1.0" speed="1" time="1.0" type="none" />
+    <artwork1 delay="1.5" h="194" hidden="false" keepaspect="false" r="0" rest="none" rx="0" ry="0" start="none"
+        time="1.4" type="zoom out" w="800" x="960" y="68.1499" zorder="-8"
+    />
+    <artwork2 delay="3" h="202.95" hidden="false" keepaspect="false" r="0" rest="none" rx="0" ry="0" start="top"
+        time="1" type="bounce around 3d" w="247.26" x="-15.5999" y="1192.6" zorder="-4"
+    />
+    <artwork3 delay="0" h="0" hidden="false" keepaspect="false" r="0" rest="none" rx="0" ry="0" start="none" time="1"
+        type="none" w="0" x="600" y="200" zorder="-3"
+    />
+    <artwork4 delay="0" h="0" hidden="false" keepaspect="false" r="0" rest="none" rx="0" ry="0" start="none" time="1"
+        type="none" w="0" x="700" y="700" zorder="-2"
+    />
+    <artwork5 delay="0" h="0" hidden="false" keepaspect="false" r="0" rest="none" rx="0" ry="0" start="none" time="1"
+        type="none" w="0" x="800" y="400" zorder="-9"
+    />
+    <artwork6 delay="0" h="0" hidden="false" keepaspect="false" r="0" rest="none" rx="0" ry="0" start="none" time="1"
+        type="none" w="0" x="900" y="300" zorder="-9"
+    />
+</Theme>

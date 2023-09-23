@@ -1,0 +1,27 @@
+<Theme>
+    <video bcolor="0" bcolor2="0" bcolor3="0" below="false" bshape="false" bsize="0" bsize2="0" bsize3="0"
+        crt_scanline="false" delay="1" forceaspect="false" h="470.703" keepaspect="false" overlaybelow="false"
+        overlayheight="818.779" overlayoffsetx="3" overlayoffsety="-40.1" overlaywidth="1493.32" r="0" random="true"
+        rest="none" rx="0" ry="0" start="none" time="0.3" type="grow x" w="700.909" x="940.079" y="498.045" zorder="0"
+    />
+    <artwork1 delay="1" h="69.9261" hidden="false" keepaspect="true" r="-0.5" random="wheel" rest="none" rx="0" ry="0"
+        start="none" time="1.5" type="fade" w="548.44" x="378.43" y="120.59" zorder="0"
+    />
+    <artwork2 delay="1.5" h="145.337" hidden="false" keepaspect="true" r="0" random="wheel" rest="none" rx="0" ry="0"
+        start="none" time="1.5" type="blur" w="548.44" x="1617.05" y="119.83" zorder="0"
+    />
+    <artwork3 delay="2" h="219.376" hidden="false" keepaspect="true" r="-27.05" random="wheel" rest="none" rx="0" ry="0"
+        start="none" time="1.5" type="grow y" w="548.44" x="296.968" y="559.21" zorder="0"
+    />
+    <artwork4 delay="0.9" h="239.942" hidden="false" keepaspect="true" r="42.35" random="wheel" rest="none" rx="0"
+        ry="0" start="none" time="1.8" type="pixelate zoom out" w="548.44" x="1664.4" y="528.784" zorder="-9"
+    />
+    <hd lh="1080" lw="1920" />
+    <background delay="0" rest="none" speed="1" />
+    <artwork5 delay="3" h="239.942" hidden="false" keepaspect="true" r="0" random="wheel" rest="none" rx="0" ry="0"
+        start="left" time="1.5" type="pixelate" w="548.44" x="331.36" y="900.969" zorder="-9"
+    />
+    <artwork6 delay="3.5" h="191.954" hidden="false" keepaspect="true" r="0" random="wheel" rest="none" rx="0" ry="0"
+        start="none" time="1.5" type="stripes" w="548.44" x="1605.46" y="918.85" zorder="-9"
+    />
+</Theme>

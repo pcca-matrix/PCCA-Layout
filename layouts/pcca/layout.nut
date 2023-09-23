@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.85
+// PCCA v2.90
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -25,6 +25,12 @@ class UserConfig {
     </ label="Search Key", help="Choose the key to initiate a search", options="custom1,custom2,custom3,custom4,custom5,custom6,none", order=M_order++ />keyboard_search_key="custom1";
     </ label="Search Results", help="Choose the search method", options="show_results,next_match", order=M_order++ />keyboard_search_method="show_results";
     </ label="Keyboard Layout", help="Choose the keyboard layout", options="qwerty,azerty,alpha", order=M_order++ />keyboard_layout="alpha";
+    </ label="--- Custom Romlists ---", help="", options="", order=M_order++ />mt1=""
+    </ label="Recently Played", help="Enable recently played romlist", options="Yes, No", order=M_order++ />Recent_Enabled="Yes";
+    </ label="Numbers of recent games", help="How many recently played game should be displayed", options="25, 50, 100", order=M_order++ />Recent_Entry="25";
+    </ label="Most Played", help="Enable recently played romlist", options="Yes, No", order=M_order++ />Most_Played_Enabled="Yes";
+    </ label="Numbers of most played games", help="How many most played game should be displayed", options="25, 50, 100", order=M_order++ />Most_Played_Entry="25";
+    </ label="Global Favourites", help="Enable global favourites romlist", options="Yes, No", order=M_order++ />Global_Favourites_Enabled="Yes";
     </ label="--- Attract-Mode ---", help="", options="", order=M_order++ />mt1=""
     </ label="Enabled", help="Enable attract-mode", options="Yes, No", order=M_order++ />AM_Enabled="Yes";
     </ label="Wait Video", help="Wait end of video before starting attract-mode", options="Yes, No", order=M_order++ />AM_WaitVideo="Yes";
@@ -41,7 +47,8 @@ class UserConfig {
 }
 
 my_config <- fe.get_config();
-globs <- {"delay" : 400, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time, "script_dir":fe.script_dir, "tofade":{} }; // super globals temp vars
+globs <- {"delay" : 400, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time, "script_dir":fe.script_dir, "tofade":{}, "custom_romlists":["Recent","Favourites","Most Played"],
+"customs_romlist_tb":{} }; // super globals temp vars
 
 triggers <- {
     "flv_transition":{
@@ -134,6 +141,54 @@ fe.load_module("file");
 fe.load_module("file-format");
 fe.do_nut("nut/lang.nut");
 
+// replace classe method in XMLNode file-format
+function XMLNode::nodeToString( node )
+{
+    local str = nodeDepth( node ) + "<" + node.tag;
+    local attrNames = [];
+    foreach (name, val in node.attr) {
+        attrNames.append(name);
+    }
+    attrNames.sort();
+
+    local currentLineLength = str.len();
+    local lineWidth = 120;
+    local jump = false;
+    foreach (attrName in attrNames) {
+        local val = node.attr[attrName];
+        local attrStr = " " + attrName + "=\"" + val + "\"";
+        if (currentLineLength + attrStr.len() > lineWidth) {
+            jump = true;
+            str += "\n" + nodeDepth(node) + "   ";
+            currentLineLength = nodeDepth(node).len() + 4;
+        }
+
+        str += attrStr;
+        currentLineLength += attrStr.len();
+    }
+
+    if ( node.text == "" && node.children.len() == 0)
+    {
+        //no end tag
+        if(jump){
+            str+="\n    />\n";
+        }else{
+            str += " />\n";
+        }
+    } else
+    {
+        //show text and/or child nodes
+        str += ">\n";;
+        str += node.text;
+        foreach( child in node.children )
+        {
+            str += nodeToString( child );
+        }
+        str += nodeDepth( node ) + "</" + node.tag + ">\n";
+    }
+    return str;
+};
+
 LnG <- _LL[ my_config["user_lang"] ];
 prev_back <- { ox = 0, oy = 0, bw = flw, bh = flh }; // previous background table infos ( transitions )
 
@@ -158,6 +213,7 @@ Ini_settings <- get_ini_values("Main Menu"); // initialize and set settings ini 
 xml_root <- [];
 path <- "";
 curr_sys <- "";
+curr_emulator <- "";
 
 ArtObj <- {};
 snap_is_playing <- false;
@@ -427,24 +483,19 @@ local dialog_anim = PresetAnimation(dialog)
 .loops_delay(1200)
 .duration(700)
 
-function dialog_datas(type){
-    switch (type){
-        case "favo":
-            if(fe.game_info(Info.Favourite) == "") dialog_text.msg = LnG.ret_fav; else dialog_text.msg = LnG.add_fav;
-        break;
-        case "tag":
-            dialog_text.msg = LnG.tag_mod;
-        break;
-    }
-    dialog_anim.play();
-}
-
 // Game Infos surface
 local ttfont = "ArialCEMTBlack.ttf";
 local Tags = surf_ginfos.add_image("[!get_media_tag]")
 Tags.set_pos(flw*0.006, 0, flw*0.063, flh*0.036);
 
-local favo = surf_ginfos.add_text("[Favourite]",0,0,0,0);
+local last_played = surf_ginfos.add_text("",0,0,0,0);
+last_played.font = ttfont;
+last_played.set_pos(flw*0.028, flh*0.011, flw*0.155, flw*0.012);
+last_played.align = Align.Left;
+last_played.set_bg_rgb(110,100,99);
+last_played.bg_alpha = 190;
+
+local favo = surf_ginfos.add_text("[!ret_favo]",0,0,0,0);
 favo.set_pos(flw*0.004, flh*0.000, flw*0.050, flh*0.035);
 favo.font = "fontello.ttf";
 favo.align = Align.Left;
@@ -569,14 +620,14 @@ local extraArtworks = {
     function getLists(){
         lists = [];
         num = 0;
-        local lst = zip_get_dir( medias_path + curr_sys + "/Images/Artworks/" +  fe.game_info(Info.Name) );
+        local lst = zip_get_dir( medias_path + curr_emulator + "/Images/Artworks/" +  fe.game_info(Info.Name) );
         foreach( v in lst ) if( ["jpg","png","mp4"].find( ext(v) ) != null ) lists.push(v);
         return lists;
     },
 
     function Resize(){
         local coeff = 0.72;
-        local ini = medias_path + curr_sys + "/Images/Artworks/" +  fe.game_info(Info.Name) + "/" + strip_ext(lists[num]) + ".txt";
+        local ini = medias_path + curr_emulator + "/Images/Artworks/" +  fe.game_info(Info.Name) + "/" + strip_ext(lists[num]) + ".txt";
         if(file_exist(ini)){
             coeff = 0.58;
             infos = ini;
@@ -656,7 +707,7 @@ local extraArtworks = {
         }
 
         if(!act){
-            surf_img.file_name =  medias_path + curr_sys + "/Images/Artworks/" +  fe.game_info(Info.Name) + "/" + lists[num];
+            surf_img.file_name =  medias_path + curr_emulator + "/Images/Artworks/" +  fe.game_info(Info.Name) + "/" + lists[num];
             Resize();
             set_Title();
             surf_img.x = flw * 0.5 - surf_img.width * 0.5;
@@ -672,7 +723,7 @@ local extraArtworks = {
             surf_img.x = clamp(surf_img.x-=speed, -surf_img.width, (flw * 0.5 - surf_img.width * 0.5));
             if(surf_img.x <= -surf_img.width){
                (num > 0 ? num-- : num = lists.len() - 1 );
-                surf_img.file_name = medias_path + curr_sys + "/Images/Artworks/" + fe.game_info(Info.Name) + "/" + lists[num];
+                surf_img.file_name = medias_path + curr_emulator + "/Images/Artworks/" + fe.game_info(Info.Name) + "/" + lists[num];
                 Resize();
                 set_Title();
                 surf_img.x = flw
@@ -685,7 +736,7 @@ local extraArtworks = {
             surf_img.x = clamp(surf_img.x+=speed, (flw * 0.5 - surf_img.width * 0.5), flw);
             if(surf_img.x >= flw){
                 ( num < lists.len() - 1 ? num++ : num = 0 )
-                surf_img.file_name = medias_path + curr_sys + "/Images/Artworks/" + fe.game_info(Info.Name) + "/" + lists[num];
+                surf_img.file_name = medias_path + curr_emulator + "/Images/Artworks/" + fe.game_info(Info.Name) + "/" + lists[num];
                 Resize();
                 set_Title();
                 surf_img.x = -surf_img.width;
@@ -759,6 +810,7 @@ function overview( offset ) {
     if(curr_sys == "Main Menu" && Ini_settings.themes["main_stats"] && my_config["stats_main"].tolower() == "yes" ){
         local totgames=0, tottimes=0, totplay=0;
         foreach(k,d in main_infos){
+            if(globs.custom_romlists.find(k) != null) continue; //don't use the custom romlists for the count
             totgames+=d.cnt;
             tottimes+=d.time;
             totplay+=d.pl;
@@ -897,7 +949,7 @@ function background_transitions(transition, File, animation = null){
     reverse = 1 - reverse;
 }
 
-function load_theme(name, theme_content, prev_def){
+function load_theme(theme_path, theme_content, prev_def){
     if(Ini_settings["game text"]["game_text_active"] && curr_sys != "Main Menu") surf_ginfos.visible = true;
     if(Ini_settings["game text"]["animation"] != "none" && Ini_settings["game text"]["game_text_hide"]) surf_ginfos_animation.play();
     // hide overlay helper
@@ -909,11 +961,11 @@ function load_theme(name, theme_content, prev_def){
     xml_root = null;
     if(theme_content.len() <= 0){  // If there is no theme file, return (unified theme)
         hd = true;
-        if(file_exist(medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4")){
+        if(file_exist(medias_path + curr_emulator + "/Themes/" + fe.game_info(Info.Name) + ".mp4")){
             ArtObj.background.set_pos(0,0,flw, flh);
             reset_art();
             if( Ini_settings.themes["animated_backgrounds"] ) back_tr = null;
-            background_transitions(back_tr, medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4");
+            background_transitions(back_tr, medias_path + curr_emulator + "/Themes/" + fe.game_info(Info.Name) + ".mp4");
         }
         return false;
     }
@@ -921,7 +973,7 @@ function load_theme(name, theme_content, prev_def){
     local zipfolder = ""; // needed when media is inside subfolder on the zip archive
     local DiR = theme_content[0];
     if ( DiR[DiR.len()-1] == '/' ) zipfolder = theme_content[0];
-    local f = ReadTextFile( name, zipfolder + "Theme.xml" );
+    local f = ReadTextFile( theme_path, zipfolder + "Theme.xml" );
     local raw_xml = "";
     while ( !f.eos() ){
         local l = f.read_line();
@@ -959,16 +1011,16 @@ function load_theme(name, theme_content, prev_def){
     set_xml_datas(); // format xml datas
 
     Sound_Click.file_name = medias_path + "Main Menu/Sound/Wheel Click.mp3";
-    if(file_exist(medias_path + curr_sys + "/Sound/Wheel Click.mp3") ) Sound_Click.file_name = medias_path + curr_sys + "/Sound/Wheel Click.mp3"; // wheel_click found in media folder
+    if(file_exist(medias_path + curr_sys + "/Sound/Wheel Click.mp3") ) Sound_Click.file_name = medias_path + curr_sys + "/Sound/Wheel Click.mp3"; // wheel_click found in current system media folder
 
-    if(file_exist(medias_path + curr_sys + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3") ){ // background music found in media folder
-        Background_Music.file_name = medias_path + curr_sys + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3";
+    if(file_exist(medias_path + curr_emulator + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3") ){ // background music found in media folder
+        Background_Music.file_name = medias_path + curr_emulator + "/Sound/Background Music/" + fe.game_info(Info.Name) + ".mp3";
         Background_Music.playing = false;
         triggers.background_music.start = true;
         ArtObj.snap.video_flags = Vid.NoAudio;
     }else if(!Background_Music.file_name.find("Default.mp3")){
-        if(file_exist(medias_path + curr_sys + "/Sound/Background Music/Default.mp3" )){
-            Background_Music.file_name = medias_path + curr_sys + "/Sound/Background Music/Default.mp3";
+        if(file_exist(medias_path + curr_emulator + "/Sound/Background Music/Default.mp3" )){
+            Background_Music.file_name = medias_path + curr_emulator + "/Sound/Background Music/Default.mp3";
             Background_Music.playing = false;
             triggers.background_music.start = true;
             ArtObj.snap.video_flags = Vid.NoAudio;
@@ -978,20 +1030,20 @@ function load_theme(name, theme_content, prev_def){
     local backg = false;
     foreach(k,v in theme_content){
         if(strip_ext(v.tolower()) == zipfolder.tolower() + "background"){ // background found in theme
-            backg = name + "|" + v
+            backg = theme_path + "|" + v
             back_tr = null
         }
 
         if( ext(v.tolower()) == "mp3" ){ // background music found anywhere in theme ( in HS , must be in /Extras/Background Sounds/ ....mp3)
-            Background_Music.file_name = name + "|" + v;
+            Background_Music.file_name = theme_path + "|" + v;
             Background_Music.playing = false;
             triggers.background_music.start = true;
             ArtObj.snap.video_flags = Vid.NoAudio;
         }
     }
 
-    // if where are on a default theme or if background is missing in theme, check in background folder
-    if( (!backg || name.find("/Default/") ) ){
+    // if we are on a default theme or if background is missing in theme, check in background folder
+    if( (!backg || theme_path.find("/Default/") ) ){
         local rndbckg = get_random_file(medias_path + curr_sys + "/Images/Backgrounds/" + fe.game_info(Info.Name));
         if(rndbckg != "") backg = rndbckg;
     }
@@ -1001,6 +1053,9 @@ function load_theme(name, theme_content, prev_def){
     if(raw_xml == "") return; // if broken with no theme.xml inside zip
 
     local back_anim = null;
+    local rnd_list = [];
+    if(globs.custom_romlists.find(fe.game_info(Info.Name)) != null) rnd_list = globs.customs_romlist_tb[fe.game_info(Info.Name)].map( function(x) { return x; });
+
     foreach ( c in theme_node.children )
     {
         // background anim
@@ -1029,11 +1084,30 @@ function load_theme(name, theme_content, prev_def){
         local artD = c.attr;
         if( artwork_list.find(Xtag) != null ){
             if( prev_def && availables[Xtag] ) continue;
-            if(availables[Xtag]){
-                ArtObj[Xtag].file_name = name + "|" + art;
+
+            if(artD.random == "none"){
+                if(availables[Xtag]){
+                    ArtObj[Xtag].file_name = theme_path + "|" + art;
+                }else{
+                    ArtObj[Xtag].file_name =  medias_path + curr_emulator + "/Images/" + Xtag + "/" + art + "/" + fe.game_info(Info.Name) + ".png"; // get hs others medias artwork when they are not available in zip
+                }
             }else{
-                // get hs others medias artwork when they are not available in zip
-                ArtObj[Xtag].file_name =  medias_path + fe.list.name + "/Images/" + Xtag + "/" + art + "/" + fe.game_info(Info.Name) + ".png";
+                if(rnd_list.len()){ // for custom romlist randomly select from custom_romlists table
+                    local rnd_art = get_random_table(rnd_list);
+                    rnd_list.remove(rnd_list.find(rnd_art));
+                    local splited = split( rnd_art, ";" );
+                    if(artD.random == "video"){
+                        ArtObj[Xtag].file_name = medias_path + splited[1] + "/Video/" + splited[0] + ".mp4";
+                    }else{
+                        ArtObj[Xtag].file_name = medias_path + splited[1] + "/Images/" + artD.random + "/" + splited[0] + ".png";
+                    }
+                }else{ // choose from system artwork folder
+                    if(artD.random == "video"){
+                        ArtObj[Xtag].file_name = get_random_file(medias_path + curr_emulator + "/Video/" );
+                    }else{
+                        ArtObj[Xtag].file_name = get_random_file(medias_path + curr_emulator + "/Images/" + artD.random + "/" );
+                    }
+                }
             }
 
             // center rotation ,hyperspin anim artworks rotation only if it's greater than 180 or -180 and time is > 0
@@ -1046,11 +1120,22 @@ function load_theme(name, theme_content, prev_def){
             clean_art("snap");
             clean_art("video");
 
-            ArtObj.snap.file_name = ret_snap();
+            if(!artD.random){
+                ArtObj.snap.file_name = medias_path + curr_emulator + "/Video/" + fe.game_info(Info.Name) + ".mp4";
+            }else{
+                if(globs.custom_romlists.find(fe.game_info(Info.Name)) != null){ // for custom romlist randomly select from custom_romlists table
+                    local rnd_vid = get_random_table(globs.customs_romlist_tb[fe.game_info(Info.Name)]);
+                    local splited = split( rnd_vid, ";" );
+                    if(splited.len() > 1) ArtObj.snap.file_name = medias_path + splited[1] + "/Video/" + splited[0] + ".mp4";
+                }else{
+                    ArtObj.snap.file_name = get_random_file(medias_path + fe.game_info(Info.Name) + "/Video");
+                }
+            }
+
             ArtObj.snap.video_playing = false; // do not start playing snap now , wait delay from animation
             snap_is_playing = false;
             if(availables["video"]){ // if video overlay available
-                ArtObj["video"].file_name = name + "|" + art;
+                ArtObj["video"].file_name = theme_path + "|" + art;
             }
 
             // hs anim video rotation on any value but only if starting position is set, animation is set and anim time > 0 !!!!
@@ -1292,10 +1377,10 @@ function game_in_out( ttype, var, ttime ) {
             globs.tofade = fade_objects(); // store elems alpha value
             Background_Music.playing = false;
             Sound_System_In_Out.playing = false;
-            if(file_exist(medias_path + curr_sys + "/Sound/Game Start/" + fe.game_info(Info.Name) + ".mp3") ){
-                Game_In_Out.file_name = medias_path + curr_sys + "/Sound/Game Start/" + fe.game_info(Info.Name) + ".mp3";
-            }else if( file_exist(medias_path + curr_sys + "/Sound/Game Start/Default.mp3") ){
-                Game_In_Out.file_name = medias_path + curr_sys + "/Sound/Game Start/Default.mp3";
+            if(file_exist(medias_path + curr_emulator + "/Sound/Game Start/" + fe.game_info(Info.Name) + ".mp3") ){
+                Game_In_Out.file_name = medias_path + curr_emulator + "/Sound/Game Start/" + fe.game_info(Info.Name) + ".mp3";
+            }else if( file_exist(medias_path + curr_emulator + "/Sound/Game Start/Default.mp3") ){
+                Game_In_Out.file_name = medias_path + curr_emulator + "/Sound/Game Start/Default.mp3";
             }else{
                 Game_In_Out.file_name = get_random_file( globs.script_dir + "sounds/game_start" );
             }
@@ -1323,6 +1408,8 @@ function hs_transition( ttype, var, ttime )
                 global_fade( ttime, 500, true);
                 return true;
             }else{
+                update_recent();
+                update_most_played();
                 ArtObj.background1.video_playing = true;
                 ArtObj.background2.video_playing = true;
                 ArtObj.snap.video_playing = true;
@@ -1355,7 +1442,7 @@ function hs_transition( ttype, var, ttime )
                 break;
 
                 case 1 :
-                  get_infos_screen(fe.game_info(Info.Name), curr_sys, ttime);
+                  get_infos_screen(fe.game_info(Info.Name), curr_emulator, ttime);
                   ttime = 0;
                   loader = 2;
                 break;
@@ -1377,8 +1464,17 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.ChangedTag: // 11
-            if(var == 21) dialog_datas("favo");
-            if(var == 22) dialog_datas("tag"); // tag not working , only for favourites ?!? see bug(#)
+            if(var == 21){
+                if(fe.game_info(Info.Favourite) == ""){
+                    dialog_text.msg = LnG.ret_fav;
+                    update_favourites(false);
+                } else {
+                    dialog_text.msg = LnG.add_fav;
+                    update_favourites(true);
+                }
+            }
+            if(var == 22) dialog_text.msg = LnG.tag_mod; // tag not working if ther is not filter rule set for this tag
+            dialog_anim.play();
         break;
 
         case Transition.NewSelOverlay: // 10
@@ -1426,6 +1522,7 @@ function hs_transition( ttype, var, ttime )
                 extraArtworks.setImage();
             }
             triggers.theme.start = true;
+            curr_emulator = (fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.game_info(Info.Emulator));
             //Play entierly games sounds-fx (Yaron fix)
             if( Ini_settings.sounds["game_sounds"] ) {
                 // check if systeme have custom wheel sounds , if not, use main menu wheel sounds like in HS !
@@ -1436,27 +1533,71 @@ function hs_transition( ttype, var, ttime )
                 Wheelclick[sid].file_name = wsound;
                 Wheelclick[sid].playing = true;
             }
+            last_played.visible = false;
+            if(curr_sys == "Recent") set_last_played_txt();
         break;
 
         case Transition.StartLayout: //0
+
             globs.tofade = fade_objects(); // store elems alpha value
             if( !glob_time ){  // glob_time == 0 on first start layout
                 if( ttime <= 255  && fe.game_info (Info.Emulator) == "@" ){ // fade when back to display menu or start layout
                     global_fade(ttime, 255, true);
                     return true;
-                }else{
-                    global_fade(255, 255, true);
                 }
+                global_fade(255, 255, true);
+                //load custom romlists
+                globs.customs_romlist_tb <- load_customs();
                 //Sound -  cause we are back to main menu we use name to match the systeme we're leaving.
                 Sound_System_In_Out.file_name = get_random_file( medias_path + fe.game_info(Info.Name) + "/Sound/System Exit/" );
                 Sound_System_In_Out.playing = true;
                 FE_Sound_Wheel_Out.playing = true;
                 stats_text_update( fe.game_info(Info.Title) );
+                local restart = false;
+                if(!check_display("Recent") && my_config["Recent_Enabled"] == "Yes"){
+                    local filters = [];
+                    filters.push({"name":"All","sort_by":"Extra", "reverse_order":"true"});
+                    filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Name"});
+                    add_display( "Recent", ["yes","yes","yes"], filters);
+                    system ( (OS == "Windows" ? "copy " : "cp ") + "\"" + globs.script_dir + "images\\Wheel\\Recent-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu\\Images\\Wheel\\Recent.png" + "\"" );
+                    restart = true;
+                }
+
+                if(!check_display("Most Played") && my_config["Most_Played_Enabled"] == "Yes"){
+                    create_most_played();
+                    local filters = [];
+                    filters.push({"name":"All"});
+                    filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Name"});
+                    add_display( "Most Played", ["yes","yes","yes"], filters);
+                    system ( (OS == "Windows" ? "copy " : "cp ") + "\"" + globs.script_dir + "images\\Wheel\\Most Played-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu\\Images\\Wheel\\Most Played.png" + "\"" );
+                    restart = true;
+                }
+
+                if(!check_display("Favourites") && my_config["Global_Favourites_Enabled"] == "Yes"){
+                    create_favourites();
+                    local filters = [];
+                    filters.push({"name":"All","sort_by":"Name"});
+                    add_display( "Favourites", ["yes","yes","yes"], filters);
+                    system ( (OS == "Windows" ? "copy " : "cp ") + "\"" + globs.script_dir + "images\\Wheel\\Favourites-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu\\Images\\Wheel\\Favourites.png" + "\"" );
+                    restart = true;
+                }
+                if(check_display("Most Played") && my_config["Most_Played_Enabled"] == "No"){ delete_display("Most Played"); restart = true; }
+                if(check_display("Recent") && my_config["Recent_Enabled"] == "No") { delete_display("Recent"); restart = true; }
+                if(check_display("Favourites") && my_config["Global_Favourites_Enabled"] == "No") { delete_display("Favourites"); restart = true; }
+
+                if(restart){
+                    overlay_message("images/warning.png");
+                    fe.overlay.list_dialog([], "The attract.cfg file has been modified AM needs to be restarted", 0, 0);
+                    fe.signal("exit_to_desktop")
+                }
             }
         break;
 
         case Transition.ToNewList: //6
             curr_sys = ( fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.list.name );
+            curr_emulator = (fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.game_info(Info.Emulator));
+            if(curr_sys == "Recent" || curr_sys == "Most Played") fe.list.index = 0;
+
             Ini_settings = get_ini_values(curr_sys); // get settings ini value
             if(curr_sys != "Main Menu"){
                 if( fe.game_info(Info.PlayedTime) == "" ) PCount.set("visible", false); else PCount.set("visible", true); //show game stats surface only if Track Usage is set to Yes in AM!
@@ -1464,7 +1605,7 @@ function hs_transition( ttype, var, ttime )
                 syno_surf.visible = false; // hide overview
                 m_infos.msg = ""; // empty global stats
                 // Update and save stats if list size change and we are not on a filter !!
-                if( my_config["stats_main"].tolower() == "yes" && glob_time && fe.filters[fe.list.filter_index].name.tolower() == LnG.Filter_all){
+                if( my_config["stats_main"].tolower() == "yes" && glob_time && ( fe.filters[fe.list.filter_index].name.tolower() == LnG.Filter_all || fe.filters[fe.list.filter_index].name.tolower() == "all" ) ){
                     if( main_infos.rawin(curr_sys) ){
                         if(fe.list.size != main_infos[curr_sys].cnt){
                             main_infos[curr_sys].cnt = fe.list.size;
@@ -1482,7 +1623,6 @@ function hs_transition( ttype, var, ttime )
                     Sound_System_In_Out.file_name = es;
                     Sound_System_In_Out.playing = true;
                 }
-                FE_Sound_Wheel_In.playing = true;
             }
 
             if(my_config["special_artworks"].tolower() == "yes") load_special(); // Load special artworks
@@ -1497,14 +1637,14 @@ function hs_transition( ttype, var, ttime )
             triggers.background_music.start = false;
             ArtObj.snap.file_name = "";
             game_surface(); // user setting for game text infos
+            last_played.visible = false;
+            if(curr_sys == "Recent") set_last_played_txt();
         break;
 
         /* Custom Overlays */
-        case Transition.ShowOverlay: // 8 var = Custom, Exit(22), Displays, Filters(15), Tags(31), Favorites(28)
+        case Transition.ShowOverlay: // 8 var = Custom(0), Exit(22), Displays, Filters(15), Tags(31), Favorites(28)
             dialog_anim.cancel("origin"); // cancel dialog animation if in progress
-            wheel_art.visible = false;
             switch(var) {
-
                 case Overlay.Filters: // = 15 Filters
                     overlay_title.set_pos( 0, flh*0.324, flw, flh*0.046);
                     overlay_title.set_rgb(192, 192, 192);
@@ -1513,6 +1653,7 @@ function hs_transition( ttype, var, ttime )
                     overlay_background.set_pos(flw*0.343, flh*0.187, flw*0.312, flh*0.625);
                     overlay_background.alpha = 250;
                     SetListBox(overlay_list, {visible = true, rows = 7, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
+                    wheel_art.visible = false;
                     overlay_icon.visible = false;
                     FE_Sound_Screen_In.playing = true;
                 break;
@@ -1531,6 +1672,11 @@ function hs_transition( ttype, var, ttime )
                 break;
 
                 case 28: //28  favorites
+                    if(fe.game_info(Info.Extra) != ""){
+                        overlay_title.msg = LnG.ret_fav2;
+                    }else{
+                        overlay_title.msg = LnG.add_fav2;
+                    }
                     overlay_title.set_pos( 0, flh*0.324, flw, flh*0.046);
                     overlay_title.set_rgb(192, 192, 192);
                     overlay_title.charsize = flw * 0.015;
@@ -1629,8 +1775,8 @@ function hs_tick( ttime )
         if(prev_tr == Transition.ToNewList) pcca_wheel.Init(Ini_settings.wheel); // slots, transition_ms, type, fade_time, alpha, curve, first_pos
         hd = false;
         if( Ini_settings.themes["bezels"] && Ini_settings.themes["aspect"] == "center" ){ // Systems bezels!  only if aspect center
-            if( file_exist(globs.script_dir + "images/Bezels/" + curr_sys + ".png") ){
-                ArtObj.bezel.file_name = globs.script_dir + "images/Bezels/" + curr_sys + ".png";
+            if( file_exist(globs.script_dir + "images/Bezels/" + curr_emulator + ".png") ){
+                ArtObj.bezel.file_name = globs.script_dir + "images/Bezels/" + curr_emulator + ".png";
             }else{
                 if( !Ini_settings.themes["background_stretch"] )
                     ArtObj.bezel.file_name = globs.script_dir + "images/Bezels/Bezel_Main.png";
@@ -1642,7 +1788,7 @@ function hs_tick( ttime )
         prev_path = path;
         overview(0);
         start_background.visible = false;
-        local Rpath = medias_path + fe.list.name + "/Themes/";
+        local Rpath = medias_path + fe.game_info(Info.Emulator) + "/Themes/";
         if(curr_sys == "Main Menu") Rpath = medias_path + "Main Menu/Themes/";
         path = Rpath + fe.game_info(Info.Name) + "/"
         local theme_content = zip_get_dir( path );
@@ -1655,7 +1801,7 @@ function hs_tick( ttime )
         if ( Ini_settings.themes["override_transitions"] &&
            ( theme_content.len() || (!theme_content.len() && curr_theme != "Default") ) )
         {
-            local tr_cache  = get_dir_lists( medias_path + curr_sys + "/Video/Override Transitions/" ); // cached table of global transitions files
+            local tr_cache  = get_dir_lists( medias_path + curr_emulator + "/Video/Override Transitions/" ); // cached table of global transitions files
             if( fe.game_info(Info.Name).tolower() in tr_cache){ // if transition exist for this game/system
                 flv_transitions.file_name = tr_cache[fe.game_info(Info.Name).tolower()];
             }else if( (fe.game_info(Info.Category) in tr_directory_cache) ){ // if transitions exist for this game category ( in the frontend folder )
@@ -1669,15 +1815,15 @@ function hs_tick( ttime )
         }
 
         if( !theme_content.len() ) { // if no theme is found .
-            if(file_exist(medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4")){ // if mp4 is found assume it's unified video theme
-                path = medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + ".mp4";
+            if(file_exist(medias_path + curr_emulator + "/Themes/" + fe.game_info(Info.Name) + ".mp4")){ // if mp4 is found assume it's unified video theme
+                path = medias_path + curr_emulator + "/Themes/" + fe.game_info(Info.Name) + ".mp4";
                 theme_content = [];
                 ArtObj.bezel.file_name = globs.script_dir + "images/Bezels/Bezel_trans.png";
             }else{ //if no video is found assume it's system default theme
-                path = medias_path + fe.list.name + "/Themes/Default/";
+                path = medias_path + curr_emulator + "/Themes/Default/";
                 theme_content = zip_get_dir( path );
                 if(!theme_content.len() && curr_sys != "Main Menu"){
-                    path = medias_path + fe.list.name + "/Themes/Default.zip";
+                    path = medias_path + curr_emulator + "/Themes/Default.zip";
                     theme_content = zip_get_dir( path );
                 }
             }
@@ -1800,7 +1946,7 @@ menus.push ({
             SetListBox(overlay_list, {visible = true, rows = 1, sel_alpha = 0, bg_alpha = 0, selbg_alpha = 0 })
             if(curr_sys == "Main Menu"){
                 local p = medias_path + "Main Menu\\Themes\\" + fe.game_info(Info.Name) + "\\";
-                if( file_exist(path) && strip_ext(path.tolower()) != "xml" ){
+                if( (file_exist(path) && strip_ext(path.tolower()) != "xml") ) {
                     overlay_message("images/warning.png");
                     fe.overlay.list_dialog([], LnG.Uneditable, 0, 0)
                     return false;
@@ -1818,7 +1964,7 @@ menus.push ({
                     return false;
                 }
             }else{
-                if( file_exist(path) && strip_ext(path.tolower()) != "xml" ){
+                if( (file_exist(path) && strip_ext(path.tolower()) != "xml") || globs.custom_romlists.find(fe.list.name) != null ){
                     overlay_message("images/warning.png");
                     fe.overlay.list_dialog([], LnG.Uneditable, 0, 0)
                     return false;
@@ -1881,7 +2027,16 @@ menus.push ({
             refresh_stats();
             return false;
         }
-    }]
+    },
+    {"title":"Rebuild Custom Romlists", "target":"", "hide":"!Main Menu",
+        "onselect":function(current_list, selected_row){
+            fe.overlay.splash_message ("Rebuilding custom romlist ...")
+            if(my_config["Most_Played_Enabled"] == "Yes") create_most_played();
+            if(my_config["Global_Favourites_Enabled"] == "Yes") create_favourites();
+            return false;
+        }
+    }
+    ]
 })
 
 //-- Settings Menu
@@ -2038,6 +2193,25 @@ menus.push ({
                 });
                 return true;
             }
+        },
+
+        {"title":"Random Artwork",
+            "onselect":function(current_list, selected_row){
+                local rnd_l = [{"title":"None","target":"none"},{"title":"Artwork1","target":"artwork1"},{"title":"Artwork2","target":"artwork2"},{"title":"Artwork3","target":"artwork3"},
+                {"title":"Artwork4","target":"artwork4"},{"title":"Artwork5","target":"artwork5"},{"title":"Artwork6","target":"artwork6"},{"title":"Video Snap","target":"video"},
+                {"title":"Wheel","target":"wheel"}];
+                local elem = xml_root.getChild(current_list.object);
+                local sel = 0;
+                foreach(a,b in rnd_l){ if(b.target == elem.attr["random"]) sel = a; }
+                set_list( {"title":"Random Artwork", "object":current_list.object, "rows":rnd_l, "slot_pos":sel,
+                    "onselect":function(current_list, selected_row){
+                        xml_root.getChild(current_list.object).addAttr("random", (selected_row.target));
+                        save_xml(xml_root, path);
+                        triggers.theme.start = true;
+                    }
+                })
+                return true;
+            }
         }
     ]
 })
@@ -2094,11 +2268,10 @@ menus.push({
                 }
             }
 
-            if(curr_sys != "Main Menu"){
-                // add artwork 5 and 6 (decompressed real hs theme) if not exist in xml
-                local refresh = false;
-                if(!art_av.find("artwork5")){
-                    try{ local test = xml_root.getChild("artwork5").attr;
+            local refresh = false;
+            foreach( v in ["artwork1","artwork2","artwork3","artwork4","artwork5","artwork6"] ) {
+                if(!art_av.find(v)){
+                    try{ local test = xml_root.getChild(v).attr;
                     }catch(e) {
                         //create a new node as a child of the current one if not exist
                         local f = ReadTextFile( globs.script_dir, "empty.xml" );
@@ -2106,44 +2279,29 @@ menus.push({
                         while ( !f.eos() ) raw_xml += f.read_line();
                         try{ tmp = xml.load( raw_xml ); } catch ( e ) { }
                         local node = XMLNode();
-                        node = tmp.getChild("artwork5");
+                        node = tmp.getChild(v);
                         xml_root.addChild(node);
                         refresh = true;
                     }
-                    art_av.push("artwork5");
-                }
-
-                if(!art_av.find("artwork6")){
-                    try{ local test = xml_root.getChild("artwork6").attr;
-                    }catch(e) {
-                        //create a new node as a child of the current one if not exist
-                        local f = ReadTextFile( globs.script_dir, "empty.xml" );
-                        local raw_xml = "", tmp = null;
-                        while ( !f.eos() ) raw_xml += f.read_line();
-                        try{ tmp = xml.load( raw_xml ); } catch ( e ) { }
-                        local node = XMLNode();
-                        node = tmp.getChild("artwork6");
-                        xml_root.addChild(node);
-                        refresh = true;
-                    }
-                    art_av.push("artwork6");
-                }
-
-                art_av.sort();
-
-                if(refresh){
-                    set_xml_datas(); // format xml datas
-                    save_xml(xml_root, path);
-                    triggers.theme.start = true;
+                    art_av.push(v);
                 }
             }
+            art_av = array_unique(art_av);
+            art_av.sort();
 
-            if(!art_av.len()){
+            if(refresh){
+                set_xml_datas(); // format xml datas
+                save_xml(xml_root, path);
+                triggers.theme.start = true;
+            }
+
+            /*if(!art_av.len()){
                 overlay_icon.file_name = "images/warning.png";
                 overlay_icon.visible = true;
                 fe.overlay.list_dialog([], LnG.M_inf_No_Artworks, 0, 0)
                 return;
             }
+            */
 
             // create the artworks list menu
             local arts_list = {};
@@ -2311,7 +2469,21 @@ menus.push({
             });
             return true;
         }
-    }
+    },
+
+    {"title":"Random Snap",
+        "onselect":function(current_list, selected_row){
+            set_list( { "title":_selected_row.title, "slot_pos":(xml_root.getChild("video").attr["random"] ? 0 : 1),
+                "rows":YesNo_menu,
+                    "onselect":function(current_list, selected_row){
+                        xml_root.getChild("video").addAttr("random", (selected_row.target == "yes" ? true : false) );
+                        save_xml(xml_root, path);
+                        triggers.theme.start = true;
+                    }
+            });
+            return true;
+        }
+    },
     ]
 })
 
@@ -3376,7 +3548,7 @@ signals["edit_sig"] <- function (str) {
 
 signals["default_sig"] <- function (str) {
     if(curr_sys == "Main Menu"){ //disable some buttons on main-menu
-       	switch ( str )
+        switch ( str )
         {
             case my_config["keyboard_search_key"]:
             case "add_favourite":
@@ -3454,6 +3626,42 @@ signals["default_sig"] <- function (str) {
         case "random_game":
             surf_ginfos.visible = false;
         break;
+
+        case "add_favourite":
+            if(globs.custom_romlists.find(curr_sys) != null){
+                local add = false;
+                overlay_hide.visible = false;
+                overlay_background.visible = true;
+                if(curr_sys == "Favourites" || fe.game_info(Info.Extra).find("f") != null){
+                    overlay_title.msg = LnG.ret_fav2;
+                }else{
+                    overlay_title.msg = LnG.add_fav2;
+                    add = true;
+                }
+                overlay_title.set_pos( 0, flh*0.324, flw, flh*0.046);
+                overlay_title.set_rgb(192, 192, 192);
+                overlay_title.charsize = flw * 0.015;
+                overlay_background.file_name = "images/favorites_overlay.png";
+                overlay_background.set_pos(flw*0.312, flh*0.092, flw*0.385, flh*0.740);
+                SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.032 })
+                wheel_art.visible = true;
+                overlay_icon.visible = false;
+                FE_Sound_Screen_In.playing = true;
+                local add_fav = fe.overlay.list_dialog([LnG.Yes,LnG.No], overlay_title.msg, 1, -1);
+                if(add_fav == 0){
+                    update_favourites(add);// update favourites everywhere
+                    update_tags(fe.path_expand(FeConfigDirectory + "romlists"), fe.game_info(Info.Emulator), false) // remove from sys tag file
+                    dialog_text.msg = LnG.ret_fav
+                    //if(curr_sys == "Favourites"){// simulate reload list to refresh the global favourites list ....
+                        fe.signal("prev_list")
+                        fe.signal("next_list")
+                    //}
+                    dialog_anim.play();
+                }
+                return true; // showoverlay launched
+            }
+        break;
+
     }
     return false
 }
@@ -3781,7 +3989,7 @@ function artworks_transform(Xtag, rotate=true, art=""){
     if( ext(art).tolower() == "swf" && !hd ){
         local swf_except = { "Mame" : ["bonzeadv","ironclad"] };// table of system and theme name where the swf fixes should not be applied.
         local exception = false;
-        if(swf_except.rawin(curr_sys)) if ( swf_except[curr_sys].find(fe.game_info(Info.Name)) != null ) exception = true;
+        if(swf_except.rawin(curr_emulator)) if ( swf_except[curr_emulator].find(fe.game_info(Info.Name)) != null ) exception = true;
         if(!exception){
             // try to fix swf
             if(artD.x > fe.layout.width ) artD.x = 0;
@@ -3949,3 +4157,19 @@ function fade_objects(){
     return tofade;
 }
 
+function set_last_played_txt(){
+    if(curr_sys != "Recent") return false;
+    local Date;
+    try{
+        Date = date(fe.game_info(Info.Extra).tointeger());
+    }catch(e){}
+
+    last_played.msg = "";
+
+    if(typeof(Date) == "table"){
+        local date_us = Date.day+"-"+PadWithZero(Date.month + 1)+"-"+Date.year+" "+PadWithZero(Date.hour)+":"+PadWithZero(Date.min);
+        local date_eu = Date.day+"-"+PadWithZero(Date.month + 1)+"-"+Date.year+" "+PadWithZero(Date.hour)+":"+PadWithZero(Date.min);
+        last_played.msg = "Last Played:" + date_eu;
+        last_played.visible = true;
+    }
+}
