@@ -14,10 +14,10 @@ void FragOut(vec4 col){
 void pixelate(vec2 uv)
 {
     float normalize = ( 25.0 - (progress * 25.00) );
-    float dx = normalize * (1./512);
-    float dy = normalize * (1./400);
-    vec2 coord = vec2(dx*floor(uv.x/dx), dy*floor(uv.y/dy));
-    FragOut( texture(Tex0, coord) );
+    float dx = normalize * (1.0/512.0);
+    float dy = normalize * (1.0/400.0);
+    vec2 coord = vec2(dx * floor(uv.x / dx), dy * floor(uv.y / dy));
+    FragOut( texture(Tex0, coord) * progress );
 }
 
 //-- Flag
@@ -84,7 +84,7 @@ void rainfloat(vec2 uv){
 void main(){
     vec2 uv = vec2(gl_TexCoord[0]);
     if(progress == 1.0){
-         FragOut( texture(Tex0, uv) );
+        FragOut( texture(Tex0, uv) );
         return;
     }
 

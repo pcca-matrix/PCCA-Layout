@@ -542,7 +542,7 @@ Copy.set("align" , Align.Left);
 Copy.set("font" , ttfont);
 
 local PCount_v = {"color":[255,255,255], "x":flw*0.030, "y":flh*0.155, "w": flw*0.3325 , "size":flh*0.021} ;
-local PCount = OutlinedText(surf_ginfos, LnG.counter + " [PlayedCount] / " + LnG.playedtime + " [PlayedTime]", PCount_v, 0.8);
+local PCount = OutlinedText(surf_ginfos, LnG.counter + " [PlayedCount] / " + LnG.playedtime + " [!PlayedTime]", PCount_v, 0.8);
 PCount.set("align" , Align.Left);
 PCount.set("font" , ttfont);
 
@@ -1410,6 +1410,7 @@ function hs_transition( ttype, var, ttime )
             }else{
                 update_recent();
                 update_most_played();
+                set_last_played_txt(true);
                 ArtObj.background1.video_playing = true;
                 ArtObj.background2.video_playing = true;
                 ArtObj.snap.video_playing = true;
@@ -4157,7 +4158,7 @@ function fade_objects(){
     return tofade;
 }
 
-function set_last_played_txt(){
+function set_last_played_txt(refresh = false){
     if(curr_sys != "Recent") return false;
     local Date;
     try{
@@ -4166,7 +4167,8 @@ function set_last_played_txt(){
 
     last_played.msg = "";
 
-    if(typeof(Date) == "table"){
+    if(typeof(Date) == "table" || refresh){
+        if(refresh) Date = date(time());
         local date_us = Date.day+"-"+PadWithZero(Date.month + 1)+"-"+Date.year+" "+PadWithZero(Date.hour)+":"+PadWithZero(Date.min);
         local date_eu = Date.day+"-"+PadWithZero(Date.month + 1)+"-"+Date.year+" "+PadWithZero(Date.hour)+":"+PadWithZero(Date.min);
         last_played.msg = "Last Played:" + date_eu;

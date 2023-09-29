@@ -205,22 +205,18 @@ function SaveStats(tbl){ // update global systems stats
 
 function secondsToDhms(seconds) {
     seconds = seconds.tointeger();
-    local d = floor(seconds / (3600*24));
-    local h = floor(seconds % (3600*24) / 3600);
+    local h = floor(seconds / 3600);
     local m = floor(seconds % 3600 / 60);
     local s = floor(seconds % 60);
 
-    local dDisplay = d > 0 ? d + LnG.Sday +" " : "";
     local hDisplay = h > 0 ? h + " H " : "";
-    local mDisplay = m > 0 ? m + " Min. ":"";
-    local sDisplay = s > 0 ? s + " Sec." : "";
+    local mDisplay = (h > 0 || m > 0) ? m + " Min. " : "";
+    local sDisplay = (h > 0 || m > 0 || s > 0) ? s + " Sec." : "";
 
     if( seconds <= 0 ){
         return LnG.Never;
     }else if( seconds < 60 ){
         return sDisplay;
-    }else if( d >= 1 ){
-        return dDisplay + hDisplay;
     }
 
     return hDisplay + mDisplay;
@@ -408,6 +404,10 @@ function ret_wheel( offset ){
 function ret_favo( offset ){
     if( fe.game_info(Info.Favourite) == "1" || fe.game_info(Info.Extra).find("f") != null || fe.list.name == "Favourites" ) return 1;
     return "";
+}
+
+function PlayedTime( offset ){
+    return secondsToDhms( fe.game_info(Info.PlayedTime) );
 }
 
 //clamp a value from min to max
