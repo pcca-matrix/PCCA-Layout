@@ -626,14 +626,14 @@ local extraArtworks = {
     },
 
     function Resize(){
-        local coeff = 0.72;
+        local coeff = 0.90;
         local ini = medias_path + curr_emulator + "/Images/Artworks/" +  fe.game_info(Info.Name) + "/" + strip_ext(lists[num]) + ".txt";
         if(file_exist(ini)){
-            coeff = 0.58;
+            coeff = 0.56;
             infos = ini;
         }
         local ratio = surf_img.texture_width.tofloat() / surf_img.texture_height.tofloat();
-        if(ratio >= 1.0){
+        if(ratio > (flw / flh)){
             surf_img.width = flw * coeff;
             surf_img.height = (flw * coeff) / ratio;
         }else{
@@ -1873,6 +1873,7 @@ function hs_tick( ttime )
     if(triggers.letter.start == true && glob_time - rtime > triggers.letter.delay ){
         local firstl = fe.game_info(Info.Title);
         letters.file_name = medias_path + fe.list.name + "/Images/Letters/" + firstl.slice(0,1) + ".png";
+        if(letters.file_name == "") letters.file_name = medias_path  + "Frontend/Images/Letters/" + firstl.slice(0,1) + ".png";
         FE_Sound_Letter_Click.playing = true;
         letters.visible = true;
         triggers.letter.start = false;
@@ -2196,7 +2197,7 @@ menus.push ({
             }
         },
 
-        {"title":"Random Artwork",
+        {"title":"Random Artwork","hide":"!Main Menu",
             "onselect":function(current_list, selected_row){
                 local rnd_l = [{"title":"None","target":"none"},{"title":"Artwork1","target":"artwork1"},{"title":"Artwork2","target":"artwork2"},{"title":"Artwork3","target":"artwork3"},
                 {"title":"Artwork4","target":"artwork4"},{"title":"Artwork5","target":"artwork5"},{"title":"Artwork6","target":"artwork6"},{"title":"Video Snap","target":"video"},
@@ -3582,10 +3583,11 @@ signals["default_sig"] <- function (str) {
             text_overlay.msg = "";
             img_overlay.file_name = medias_path + "Main Menu/Images/Wheel/" + fe.displays[offset].name + ".png";
             if(img_overlay.file_name == "") text_overlay.msg = fe.displays[offset].name;
+
             img_overlay.width = flw * 0.3;
             img_overlay.height = img_overlay.width  / ( img_overlay.texture_width.tofloat() / img_overlay.texture_height.tofloat() );
             img_overlay.x = flw * 0.5 - img_overlay.width * 0.5;
-            img_overlay.y = flh * 0.5 - img_overlay.texture_height * 0.5;
+            img_overlay.y = flh * 0.5 - img_overlay.height * 0.5;
             img_overlay.visible = true;
         break;
 
