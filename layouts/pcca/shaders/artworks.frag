@@ -13,28 +13,17 @@ void FragOut(vec4 col){
 //-- Pixelate
 void pixelate(vec2 uv)
 {
-    float normalize = ( 25.0 - (progress * 25.00) );
-    float dx = normalize * (1.0/512.0);
-    float dy = normalize * (1.0/400.0);
+    float normalize = 25.0 - (progress * 25.00);
+    float dx = normalize * (1.0 / 150.0);
+    float dy = normalize * (1.0 / 60.0);
     vec2 coord = vec2(dx * floor(uv.x / dx), dy * floor(uv.y / dy));
-    FragOut( texture(Tex0, coord) * progress );
+    FragOut( texture(Tex0, coord) * step(0.01, progress) );
 }
 
 //-- Flag
-vec2 offset(float progress, float x, float theta) {
-  float phase = progress*progress + progress + theta;
-  float shifty = 0.05*progress*cos(10*(progress+x));
-  return vec2(0, shifty);
+void flag(vec2 uv){ 
+    FragOut(texture(Tex0, uv + vec2( 0.0, 0.18 * (1.0 - progress) * cos(10.0 * ((1.0 - progress) + uv.x)))));
 }
-
-void flag(vec2 uv){
-    if (progress == 0.0){
-      FragOut( texture(Tex0, uv) );
-    }else{
-      FragOut( texture(Tex0, uv + offset(1.0-progress, uv.x, 0.0)) );
-    }
-}
-
 
 //-- Stripes
 void stripes(vec2 uv){
@@ -56,38 +45,31 @@ void stripes2(vec2 uv){
 
 //-- Blur
 void blur(vec2 uv){
-    float intensity = 0.112; // = 0.1
-    int passes = 6;
+    float intensity = 0.115; // = 0.1
+    int passes = 4;
     vec4 c1 = vec4(0.0);
-    float disp = intensity*(0.5-distance(0.5, progress));
-    for (int xi=0; xi<passes; xi++)
+    float disp = intensity * (0.5 - distance(0.5, progress));
+    float revpass = 1.0 / float(passes);
+    for (int xi=0; xi < passes; xi++)
     {
-        float x = float(xi) / float(passes) - 0.5;
-        for (int yi=0; yi<passes; yi++)
+        float x = float(xi) * revpass - 0.5;
+        for (int yi = 0; yi < passes; yi++)
         {
-            float y = float(yi) / float(passes) - 0.5;
-            vec2 v = vec2(x,y);
-            float d = disp;
-            c1 += texture(Tex0, uv + d*v);
+            float y = float(yi) * revpass - 0.5;
+            vec2 v = vec2(x, y);
+            c1 += texture(Tex0, uv + disp * v);
         }
     }
-    c1 /= float(passes*passes);
-    FragOut(c1*progress);
+    c1 *= float(revpass * revpass);
+    FragOut(c1 * progress);
 }
 
-//-- Rain float
-void rainfloat(vec2 uv){
-    /* TODO */
-}
-
-/* Main */
 void main(){
     vec2 uv = vec2(gl_TexCoord[0]);
     if(progress == 1.0){
         FragOut( texture(Tex0, uv) );
         return;
     }
-
     switch ( int(datas.x) ) {
         case 0:
             FragOut( texture(Tex0, uv) );
@@ -112,10 +94,5 @@ void main(){
         case 5:
             blur(uv);
         break;
-
-        /*case 6:
-            rainfloat(uv);
-        break;
-        */
     }
 }
