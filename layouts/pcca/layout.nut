@@ -198,8 +198,8 @@ img_overlay.visible = false;
 img_overlay.zorder = 15;
 
 text_overlay <- fe.add_text("",0,0,0,0);
-text_overlay.set_pos(0, flh * 0.4, flw, flh * 0.10);
-text_overlay.charsize = 100;
+text_overlay.set_pos(0, (flh * 0.5) - flh * 0.02 , flw, 0);
+text_overlay.charsize = flh * 0.08;
 text_overlay.set_rgb( 220, 220, 220 );
 text_overlay.alpha = 230;
 text_overlay.zorder = 10;
