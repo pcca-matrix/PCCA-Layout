@@ -204,6 +204,7 @@ function SaveStats(tbl){ // update global systems stats
 }
 
 function secondsToDhms(seconds) {
+    if(seconds == "") return;
     seconds = seconds.tointeger();
     local h = floor(seconds / 3600);
     local m = floor(seconds % 3600 / 60);

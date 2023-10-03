@@ -466,8 +466,6 @@ class PCCA_Conveyor {
 
     function Type(pos){
         local x,y,wh,ww,pad,angle;
-        //local hor = surface.add_image("F:/line.png", 0, surface_h * 0.5, surface.width, 1) // debug center hor
-        //local ver = surface.add_image("F:/line.png", surface_w * 0.5, 0, 1, surface_h) // debug center ver
         set_slots(nbr_slot);
 
         switch (pos) {
@@ -744,6 +742,7 @@ class PCCA_Conveyor {
             break;
 
             case Transition.ToNewSelection:
+                var = circular_idx_diff( fe.layout.index + var, fe.layout.index );
                 surface.alpha = 255;
                 fast_nav = false
                 if(last_selected == "random_game"){
@@ -1008,6 +1007,11 @@ class PCCA_Conveyor {
             if(alpha <= to || alpha == 0) return false;
             surface.alpha = alpha;
         }
+    }
+
+    function circular_idx_diff(a, b) {
+        local diff = (a - b + fe.list.size) % fe.list.size;
+        return diff <= fe.list.size * 0.5 ? diff : diff - fe.list.size;
     }
 
     function clamp(value, min, max) {

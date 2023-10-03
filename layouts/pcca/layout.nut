@@ -382,11 +382,7 @@ function load_special(){
 
         if( !S_Art["active"] ) continue;
         n = n.toupper();
-        if( S_Art["default"] ) {
-            S_Art["syst"] = "Main Menu"; // if default is true in ini , use main menu special artwork
-        } else if(S_Art["sys_global"] == 1 ){
-            S_Art["syst"] = "Frontend"; // use Global systeme special artwork ( only if no artwork is found inside sys folder)
-        }
+        if( S_Art["default"] ) S_Art["syst"] = "Frontend"; // use Global systeme special artwork ( only if no artwork is found inside sys folder)
 
         local lst = zip_get_dir( medias_path + S_Art["syst"] + "/Images/Special" );
 
@@ -402,7 +398,6 @@ function load_special(){
         S_Art.nbr = n;
 
         if(S_Art){
-
             ArtObj["Special" + n].width = ArtObj["Special" + n].texture_width;
             ArtObj["Special" + n].height = ArtObj["Special" + n].texture_height;
 
@@ -3300,7 +3295,12 @@ menus.push({
                 }
 
                 // set current edited special to final pos and restore shader alpha
-                current_list.object.set_pos(Ini_settings["special art "+spec.tolower()].x * flw, Ini_settings["special art "+spec.tolower()].y * flh );
+                if( Ini_settings["special art "+spec.tolower()].x != 0 && Ini_settings["special art "+spec.tolower()].y != 0){
+                    current_list.object.set_pos(Ini_settings["special art "+spec.tolower()].x * flw, Ini_settings["special art "+spec.tolower()].y * flh );
+                }else{ // default bottom centered
+                    current_list.object.set_pos(flw * 0.5 - ( (current_list.object.width  ) * 0.5), flh - ( (current_list.object.height )) );
+                }
+
                 current_list.object.shader.set_param("alpha", 1.0);
 
                 _slot[_slot_pos].set_bg_rgb(30, 240, 40); // set cell color on the menu
@@ -3358,7 +3358,7 @@ menus.push({
                 return true;
             }
         },
-        {"title":"Default", "target":"", "hide":"Main Menu",
+        {"title":"Default", "target":"",
             "onselect":function(current_list, selected_row){
                 local spec = current_list.title.slice(8).tolower();
                 set_list( { "title":_selected_row.title, "slot_pos":(Ini_settings["special art "+spec]["default"] == true ? 0 : 1),
@@ -3747,7 +3747,7 @@ function global_fade(ttime, target, direction){
    ttime = ttime.tofloat();
    local objlist = {"surf_ginfos":surf_ginfos, "syno_surf":syno_surf, "flv_transitions":flv_transitions, "bezel":ArtObj.bezel, "point":point, "wheel_surf":wheel_surf}; // objects list to fade
     if(direction){ // show
-        foreach(a, obj in objlist) obj.alpha = ttime * (255.0 / target);
+        foreach(a, obj in objlist) obj.alpha = ttime * (255.0 / target); //ttime * (globs.tofade[a] / target)
         video_shader.set_param("alpha", (ttime / target) );
         foreach(k, obj in artwork_list ){
             artwork_shader[k].set_param("alpha", (ttime / target) );
