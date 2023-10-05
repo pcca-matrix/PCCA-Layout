@@ -599,7 +599,10 @@ surf_infos.word_wrap = true;
 local surf_inf_anim = PresetAnimation(surf_inf)
 .key("alpha").from(0).to(255)
 .on("stop", function(anim){
-    if(anim.opts.target.alpha == 0) anim.opts.target.visible = false;
+    if(anim.opts.target.alpha == 0){
+        anim.opts.target.visible = false;
+        surf_img.file_name = "";
+    }
 })
 .duration(600)
 
