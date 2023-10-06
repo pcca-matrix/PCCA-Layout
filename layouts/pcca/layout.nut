@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.90
+// PCCA v2.91
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -1849,7 +1849,6 @@ function hs_tick( ttime )
         visi = false;
     }
 
-
     if(triggers.background_anim.start == true && bck_anim.progress == 1.0 && glob_time - rtime > globs.delay + (triggers.background_anim.delay * 1000)){ // start animate background
         background_anim.resting = true;
         triggers.background_anim.start = false;
@@ -3424,6 +3423,8 @@ menus.push ({
                     "onselect":function(current_list, selected_row){
                         xml_root.getChild(current_list.object).addAttr("rest", (selected_row.target));
                         save_xml(xml_root, path);
+                        background_anim.resting = false;
+                        rtime = glob_time
                         triggers.theme.start = true;
                     }
                 })
@@ -3432,13 +3433,23 @@ menus.push ({
         },
         {"title":"Speed", "target":"", "type":"float",
             "onselect":function(current_list, selected_row){
-                set_list( { "id":"speed", "title":_selected_row.title, "object":current_list.object, "target":"xml", "values" : [0.1,5.0,0.1], "rows":[{"title":xml_root.getChild("background").attr["speed"]}] });
+                set_list( { "id":"speed", "title":_selected_row.title, "object":current_list.object, "target":"xml", "values" : [0.1,5.0,0.1], "rows":[{"title":xml_root.getChild("background").attr["speed"]}],
+                "onselect":function(current_list, selected_row){ // reset resting delay
+                    background_anim.resting = false;
+                    rtime = glob_time
+                }
+                });
                 return true;
             }
         },
-        {"title":"Delay", "target":"", "type":"int",
+        {"title":"Delay", "target":"", "type":"float",
             "onselect":function(current_list, selected_row){
-                set_list( { "id":"delay", "title":_selected_row.title, "object":current_list.object, "target":"xml", "values" : [0,10,1], "rows":[{"title":xml_root.getChild("background").attr["delay"]}] });
+                set_list( { "id":"delay", "title":_selected_row.title, "object":current_list.object, "target":"xml", "values" : [0.0,10.0,0.1], "rows":[{"title":xml_root.getChild("background").attr["delay"]}],
+                "onselect":function(current_list, selected_row){ // reset resting delay
+                    background_anim.resting = false;
+                    rtime = glob_time
+                }
+                });
                 return true;
             }
         }
@@ -3577,6 +3588,7 @@ signals["default_sig"] <- function (str) {
 
         case "next_display":
         case "prev_display":
+            background_anim.resting = false;
             if(curr_sys == "Main Menu") return true;
             letters.visible = false;
             text_overlay.visible = true;
