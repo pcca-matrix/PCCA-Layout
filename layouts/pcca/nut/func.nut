@@ -1155,6 +1155,11 @@ function create_favourites(){
             }
         }
     }
+    // sort by Title
+    Favourites.sort(function(a, b) {
+        return split(a, ";")[1].tolower() > split(b, ";")[1].tolower() ? 1 : (split(a, ";")[1].tolower() < split(b, ";")[1].tolower() ? -1 : 0);
+    });
+
     local favoPath = fe.path_expand(FeConfigDirectory + "romlists/Favourites.txt");
     local f2 = file(favoPath, "w");
     foreach(ln in Favourites) f2.writeblob( writeB(ln + "\n") );

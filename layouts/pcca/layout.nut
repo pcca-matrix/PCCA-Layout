@@ -1575,7 +1575,7 @@ function hs_transition( ttype, var, ttime )
                 if(!check_display("Favourites") && my_config["Global_Favourites_Enabled"] == "Yes"){
                     create_favourites();
                     local filters = [];
-                    filters.push({"name":"All","sort_by":"Name"});
+                    filters.push({"name":"All","sort_by":"Title"});
                     add_display( "Favourites", ["yes","yes","yes"], filters);
                     system ( (OS == "Windows" ? "copy " : "cp ") + "\"" + globs.script_dir + "images\\Wheel\\Favourites-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu\\Images\\Wheel\\Favourites.png" + "\"" );
                     restart = true;
