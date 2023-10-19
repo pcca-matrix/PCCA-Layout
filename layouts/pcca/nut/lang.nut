@@ -6,7 +6,7 @@ _LL["Fr"] <- {
     display = "Jeux / Filtre",
     add_fav = "Ajouté au favoris",
     ret_fav = "Retiré des favoris",
-    add_fav2 = "Ajouter au favoris?",
+    add_fav2 = "Ajouter au favoris",
     ret_fav2 = "Retirer des favoris?",
     tag_mod = "Tag modifié",
     Sday = "J",
@@ -74,7 +74,8 @@ _LL["Fr"] <- {
     Cancel = "Annuler",
     Edit_Ask = "Que voulez-vous faire ?",
     Create = "Créer",
-    Edit = "Editer"
+    Edit = "Editer",
+    Wait = "Patientez svp"
 }
 
 _LL["En"] <- {
@@ -151,7 +152,8 @@ _LL["En"] <- {
     Cancel = "Cancel",
     Edit_Ask = "What do you want to do ?",
     Create = "Create",
-    Edit = "Edit"
+    Edit = "Edit",
+    Wait = "Please Wait"
 }
 
 _LL["Es"] <- { // Translated By shiryu55 Thanks !
@@ -228,5 +230,6 @@ _LL["Es"] <- { // Translated By shiryu55 Thanks !
     Cancel = "Cancelar",
     Edit_Ask = "¿Qué quiere hacer?",
     Create = "Crear",
-    Edit = "Editar"
+    Edit = "Editar",
+    Wait = "Por favor, espera"
 }

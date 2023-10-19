@@ -47,8 +47,8 @@ class UserConfig {
 }
 
 my_config <- fe.get_config();
-globs <- {"delay" : 400, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time, "script_dir":fe.script_dir, "tofade":{}, "custom_romlists":["Recent","Favourites","Most Played"],
-"customs_romlist_tb":{} }; // super globals temp vars
+globs <- {"delay" : 400, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time, "script_dir":fe.script_dir, "config_dir":FeConfigDirectory,
+"tofade":{}, "custom_romlists":["Recent","Favourites","Most Played"], "customs_romlist_tb":{} }; // super globals temp vars
 
 triggers <- {
     "flv_transition":{
@@ -76,8 +76,20 @@ triggers <- {
     }
 }
 
+function replace(string, original, replacement) {
+    local str = string.find(original);
+    while (str != null) {
+        string = string.slice(0, str) + replacement + string.slice(str + original.len());
+        str = string.find(original);
+    }
+    return string;
+}
+
 medias_path <- ( my_config["medias_path"] != "" ? my_config["medias_path"] : globs.script_dir + "Media" );
 if ( medias_path.len()-1 != '/' ) medias_path += "/";
+medias_path = replace(medias_path, "\\", "/")
+globs.script_dir = replace(fe.path_expand(globs.script_dir), "\\", "/")
+globs.config_dir = replace(fe.path_expand(globs.config_dir), "\\", "/")
 
 // check if it's am or am+ (thanks zpaolo11x)
 AMPlus <- true;
@@ -1052,7 +1064,8 @@ function load_theme(theme_path, theme_content, prev_def){
 
     local back_anim = null;
     local rnd_list = [];
-    if(globs.custom_romlists.find(fe.game_info(Info.Name)) != null) rnd_list = globs.customs_romlist_tb[fe.game_info(Info.Name)].map( function(x) { return x; });
+
+    if(globs.customs_romlist_tb.rawin(fe.game_info(Info.Name))) rnd_list = globs.customs_romlist_tb[fe.game_info(Info.Name)].map( function(x) { return x; });
 
     foreach ( c in theme_node.children )
     {
@@ -1121,10 +1134,15 @@ function load_theme(theme_path, theme_content, prev_def){
             if(!artD.random){
                 ArtObj.snap.file_name = medias_path + curr_emulator + "/Video/" + fe.game_info(Info.Name) + ".mp4";
             }else{
-                if(globs.custom_romlists.find(fe.game_info(Info.Name)) != null){ // for custom romlist randomly select from custom_romlists table
-                    local rnd_vid = get_random_table(globs.customs_romlist_tb[fe.game_info(Info.Name)]);
-                    local splited = split( rnd_vid, ";" );
-                    if(splited.len() > 1) ArtObj.snap.file_name = medias_path + splited[1] + "/Video/" + splited[0] + ".mp4";
+                if(globs.customs_romlist_tb.rawin(fe.game_info(Info.Name))){ // for custom romlist randomly select from custom_romlists table
+                    local i = 0;
+                    while( ArtObj.snap.file_name == "" ){
+                        local rnd_vid = get_random_table(globs.customs_romlist_tb[fe.game_info(Info.Name)]);
+                        local splited = split( rnd_vid, ";" );
+                        if(splited.len() > 1) ArtObj.snap.file_name = medias_path + splited[1] + "/Video/" + splited[0] + ".mp4";
+                        if(i>5) break;//break if no radom art is found after 6 it
+                        i++;
+                    }
                 }else{
                     ArtObj.snap.file_name = get_random_file(medias_path + fe.game_info(Info.Name) + "/Video");
                 }
@@ -1556,9 +1574,15 @@ function hs_transition( ttype, var, ttime )
                 if(!check_display("Recent") && my_config["Recent_Enabled"] == "Yes"){
                     local filters = [];
                     filters.push({"name":"All","sort_by":"Extra", "reverse_order":"true"});
-                    filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Name"});
+                    filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Title"});
                     add_display( "Recent", ["yes","yes","yes"], filters);
-                    system ( (OS == "Windows" ? "copy " : "cp ") + "\"" + globs.script_dir + "images\\Wheel\\Recent-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu\\Images\\Wheel\\Recent.png" + "\"" );
+                    system ("mkdir " + (OS == "Windows" ? "" : "-p ") + "\"" + medias_path + "Main Menu/Images/Wheel/\"");
+                    local cop = "\"" + globs.script_dir + "images/Wheel/Recent-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Recent.png" + "\""; 
+                    if(OS == "Windows"){
+                        system("copy " + replace(cop, "/","\\"));
+                    }else{
+                       system("cp " + cop); 
+                    }
                     restart = true;
                 }
 
@@ -1566,9 +1590,15 @@ function hs_transition( ttype, var, ttime )
                     create_most_played();
                     local filters = [];
                     filters.push({"name":"All"});
-                    filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Name"});
+                    filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Title"});
                     add_display( "Most Played", ["yes","yes","yes"], filters);
-                    system ( (OS == "Windows" ? "copy " : "cp ") + "\"" + globs.script_dir + "images\\Wheel\\Most Played-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu\\Images\\Wheel\\Most Played.png" + "\"" );
+                    system ("mkdir " + (OS == "Windows" ? "" : "-p ") + "\"" + medias_path + "Main Menu/Images/Wheel/\"");
+                    local cop = "\"" + globs.script_dir + "images/Wheel/Most Played-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Most Played.png" + "\""; 
+                    if(OS == "Windows"){
+                        system("copy " + replace(cop, "/","\\"));
+                    }else{
+                       system("cp " + cop); 
+                    }
                     restart = true;
                 }
 
@@ -1577,9 +1607,15 @@ function hs_transition( ttype, var, ttime )
                     local filters = [];
                     filters.push({"name":"All","sort_by":"Title"});
                     add_display( "Favourites", ["yes","yes","yes"], filters);
-                    system ( (OS == "Windows" ? "copy " : "cp ") + "\"" + globs.script_dir + "images\\Wheel\\Favourites-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu\\Images\\Wheel\\Favourites.png" + "\"" );
+                    local cop = "\"" + globs.script_dir + "images/Wheel/Favourites-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Favourites.png" + "\""; 
+                    if(OS == "Windows"){
+                        system("copy " + replace(cop, "/","\\"));
+                    }else{
+                       system("cp " + cop); 
+                    }
                     restart = true;
                 }
+
                 if(check_display("Most Played") && my_config["Most_Played_Enabled"] == "No"){ delete_display("Most Played"); restart = true; }
                 if(check_display("Recent") && my_config["Recent_Enabled"] == "No") { delete_display("Recent"); restart = true; }
                 if(check_display("Favourites") && my_config["Global_Favourites_Enabled"] == "No") { delete_display("Favourites"); restart = true; }
@@ -1612,6 +1648,8 @@ function hs_transition( ttype, var, ttime )
                         }
                     }else{ // new systeme added , create new entry
                         main_infos <- refresh_stats(curr_sys);
+                        if(my_config["Most_Played_Enabled"] == "Yes") create_most_played();
+                        if(my_config["Global_Favourites_Enabled"] == "Yes") create_favourites();
                     }
                 }
                 Langue();
@@ -1671,11 +1709,6 @@ function hs_transition( ttype, var, ttime )
                 break;
 
                 case 28: //28  favorites
-                    if(fe.game_info(Info.Extra) != ""){
-                        overlay_title.msg = LnG.ret_fav2;
-                    }else{
-                        overlay_title.msg = LnG.add_fav2;
-                    }
                     overlay_title.set_pos( 0, flh*0.324, flw, flh*0.046);
                     overlay_title.set_rgb(192, 192, 192);
                     overlay_title.charsize = flw * 0.015;
@@ -1818,7 +1851,15 @@ function hs_tick( ttime )
                 path = medias_path + curr_emulator + "/Themes/" + fe.game_info(Info.Name) + ".mp4";
                 theme_content = [];
                 ArtObj.bezel.file_name = globs.script_dir + "images/Bezels/Bezel_trans.png";
-            }else{ //if no video is found assume it's system default theme
+            }else if(curr_sys != "Main Menu"){ //if no video is found assume it's system default theme
+                path = medias_path + curr_emulator + "/Themes/Default/";
+                theme_content = zip_get_dir( path );
+                if(!theme_content.len()){
+                    path = medias_path + curr_emulator + "/Themes/Default.zip";
+                    theme_content = zip_get_dir( path );
+                }
+            }
+            /*}else{ //if no video is found assume it's system default theme
                 path = medias_path + curr_emulator + "/Themes/Default/";
                 theme_content = zip_get_dir( path );
                 if(!theme_content.len() && curr_sys != "Main Menu"){
@@ -1826,6 +1867,7 @@ function hs_tick( ttime )
                     theme_content = zip_get_dir( path );
                 }
             }
+            */
 
             if( prev_path == path && surf_menu.visible == false ){ // if previous and current theme is equal ( and we are not in edit mode ).
                 reset_art(true);
@@ -1944,7 +1986,7 @@ menus.push ({
             overlay_message();
             SetListBox(overlay_list, {visible = true, rows = 1, sel_alpha = 0, bg_alpha = 0, selbg_alpha = 0 })
             if(curr_sys == "Main Menu"){
-                local p = medias_path + "Main Menu\\Themes\\" + fe.game_info(Info.Name) + "\\";
+                local p = medias_path + "Main Menu/Themes/" + fe.game_info(Info.Name) + "/";
                 if( (file_exist(path) && strip_ext(path.tolower()) != "xml") ) {
                     overlay_message("images/warning.png");
                     fe.overlay.list_dialog([], LnG.Uneditable, 0, 0)
@@ -1954,7 +1996,7 @@ menus.push ({
                     SetListBox(overlay_list, {visible = true, rows = 4, sel_alpha = 255, bg_alpha = 0, selbg_alpha = 0 })
                     local selected = fe.overlay.list_dialog([ LnG.Create + " main menu theme", LnG.Cancel], LnG.Edit_Ask, 0, -1);
                     if(selected == 0){
-                        system ("mkdir \"" + p);
+                        system ("mkdir " + (OS == "Windows" ? "" : "-p ") + "\"" + p + "\"");
                         create_xml();
                         save_xml(xml_root, p);
                         overlay_message("images/validate.png");
@@ -1970,10 +2012,10 @@ menus.push ({
                 }else{
                     local default_theme = false;
 
-                    if( file_exist(medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\Theme.xml")){ // if game theme exist
+                    if( file_exist(medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + "/Theme.xml")){ // if game theme exist
                         return true;
                     }
-                    if( file_exist(medias_path + curr_sys + "\\Themes\\Default\\Theme.xml")) default_theme = true;
+                    if( file_exist(medias_path + curr_sys + "/Themes/Default/Theme.xml")) default_theme = true;
 
                     if(default_theme){ // if default theme exist but not game theme
                         SetListBox(overlay_list, {visible = true, rows = 4, sel_alpha = 255, bg_alpha = 0, selbg_alpha = 0 })
@@ -1981,9 +2023,9 @@ menus.push ({
                         if(selected == 0){
                             return true;
                         }else if(selected == 1){
-                            system ("mkdir \"" + medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\");
+                            system ("mkdir " + (OS == "Windows" ? "" : "-p ")  + "\"" + medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + "/");
                             create_xml();
-                            save_xml(xml_root, medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\")
+                            save_xml(xml_root, medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + "/")
                             path = ""; // reset path forcing the theme to reload artworks
                             triggers.theme.start = true;
                             overlay_message("images/validate.png");
@@ -1994,17 +2036,18 @@ menus.push ({
                         SetListBox(overlay_list, {visible = true, rows = 4, sel_alpha = 255, bg_alpha = 0, selbg_alpha = 0 })
                         local selected = fe.overlay.list_dialog([LnG.Create + " default theme", LnG.Create + "game theme", LnG.Cancel], LnG.Edit_Ask, 1, -1);
                         if(selected == 0){
-                            system ("mkdir \"" + medias_path + curr_sys + "\\Themes\\Default\\");
+                            create_theme_struct(curr_sys);
+                            system ("mkdir \"" + medias_path + curr_sys + "/Themes/Default/");
                             create_xml();
-                            save_xml(xml_root, medias_path + curr_sys + "\\Themes\\Default\\")
+                            save_xml(xml_root, medias_path + curr_sys + "/Themes/Default/")
                             path = ""; // reset path forcing the theme to reload artworks
                             triggers.theme.start = true;
                             overlay_message("images/validate.png");
                             fe.overlay.list_dialog([], LnG.Create_folder);
                         }else if(selected == 1){
-                            system ("mkdir \"" + medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\");
+                            system ("mkdir \"" + medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + "/");
                             create_xml();
-                            save_xml(xml_root, medias_path + curr_sys + "\\Themes\\" + fe.game_info(Info.Name) + "\\")
+                            save_xml(xml_root, medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + "/")
                             path = ""; // reset path forcing the theme to reload artworks
                             triggers.theme.start = true;
                             overlay_message("images/validate.png");
@@ -3668,8 +3711,7 @@ signals["default_sig"] <- function (str) {
                 local add_fav = fe.overlay.list_dialog([LnG.Yes,LnG.No], overlay_title.msg, 1, -1);
                 if(add_fav == 0){
                     update_favourites(add);// update favourites everywhere
-                    update_tags(fe.path_expand(FeConfigDirectory + "romlists"), fe.game_info(Info.Emulator), false) // remove from sys tag file
-                    dialog_text.msg = LnG.ret_fav
+                    if(add) dialog_text.msg = LnG.add_fav; else dialog_text.msg = LnG.ret_fav;
                     //if(curr_sys == "Favourites"){// simulate reload list to refresh the global favourites list ....
                         fe.signal("prev_list")
                         fe.signal("next_list")

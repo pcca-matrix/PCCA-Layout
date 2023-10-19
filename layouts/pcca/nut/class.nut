@@ -326,7 +326,7 @@ class PCCA_Conveyor {
     frame_img = null;
     timer = 0;
     stop = false;
-    media = "wheel";
+    media = "Wheel";
     rounded = true;
     Rad = 0;
     Curve = 1.0;
@@ -421,7 +421,7 @@ class PCCA_Conveyor {
             try{ wheel_frame = opts.frame } catch(err){}
             try{ type = opts.type } catch(err){}
             try{ spin_start = opts.spin_start } catch(err){}
-            try{ media = opts.media } catch(err){}
+            try{ media = opts.media.slice( 0, 1 ).toupper() + opts.media.slice( 1, opts.media.len() ) } catch(err){} // caps first char
             try{ scale = opts.scale.tofloat() } catch(err){}
             try{ center_zoom = opts.center_zoom } catch(err){}
             // attract-mode
@@ -449,7 +449,7 @@ class PCCA_Conveyor {
             }else{
                 frame_img.file_name = medias_path + fe.list.name + "/Images/Wheel/Frame/frame.png";
             }
-            if(frame_img.file_name == "") frame_img.file_name = ::fe.script_dir + "\\images\\Wheel\\frame.png";
+            if(frame_img.file_name == "") frame_img.file_name = ::globs.script_dir + "/images/Wheel/frame.png";
         }
 
         if(spin_start && !::surf_menu.visible){

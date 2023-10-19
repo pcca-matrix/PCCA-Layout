@@ -28,7 +28,7 @@ function global_default_settings(){
     Ini_settings["wheel"]["spin_start"] <- true;
     Ini_settings["wheel"]["scale"] <- 1.0;
     Ini_settings["wheel"]["center_zoom"] <- 1.0;
-    Ini_settings["wheel"]["media"] <- "wheel";
+    Ini_settings["wheel"]["media"] <- "Wheel";
 
     Ini_settings["game text"] <- {}
     Ini_settings["game text"]["animation"] <- "elastic";
@@ -146,7 +146,7 @@ function refresh_stats(system = "") {
             }
         }
         if(romlist != ""){
-            local text = txt.loadFile( FeConfigDirectory + "romlists\\" + romlist + ".txt" );
+            local text = txt.loadFile( globs.config_dir + "romlists/" + romlist + ".txt" );
             foreach( line in text.lines ){
                 if( line != "" ){
                     if(line[0] != 35) cnt++; // discard #
@@ -158,13 +158,13 @@ function refresh_stats(system = "") {
     }
 
     // Get Stats for each System
-    dirs = DirectoryListing( FeConfigDirectory + "stats", false );
+    dirs = DirectoryListing( globs.config_dir + "stats", false );
     foreach(subdir in dirs.results){
         if( !datas.rawin(subdir) ) continue; // assume only systems listed by fe.display is used
-        local files = DirectoryListing( FeConfigDirectory + "stats\\" + subdir, false );
+        local files = DirectoryListing( globs.config_dir + "stats/" + subdir, false );
         foreach(file in files.results){
             if ( ext(file) == "stat" ){
-                local f_stat = ReadTextFile(FeConfigDirectory + "stats\\" + subdir + "\\" + file);
+                local f_stat = ReadTextFile(globs.config_dir + "stats/" + subdir + "/" + file);
                 local i = 0;
                 while ( !f_stat.eos() ) {
                     local num = f_stat.read_line().tointeger();
@@ -292,27 +292,6 @@ function get_random_file(dir){
     local tmp = zip_get_dir( dir );
     if( tmp.len() > 0 ) fname = dir + "/" + tmp[ rnd_num(0,tmp.len()-1,"int") ];
     return fname;
-}
-
-//Replace text in a string
-function replace (string, original, replacement)
-{
-  local expression = regexp(original);
-  local result = "";
-  local position = 0;
-  local captures = expression.capture(string);
-  while (captures != null)
-  {
-    foreach (i, capture in captures)
-    {
-      result += string.slice(position, capture.begin);
-      result += replacement;
-      position = capture.end;
-    }
-    captures = expression.capture(string, position);
-  }
-  result += string.slice(position);
-  return result;
 }
 
 //Flip Effect
@@ -609,28 +588,10 @@ function video_transform(rotate=true){
 }
 
 function create_theme_struct(sys){
-    system ("mkdir \"" + medias_path + sys + "\\Images\\");
-    system ("mkdir \"" + medias_path + sys + "\\Images\\Letters\\");
-    system ("mkdir \"" + medias_path + sys + "\\Images\\Other\\");
-    system ("mkdir \"" + medias_path + sys + "\\Images\\Particle\\");
-    system ("mkdir \"" + medias_path + sys + "\\Images\\Special\\");
-    system ("mkdir \"" + medias_path + sys + "\\Images\\Wheel\\");
-    system ("mkdir \"" + medias_path + sys + "\\Images\\Backgrounds\\");
-    system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork1\\");
-    system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork2\\");
-    system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork3\\");
-    system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork4\\");
-    system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork5\\");
-    system ("mkdir \"" + medias_path + sys + "\\Images\\Artwork6\\");
-    system ("mkdir \"" + medias_path + sys + "\\Sound\\");
-    system ("mkdir \"" + medias_path + sys + "\\Sound\\Background Music\\");
-    system ("mkdir \"" + medias_path + sys + "\\Sound\\Game Start\\");
-    system ("mkdir \"" + medias_path + sys + "\\Sound\\System Start\\");
-    system ("mkdir \"" + medias_path + sys + "\\Sound\\System Exit\\");
-    system ("mkdir \"" + medias_path + sys + "\\Sound\\Wheel Sounds\\");
-    system ("mkdir \"" + medias_path + sys + "\\Themes\\");
-    system ("mkdir \"" + medias_path + sys + "\\Video\\");
-    system ("mkdir \"" + medias_path + sys + "\\Video\\Override Transitions\\");
+    local arr = ["/Images/", "/Images/Letters/", "/Images/Other/", "/Images/Particle/", "/Images/Special/", "/Images/Wheel/", "/Images/Backgrounds/",
+    "/Images/Artwork1/", "/Images/Artwork2/", "/Images/Artwork3/", "/Images/Artwork4/", "/Images/Artwork5/", "/Images/Artwork6/", "/Sound/",
+    "/Sound/Background Music/", "/Sound/Game Start/", "/Sound/System Exit/", "/Sound/Wheel Sounds/", "/Themes/", "/Video/", "/Video/Override Transitions/"];
+    foreach(sub in arr) system ("mkdir " + (OS == "Windows" ? "" : "-p ") + "\"" + medias_path + sys + sub + "\"");
 }
 
 function create_xml(){
@@ -879,7 +840,7 @@ function check_display(name){
 
 function delete_display(disp_name){
     fe.overlay.splash_message ("Deleting Romlist");
-    local cfg = file(fe.path_expand(FeConfigDirectory + "attract.cfg"), "rb")
+    local cfg = file(globs.config_dir + "attract.cfg", "rb")
     local output = [];
     local char
     while (!cfg.eos()){
@@ -916,14 +877,14 @@ function delete_display(disp_name){
         if (keep) new_output.append(v);
     }
 
-    local f2 = file(  fe.path_expand( FeConfigDirectory + "attract.cfg" ), "w" );
+    local f2 = file( globs.config_dir + "attract.cfg", "w" );
     foreach (v in new_output) f2.writeblob(writeB(v + "\n"));
     f2.close()
 }
 
 function add_display(name, opts, filters){
     fe.overlay.splash_message ("Creating romlist");
-    local cfg = file(fe.path_expand(FeConfigDirectory + "attract.cfg"), "rb")
+    local cfg = file(globs.config_dir + "attract.cfg", "rb")
     local output = [];
     local char
     while (!cfg.eos()){
@@ -963,7 +924,7 @@ function add_display(name, opts, filters){
         }
     }
 
-    local f2 = file(  fe.path_expand( FeConfigDirectory + "attract.cfg" ), "w" );
+    local f2 = file( globs.config_dir + "attract.cfg", "w" );
     foreach (v in output) f2.writeblob(writeB(v + "\n"));
     f2.close()
 }
@@ -983,7 +944,7 @@ function update_most_played(){
     local ln = implode(g_inf, ";");
     local game = {"sys":g_inf[2], "name":g_inf[0],"line":ln, "cnt":fe.game_info(Info.PlayedCount).tointeger(), "elapse":elapse};
 
-    local Mostpath = fe.path_expand(FeConfigDirectory + "romlists/Most Played.txt");
+    local Mostpath = globs.config_dir + "romlists/Most Played.txt";
     local tempf = ReadTextFile(Mostpath);
     while (!tempf.eos()){
         local tmpline = tempf.read_line();
@@ -1007,13 +968,13 @@ function update_most_played(){
 function create_most_played()
 {
     local m_pl = [];
-    local dirs = DirectoryListing( FeConfigDirectory + "stats", false );
+    local dirs = DirectoryListing( globs.config_dir + "stats", false );
     foreach(display in dirs.results){
-        if(!check_display(display) || !file_exist(FeConfigDirectory + "romlists/" + display + ".txt")) continue; // check if display and romlist exist
+        if(!check_display(display) || !file_exist(globs.config_dir + "romlists/" + display + ".txt")) continue; // check if display and romlist exist
         local games = [];
 
         // load romlist in games array
-        local romlist_file = ReadTextFile( fe.path_expand(FeConfigDirectory + "romlists/" + display + ".txt") );
+        local romlist_file = ReadTextFile( globs.config_dir + "romlists/" + display + ".txt" );
         while (!romlist_file.eos()){
             local tmpline = romlist_file.read_line();
             local splited = split( tmpline, ";" );
@@ -1022,10 +983,10 @@ function create_most_played()
 
         if(!games.len()) continue; // if empty romlist
 
-        local files = DirectoryListing( FeConfigDirectory + "stats/" + display, false );
+        local files = DirectoryListing( globs.config_dir + "stats/" + display, false );
         foreach(file in files.results){
             if ( ext(file) == "stat" ){
-                local f_stat = ReadTextFile(FeConfigDirectory + "stats/" + display + "/" + file);
+                local f_stat = ReadTextFile(globs.config_dir + "stats/" + display + "/" + file);
                 local stats = [];
                 for (local i = 0; !f_stat.eos(); i++) stats.push(f_stat.read_line().tointeger());
 
@@ -1042,8 +1003,8 @@ function create_most_played()
         }
 
         // add favourites flag to extra inf
-        if(file_exist(FeConfigDirectory + "romlists/" + display + ".tag")){
-            local temp_favo = ReadTextFile(FeConfigDirectory + "romlists/" + display + ".tag");
+        if(file_exist(globs.config_dir + "romlists/" + display + ".tag")){
+            local temp_favo = ReadTextFile(globs.config_dir + "romlists/" + display + ".tag");
             while (!temp_favo.eos()){
                 local tmpline = temp_favo.read_line();
                 foreach(k,v in games){
@@ -1065,7 +1026,7 @@ function create_most_played()
         }
     }
 
-    local mostPlpath = fe.path_expand(FeConfigDirectory + "romlists/Most Played.txt");
+    local mostPlpath = globs.config_dir + "romlists/Most Played.txt";
     local f2 = file(mostPlpath, "w");
     foreach(b in m_pl) f2.writeblob( writeB(b.line + ";" + b.cnt + ";" + b.elapse + "\n") ); // add 2 new cols to the romlist (count and time) for the sorting order
     f2.close()
@@ -1076,7 +1037,7 @@ function update_recent()
     local g_inf = game_infos();
     // check if it's a favourites and add time to extra information
     if(ret_favo(0)== 1) g_inf[15] = time() + ":f"; else g_inf[15] = time();
-    local Recentpath = fe.path_expand(FeConfigDirectory + "romlists/Recent.txt");
+    local Recentpath = globs.config_dir + "romlists/Recent.txt";
     local tempf = ReadTextFile(Recentpath);
     local ln = "";
     ln+=implode(g_inf, ";") + "\n";
@@ -1094,8 +1055,9 @@ function update_recent()
 }
 
 function update_favourites(add){
+    fe.overlay.splash_message (LnG.Wait + " ...")
     local g_inf = game_infos();
-    local Favopath = fe.path_expand(FeConfigDirectory + "romlists/Favourites.txt");
+    local Favopath = globs.config_dir + "romlists/Favourites.txt";
     local tempf = ReadTextFile(Favopath);
     local ln = "";
     while (!tempf.eos()){
@@ -1110,44 +1072,48 @@ function update_favourites(add){
     f2.close();
 
     //update custom romlist
+    local output = [];
     foreach( v in globs.custom_romlists ){
         if(v == "Favourites") continue;
-            local Favopath = fe.path_expand(FeConfigDirectory + "romlists/" + v + ".txt");
+            local Favopath = globs.config_dir + "romlists/" + v + ".txt";
             local tempf = ReadTextFile(Favopath);
-            local ln = "";
+            local found = false;
+            output.clear();
             while (!tempf.eos()){
                 local templ = tempf.read_line();
-                local spl = RealSplit( templ, ";" );
-                if(spl[0] == g_inf[0] && spl[2] == g_inf[2]){ // if game is in the list
-                    if(v == "Recent"){ // Recent romlist
-                       local datas = RealSplit(spl[15], ":");
-                       spl[15] = datas[0] + (add == true ? ":f" : "" );
-                    }else{ // other romlist
-                       spl[15] = (add == true ? "f" : "" );
+                if(!found && templ.find(g_inf[0]) != null){
+                    local spl = RealSplit( templ, ";" );
+                    if(spl[2] == g_inf[2]){
+                        if(v == "Recent"){ // Recent romlist
+                           local datas = RealSplit(spl[15], ":");
+                           spl[15] = datas[0] + (add == true ? ":f" : "" );
+                        }else{ // other romlist
+                           spl[15] = (add == true ? "f" : "" );
+                        }
+                        templ = implode(spl, ";");
+                        found = true;
                     }
-                    ln+=implode(spl, ";") + "\n";
-                }else{
-                    ln+=templ + "\n";
                 }
+                output.push(templ);
             }
 
-            local f2 = file(  Favopath, "w" );
-            f2.writeblob(writeB(ln));
-            f2.close();
+            local f2 = file( globs.config_dir + "romlists/" + v + ".txt", "w" );
+            foreach (v in output) f2.writeblob(writeB(v + "\n"));
+            f2.close()
     }
-
+    update_tags(globs.config_dir + "romlists", g_inf[2], add) // update system tag file
     return true;
 }
 
 function create_favourites(){
     local Favourites = [];
-    local files = DirectoryListing( FeConfigDirectory + "romlists", false );
+    local files = DirectoryListing( globs.config_dir + "romlists", false );
     foreach(file in files.results){
         if ( ext(file) == "tag" && globs.custom_romlists.find(strip_ext(file)) == null ){
-            local f = ReadTextFile(FeConfigDirectory + "romlists\\" + file);
+            local f = ReadTextFile(globs.config_dir + "romlists/" + file);
             local favo = [];
             for (local i = 0; !f.eos(); i++) favo.push(strip(f.read_line()));
-            local romlist = ReadTextFile (FeConfigDirectory + "romlists\\" + strip_ext(file) + ".txt");
+            local romlist = ReadTextFile (globs.config_dir + "romlists/" + strip_ext(file) + ".txt");
             while (!romlist.eos()){
                 local tmpline = romlist.read_line();
                 local spl = split( tmpline, ";" );
@@ -1160,7 +1126,7 @@ function create_favourites(){
         return split(a, ";")[1].tolower() > split(b, ";")[1].tolower() ? 1 : (split(a, ";")[1].tolower() < split(b, ";")[1].tolower() ? -1 : 0);
     });
 
-    local favoPath = fe.path_expand(FeConfigDirectory + "romlists/Favourites.txt");
+    local favoPath = globs.config_dir + "romlists/Favourites.txt";
     local f2 = file(favoPath, "w");
     foreach(ln in Favourites) f2.writeblob( writeB(ln + "\n") );
     f2.close()
@@ -1168,7 +1134,7 @@ function create_favourites(){
 
 
 function update_tags(path, name, add){
-    path = path + "\\" + name + ".tag";
+    path = path + "/" + name + ".tag";
     local tabl = [];
     local f = ReadTextFile(path);
     local game = fe.game_info(Info.Name);
@@ -1188,7 +1154,7 @@ function load_customs(){ // load custom romlist in array
     local custom_lists = {};
     foreach(a,v in globs.custom_romlists){
         local lists = [];
-        local romlist_file = ReadTextFile( fe.path_expand(FeConfigDirectory + "romlists/" + v + ".txt") );
+        local romlist_file = ReadTextFile( globs.config_dir + "romlists/" + v + ".txt" );
         while (!romlist_file.eos()){
             local tmpline = romlist_file.read_line();
             local splited = split( tmpline, ";" );
