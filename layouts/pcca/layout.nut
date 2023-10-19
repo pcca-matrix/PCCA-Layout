@@ -31,6 +31,7 @@ class UserConfig {
     </ label="Most Played", help="Enable recently played romlist", options="Yes, No", order=M_order++ />Most_Played_Enabled="Yes";
     </ label="Numbers of most played games", help="How many most played game should be displayed", options="25, 50, 100", order=M_order++ />Most_Played_Entry="25";
     </ label="Global Favourites", help="Enable global favourites romlist", options="Yes, No", order=M_order++ />Global_Favourites_Enabled="Yes";
+    </ label="All Games romlist", help="Enable the All Games romlist", options="Yes, No", order=M_order++ />All_Games_Enabled="Yes";
     </ label="--- Attract-Mode ---", help="", options="", order=M_order++ />mt1=""
     </ label="Enabled", help="Enable attract-mode", options="Yes, No", order=M_order++ />AM_Enabled="Yes";
     </ label="Wait Video", help="Wait end of video before starting attract-mode", options="Yes, No", order=M_order++ />AM_WaitVideo="Yes";
@@ -48,7 +49,7 @@ class UserConfig {
 
 my_config <- fe.get_config();
 globs <- {"delay" : 400, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time, "script_dir":fe.script_dir, "config_dir":FeConfigDirectory,
-"tofade":{}, "custom_romlists":["Recent","Favourites","Most Played"], "customs_romlist_tb":{} }; // super globals temp vars
+"tofade":{}, "custom_romlists":["Recent","Favourites","Most Played","All Games"], "customs_romlist_tb":{}}; // super globals temp vars
 
 triggers <- {
     "flv_transition":{
@@ -1145,6 +1146,14 @@ function load_theme(theme_path, theme_content, prev_def){
                     }
                 }else{
                     ArtObj.snap.file_name = get_random_file(medias_path + fe.game_info(Info.Name) + "/Video");
+                    if(fe.game_info(Info.Name) == "All Games" && ArtObj.snap.file_name == ""){ // if all games and no snap, get a random main menu snap
+                        local i = 0;
+                        while( ArtObj.snap.file_name == "" ){
+                            ArtObj.snap.file_name =  medias_path + "Main Menu/Video/"+get_random_table(fe.displays).name+".mp4";
+                            if(i>5) break;//break if no radom snap is found after 6 it
+                            i++;
+                        }
+                    }
                 }
             }
 
@@ -1615,10 +1624,21 @@ function hs_transition( ttype, var, ttime )
                     }
                     restart = true;
                 }
+                if(!check_display("All Games") && my_config["All_Games_Enabled"] == "Yes"){
+                    create_all_games();
+                    local filters = [];
+                    filters.push({"name":"All","sort_by":"Title"});
+                    filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Title"});
+                    add_display( "All Games", ["yes","yes","yes"], filters);
+                    system ("mkdir " + (OS == "Windows" ? "" : "-p ") + medias_path + "\"Main Menu/Images/Wheel/\"");
+                    system ( (OS == "Windows" ? "copy " : "cp ") + "\"" + globs.script_dir + "images/Wheel/All Games-"+my_config["user_lang"]+".png\"" +" \"" + medias_path + "Main Menu/Images/Wheel/All Games.png" + "\"" );
+                    restart = true;
+                }
 
                 if(check_display("Most Played") && my_config["Most_Played_Enabled"] == "No"){ delete_display("Most Played"); restart = true; }
                 if(check_display("Recent") && my_config["Recent_Enabled"] == "No") { delete_display("Recent"); restart = true; }
                 if(check_display("Favourites") && my_config["Global_Favourites_Enabled"] == "No") { delete_display("Favourites"); restart = true; }
+                if(check_display("All Games") && my_config["All_Games_Enabled"] == "No") { delete_display("All Games"); restart = true; }
 
                 if(restart){
                     overlay_message(globs.script_dir + "images/warning.png");
@@ -1650,6 +1670,7 @@ function hs_transition( ttype, var, ttime )
                         main_infos <- refresh_stats(curr_sys);
                         if(my_config["Most_Played_Enabled"] == "Yes") create_most_played();
                         if(my_config["Global_Favourites_Enabled"] == "Yes") create_favourites();
+                        if(my_config["All_Games_Enabled"] == "Yes") create_all_games();
                     }
                 }
                 Langue();
@@ -2075,6 +2096,7 @@ menus.push ({
             fe.overlay.splash_message ("Rebuilding custom romlist ...")
             if(my_config["Most_Played_Enabled"] == "Yes") create_most_played();
             if(my_config["Global_Favourites_Enabled"] == "Yes") create_favourites();
+            if(my_config["All_Games_Enabled"] == "Yes") create_all_games();
             return false;
         }
     }

@@ -1153,6 +1153,7 @@ function update_tags(path, name, add){
 function load_customs(){ // load custom romlist in array
     local custom_lists = {};
     foreach(a,v in globs.custom_romlists){
+        if(v == "All Games") continue;
         local lists = [];
         local romlist_file = ReadTextFile( globs.config_dir + "romlists/" + v + ".txt" );
         while (!romlist_file.eos()){
@@ -1175,6 +1176,43 @@ function array_unique(arr) {
     return uniqueArr;
 }
 
+function create_all_games()
+{
+    local games = [];
+    foreach(k, display in fe.displays){
+        if(globs.custom_romlists.find(display.romlist) != null || display.romlist == "All Games") continue; //don't use the custom romlists
+        if(!check_display(display.romlist) || !file_exist(globs.config_dir + "romlists/" + display.romlist + ".txt")) continue; // check if display and romlist exist
+        local file = globs.config_dir + "romlists/" + display.romlist + ".txt";
+        local tmpfile = ReadTextFile(file);
+        while (!tmpfile.eos()){
+            local tmpline = tmpfile.read_line();
+            if(tmpline[0] == 35 || strip(tmpline) == "") continue;
+            local splited = split( tmpline, ";" );
+            games.push({"name":splited[0],"title":splited[1],"line":tmpline});
+        }
+        // add favourites flag to all inf
+        if(file_exist(globs.config_dir + "romlists/" + display.romlist + ".tag")){
+            local temp_favo = ReadTextFile(globs.config_dir + "romlists/" + display.romlist + ".tag");
+            while (!temp_favo.eos()){
+                local tmpline = temp_favo.read_line();
+                foreach(k,v in games){
+                    if(v.name == strip(tmpline)){
+                        local g_inf = RealSplit( v.line, ";" );
+                        g_inf[15] = "f";
+                        games[k].line = implode(g_inf , ";");
+                    }
+                }
+            }
+        }
+    }
+    //sort by title
+    games.sort(function(a, b) { return a.title.tolower() > b.title.tolower() ? 1 : (a.title.tolower() < b.title.tolower() ? -1 : 0); });
+
+    local AllPath = globs.config_dir + "romlists/All Games.txt";
+    local f2 = file(AllPath, "w");
+    foreach(b in games) f2.writeblob( writeB(b.line + "\n") );
+    f2.close()
+}
 // named transitions
 debug_array <- [];
 debug_array.push("StartLayout")// 0
