@@ -1320,7 +1320,7 @@ function overlay_message(img=false, icon_pos=false){
     overlay_icon.visible = false;
     overlay_icon.set_pos(flw * 0.5 - (flw * 0.0833 * 0.5), flh * 0.15, flw * 0.0833, flh * 0.1111);
     if(img){
-    overlay_icon.file_name = img;
+        overlay_icon.file_name = img;
         overlay_icon.visible = true;
     }
     if(icon_pos){
@@ -1577,11 +1577,11 @@ function hs_transition( ttype, var, ttime )
                     filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Title"});
                     add_display( "Recent", ["yes","yes","yes"], filters);
                     system ("mkdir " + (OS == "Windows" ? "" : "-p ") + "\"" + medias_path + "Main Menu/Images/Wheel/\"");
-                    local cop = "\"" + globs.script_dir + "images/Wheel/Recent-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Recent.png" + "\""; 
+                    local cop = "\"" + globs.script_dir + "images/Wheel/Recent-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Recent.png" + "\"";
                     if(OS == "Windows"){
                         system("copy " + replace(cop, "/","\\"));
                     }else{
-                       system("cp " + cop); 
+                       system("cp " + cop);
                     }
                     restart = true;
                 }
@@ -1593,11 +1593,11 @@ function hs_transition( ttype, var, ttime )
                     filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Title"});
                     add_display( "Most Played", ["yes","yes","yes"], filters);
                     system ("mkdir " + (OS == "Windows" ? "" : "-p ") + "\"" + medias_path + "Main Menu/Images/Wheel/\"");
-                    local cop = "\"" + globs.script_dir + "images/Wheel/Most Played-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Most Played.png" + "\""; 
+                    local cop = "\"" + globs.script_dir + "images/Wheel/Most Played-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Most Played.png" + "\"";
                     if(OS == "Windows"){
                         system("copy " + replace(cop, "/","\\"));
                     }else{
-                       system("cp " + cop); 
+                       system("cp " + cop);
                     }
                     restart = true;
                 }
@@ -1607,11 +1607,11 @@ function hs_transition( ttype, var, ttime )
                     local filters = [];
                     filters.push({"name":"All","sort_by":"Title"});
                     add_display( "Favourites", ["yes","yes","yes"], filters);
-                    local cop = "\"" + globs.script_dir + "images/Wheel/Favourites-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Favourites.png" + "\""; 
+                    local cop = "\"" + globs.script_dir + "images/Wheel/Favourites-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Favourites.png" + "\"";
                     if(OS == "Windows"){
                         system("copy " + replace(cop, "/","\\"));
                     }else{
-                       system("cp " + cop); 
+                       system("cp " + cop);
                     }
                     restart = true;
                 }
@@ -1621,7 +1621,7 @@ function hs_transition( ttype, var, ttime )
                 if(check_display("Favourites") && my_config["Global_Favourites_Enabled"] == "No") { delete_display("Favourites"); restart = true; }
 
                 if(restart){
-                    overlay_message("images/warning.png");
+                    overlay_message(globs.script_dir + "images/warning.png");
                     fe.overlay.list_dialog([], "The attract.cfg file has been modified AM needs to be restarted", 0, 0);
                     fe.signal("exit_to_desktop")
                 }
@@ -1988,7 +1988,7 @@ menus.push ({
             if(curr_sys == "Main Menu"){
                 local p = medias_path + "Main Menu/Themes/" + fe.game_info(Info.Name) + "/";
                 if( (file_exist(path) && strip_ext(path.tolower()) != "xml") ) {
-                    overlay_message("images/warning.png");
+                    overlay_message(globs.script_dir + "images/warning.png");
                     fe.overlay.list_dialog([], LnG.Uneditable, 0, 0)
                     return false;
                 }else if(!zip_get_dir( p ).len()){
@@ -1999,14 +1999,14 @@ menus.push ({
                         system ("mkdir " + (OS == "Windows" ? "" : "-p ") + "\"" + p + "\"");
                         create_xml();
                         save_xml(xml_root, p);
-                        overlay_message("images/validate.png");
+                        overlay_message(globs.script_dir + "images/validate.png");
                         fe.overlay.list_dialog([], LnG.Create_folder)
                     }
                     return false;
                 }
             }else{
                 if( (file_exist(path) && strip_ext(path.tolower()) != "xml") || globs.custom_romlists.find(fe.list.name) != null ){
-                    overlay_message("images/warning.png");
+                    overlay_message(globs.script_dir + "images/warning.png");
                     fe.overlay.list_dialog([], LnG.Uneditable, 0, 0)
                     return false;
                 }else{
@@ -2028,7 +2028,7 @@ menus.push ({
                             save_xml(xml_root, medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + "/")
                             path = ""; // reset path forcing the theme to reload artworks
                             triggers.theme.start = true;
-                            overlay_message("images/validate.png");
+                            overlay_message(globs.script_dir + "images/validate.png");
                             fe.overlay.list_dialog([], LnG.Create_folder)
                         }
                         return false;
@@ -2042,7 +2042,7 @@ menus.push ({
                             save_xml(xml_root, medias_path + curr_sys + "/Themes/Default/")
                             path = ""; // reset path forcing the theme to reload artworks
                             triggers.theme.start = true;
-                            overlay_message("images/validate.png");
+                            overlay_message(globs.script_dir + "images/validate.png");
                             fe.overlay.list_dialog([], LnG.Create_folder);
                         }else if(selected == 1){
                             system ("mkdir \"" + medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + "/");
@@ -2050,7 +2050,7 @@ menus.push ({
                             save_xml(xml_root, medias_path + curr_sys + "/Themes/" + fe.game_info(Info.Name) + "/")
                             path = ""; // reset path forcing the theme to reload artworks
                             triggers.theme.start = true;
-                            overlay_message("images/validate.png");
+                            overlay_message(globs.script_dir + "images/validate.png");
                             fe.overlay.list_dialog([], LnG.Create_folder)
                         }
                         return false;
@@ -2092,7 +2092,7 @@ menus.push ({
             {"title":"Special Artworks", "target":"special_list",
                 "onselect":function(current_list, selected_row){
                     if(my_config["special_artworks"].tolower() == "no"){
-                        overlay_message("images/warning.png");
+                        overlay_message(globs.script_dir + "images/warning.png");
                         fe.overlay.list_dialog([], LnG.M_inf_Special_disabled, 0, 0)
                         return false;
                     }
