@@ -3657,13 +3657,13 @@ signals["default_sig"] <- function (str) {
             if(curr_sys == "Main Menu") return true;
             letters.visible = false;
             text_overlay.visible = true;
-            local offset = (str == "next_display" ? fe.list.display_index + 1 : fe.list.display_index - 1);
-            if(offset > fe.displays.len() - 1 ) offset = 0;
-            if(offset < 0 ) offset = fe.displays.len() - 1;
             text_overlay.msg = "";
-            img_overlay.file_name = medias_path + "Main Menu/Images/Wheel/" + fe.displays[offset].name + ".png";
-            if(img_overlay.file_name == "") text_overlay.msg = fe.displays[offset].name;
-
+            local cycle_display = [];
+            foreach(b in fe.displays) if(b.in_cycle) cycle_display.push(b.name);
+            local idx = cycle_display.find(curr_sys);
+            idx = (str == "next_display" ? (idx + 1) % cycle_display.len() : (idx - 1 + cycle_display.len()) % cycle_display.len());
+            img_overlay.file_name = medias_path + "Main Menu/Images/Wheel/" + cycle_display[idx] + ".png";
+            if(img_overlay.file_name == "") text_overlay.msg = cycle_display[idx];
             img_overlay.width = flw * 0.3;
             img_overlay.height = img_overlay.width  / ( img_overlay.texture_width.tofloat() / img_overlay.texture_height.tofloat() );
             img_overlay.x = flw * 0.5 - img_overlay.width * 0.5;
