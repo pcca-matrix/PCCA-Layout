@@ -790,7 +790,7 @@ m_infos.set_rgb(205, 205, 195);
 
 if( my_config["stats_main"].tolower() == "yes" ){
     m_infos.visible = true;
-    if( !file_exist(globs.script_dir + "pcca.stats") ) refresh_stats();
+    if( !file_exist(globs.script_dir + "pcca.stats") ) main_infos <- refresh_stats();
     main_infos <- LoadStats();
 }
 
@@ -1664,17 +1664,25 @@ function hs_transition( ttype, var, ttime )
                     if( main_infos.rawin(curr_sys) ){
                         if(fe.list.size != main_infos[curr_sys].cnt){
                             main_infos[curr_sys].cnt = fe.list.size;
-                            SaveStats(main_infos);
+                            rebuild_custom_romlists();
+                            main_infos <- refresh_stats();
                         }
-                    }else{ // new systeme added , create new entry
-                        main_infos <- refresh_stats(curr_sys);
-                        if(my_config["Most_Played_Enabled"] == "Yes") create_most_played();
-                        if(my_config["Global_Favourites_Enabled"] == "Yes") create_favourites();
-                        if(my_config["All_Games_Enabled"] == "Yes") create_all_games();
+                    }else{ // new systeme added , create new entry (not in_cycle)
+                        rebuild_custom_romlists();
+                        main_infos <- refresh_stats();
                     }
                 }
                 Langue();
+            }else{
+                //on main menu and system count is different , refresh stats and custom romlists if (in_cycle)
+                if( my_config["stats_main"].tolower() == "yes"){
+                    if(fe.list.size != main_infos.len()){
+                        rebuild_custom_romlists();
+                        main_infos <- refresh_stats();
+                    }
+                }
             }
+
             if( glob_time ){  // when glob_time > 0 not startlayout
                 local es = get_random_file( medias_path + curr_sys + "/Sound/System Start/" );
                 if( es != "" ){ // if exit sound exist for this system
@@ -2087,16 +2095,13 @@ menus.push ({
 
     {"title":"Refresh Stats", "target":"", "hide":"!Main Menu",
         "onselect":function(current_list, selected_row){
-            refresh_stats();
+            ::main_infos <- refresh_stats();
             return false;
         }
     },
     {"title":"Rebuild Custom Romlists", "target":"", "hide":"!Main Menu",
         "onselect":function(current_list, selected_row){
-            fe.overlay.splash_message ("Rebuilding custom romlist ...")
-            if(my_config["Most_Played_Enabled"] == "Yes") create_most_played();
-            if(my_config["Global_Favourites_Enabled"] == "Yes") create_favourites();
-            if(my_config["All_Games_Enabled"] == "Yes") create_all_games();
+            rebuild_custom_romlists()
             return false;
         }
     }

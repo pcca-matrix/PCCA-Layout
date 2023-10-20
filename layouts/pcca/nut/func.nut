@@ -125,17 +125,12 @@ function get_ini(path){
     return map;
 }
 
-function refresh_stats(system = "") {
+function refresh_stats() {
     fe.overlay.splash_message (LnG.RefreshTxt + " ...")
-    local datas = main_infos; local sys = "";local cnt;
+    local datas = {}; local sys = "";local cnt;
     local g_cnt = 0; local g_time = 0; local g_played = 0; local dirs = {};
     dirs.results <- [];
-    if(system != ""){ // Get games count for single system
-        dirs.results.push( system );
-    }else{ // Get games count for each system
-        for ( local i = 0; i < fe.displays.len(); i++ ) dirs.results.push(fe.displays[i].name);
-    }
-
+    foreach(b in fe.displays) if(b.in_menu) dirs.results.push(b.name);
     foreach(display in dirs.results){
         cnt=0;
         local romlist = "";
@@ -145,6 +140,7 @@ function refresh_stats(system = "") {
                 break;
             }
         }
+
         if(romlist != ""){
             local text = txt.loadFile( globs.config_dir + "romlists/" + romlist + ".txt" );
             foreach( line in text.lines ){
@@ -834,7 +830,7 @@ function RealSplit(str, separator) {
 }
 
 function check_display(name){
-    foreach(v in fe.displays ) if(v.name == name) return true;
+    foreach(v in fe.displays ) if(v.name.tolower() == name.tolower()) return true;
     return false;
 }
 
@@ -1213,6 +1209,14 @@ function create_all_games()
     foreach(b in games) f2.writeblob( writeB(b.line + "\n") );
     f2.close()
 }
+
+function rebuild_custom_romlists(){
+    fe.overlay.splash_message ("List size change, rebuilding custom romlist ...")
+    if(my_config["Most_Played_Enabled"] == "Yes") create_most_played();
+    if(my_config["Global_Favourites_Enabled"] == "Yes") create_favourites();
+    if(my_config["All_Games_Enabled"] == "Yes") create_all_games();
+}
+
 // named transitions
 debug_array <- [];
 debug_array.push("StartLayout")// 0
