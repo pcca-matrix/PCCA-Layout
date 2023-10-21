@@ -1660,7 +1660,8 @@ function hs_transition( ttype, var, ttime )
                 syno_surf.visible = false; // hide overview
                 m_infos.msg = ""; // empty global stats
                 // Update and save stats if list size change and we are not on a filter !!
-                if( my_config["stats_main"].tolower() == "yes" && glob_time && ( fe.filters[fe.list.filter_index].name.tolower() == LnG.Filter_all || fe.filters[fe.list.filter_index].name.tolower() == "all" ) ){
+                if( my_config["stats_main"].tolower() == "yes" && glob_time && !fe.list.search_rule &&
+                    ( fe.filters[fe.list.filter_index].name.tolower() == LnG.Filter_all || fe.filters[fe.list.filter_index].name.tolower() == "all" ) ){
                     if( main_infos.rawin(curr_sys) ){
                         if(fe.list.size != main_infos[curr_sys].cnt){
                             main_infos[curr_sys].cnt = fe.list.size;
@@ -3648,6 +3649,20 @@ signals["default_sig"] <- function (str) {
             case "filters_menu":
             return true;
         }
+    }else if(search.state > 0){
+        switch ( str )
+        {
+            case my_config["keyboard_search_key"]:
+            case "up":
+            case "down":
+            case "left":
+            case "right":
+            case "select":
+            case "back":
+            case "exit":
+            return false;
+        }
+        return true;
     }
 
     switch( str ) {
