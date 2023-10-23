@@ -1071,17 +1071,16 @@ function load_theme(theme_path, theme_content, prev_def){
     foreach ( c in theme_node.children )
     {
         // background anim
-        if(c.tag == "background" && c.attr.rest != "none" && !prev_def){
-            background_anim.opts.bck_opts.clear(); // reset background options in anim module
-            background_anim.rest(c.attr.rest);
-            background_anim.opts.rest_speed = c.attr.speed;
-            triggers.background_anim.start = true;
-            triggers.background_anim.delay = c.attr.delay;
+        if(c.tag == "background"){
             back_anim = c.attr.rest;
-        }else if(c.tag == "background" && c.attr.rest == "none"){
-            background_anim.resting = false;
+            if( c.attr.rest != "none" && !prev_def){
+                background_anim.opts.bck_opts.clear(); // reset background options in anim module
+                background_anim.rest(c.attr.rest);
+                background_anim.opts.rest_speed = c.attr.speed;
+                triggers.background_anim.delay = c.attr.delay;
+                triggers.background_anim.start = true;
+            }
         }
-
         if( !(c.tag in availables ) ) continue; // if xml tag not know continue
 
         local art = ""; local Xtag = c.tag;
@@ -1198,6 +1197,7 @@ function load_theme(theme_path, theme_content, prev_def){
 
     if(!Ini_settings.themes["animated_backgrounds"] ) back_tr = 99;
     background_transitions(back_tr, backg, back_anim);
+    if(!back_anim)background_anim.resting = false;
 }
 
 function clean_art(obj){
@@ -1532,7 +1532,6 @@ function hs_transition( ttype, var, ttime )
             flv_transitions.visible = false;
             flv_transitions.file_name = "";
             if(curr_sys == "Main Menu") stats_text_update( fe.game_info(Info.Title, 1) );
-            if(curr_theme != "Default") background_anim.resting = false; // stop background resting when we are not on a default theme
             if(Ini_settings["game text"]["game_text_hide"]){
                 surf_ginfos.visible = false;
                 if(Ini_settings["game text"]["animation"] != "none") surf_ginfos_animation.cancel("from");
@@ -1660,7 +1659,7 @@ function hs_transition( ttype, var, ttime )
                 syno_surf.visible = false; // hide overview
                 m_infos.msg = ""; // empty global stats
                 // Update and save stats if list size change and we are not on a filter !!
-                if( my_config["stats_main"].tolower() == "yes" && glob_time && !fe.list.search_rule &&
+                if( my_config["stats_main"].tolower() == "yes" && glob_time && fe.list.search_rule == "" &&
                     ( fe.filters[fe.list.filter_index].name.tolower() == LnG.Filter_all || fe.filters[fe.list.filter_index].name.tolower() == "all" ) ){
                     if( main_infos.rawin(curr_sys) ){
                         if(fe.list.size != main_infos[curr_sys].cnt){
@@ -3673,7 +3672,6 @@ signals["default_sig"] <- function (str) {
 
         case "next_display":
         case "prev_display":
-            background_anim.resting = false;
             if(curr_sys == "Main Menu") return true;
             letters.visible = false;
             text_overlay.visible = true;
