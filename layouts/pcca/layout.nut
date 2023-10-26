@@ -23,6 +23,7 @@ class UserConfig {
     </ label="Interface Language", help="Preferred User Language", options="Fr, En, Es", order=M_order++ /> user_lang="En"
     </ label="Global Stats", help="Enable or disable the main menu stats system", options="Yes, No", order=M_order++ /> stats_main = "Yes"
     </ label="Search Key", help="Choose the key to initiate a search", options="custom1,custom2,custom3,custom4,custom5,custom6,none", order=M_order++ />keyboard_search_key="custom1";
+    </ label="Help Key", help="Choose the key to initiate the help screen", options="custom1,custom2,custom3,custom4,custom5,custom6,none", order=M_order++ />help_screen_key="custom3";
     </ label="Search Results", help="Choose the search method", options="show_results,next_match", order=M_order++ />keyboard_search_method="show_results";
     </ label="Keyboard Layout", help="Choose the keyboard layout", options="qwerty,azerty,alpha", order=M_order++ />keyboard_layout="alpha";
     </ label="--- Custom Romlists ---", help="", options="", order=M_order++ />mt1=""
@@ -205,18 +206,43 @@ function XMLNode::nodeToString( node )
 LnG <- _LL[ my_config["user_lang"] ];
 prev_back <- { ox = 0, oy = 0, bw = flw, bh = flh }; // previous background table infos ( transitions )
 
-// overlay helper (screen center)
-img_overlay <- fe.add_image("");
-img_overlay.visible = false;
-img_overlay.zorder = 15;
+// overlay_surf
+overlay_surf <- fe.add_surface(flw, flh);
+overlay_surf.zorder = 99;
+overlay_surf.visible = false;
+top_left_ico <- overlay_surf.add_text("",flw*0.015,flh*0.022,0,0);
+top_right_ico <- overlay_surf.add_text( "",flw,flh*0.018,0,0);
+bottom_left_ico <- overlay_surf.add_text( "",flw*0.015,flh*0.96,0,0);
+bottom_right_ico <- overlay_surf.add_text( "",flw,flh*0.96,0,0);
+ctrl_icons <- [top_left_ico,top_right_ico,bottom_left_ico,bottom_right_ico];
+foreach(a in ctrl_icons){
+    a.zorder = 99
+    a.font = "fontello.ttf"
+    a.charsize = flh*0.04
+    a.set_bg_rgb(255,200,200)
+    a.align = Align.Right;
+}
+top_left_ico.align = Align.Left;
+bottom_left_ico.align = Align.Left;
 
-text_overlay <- fe.add_text("",0,0,0,0);
+// overlay helper (screen center)
+img_overlay <- overlay_surf.add_image("");
+text_overlay <- overlay_surf.add_text("",0,0,0,0);
 text_overlay.set_pos(0, (flh * 0.5) - flh * 0.02 , flw, 0);
 text_overlay.charsize = flh * 0.08;
 text_overlay.set_rgb( 220, 220, 220 );
 text_overlay.alpha = 230;
 text_overlay.zorder = 10;
-text_overlay.visible = false;
+
+local overlay_surf_anim = PresetAnimation(overlay_surf)
+.key("alpha").from(0).to(255)
+.on("stop", function(anim){
+    if(anim.opts.target.alpha == 0){
+        anim.opts.target.visible = false;
+        foreach(v in [top_left_ico,top_right_ico,bottom_left_ico,bottom_right_ico]) v.visible = false;
+    }
+})
+.duration(500)
 
 // Globals
 local tr_directory_cache  = get_dir_lists( medias_path + "Frontend/Video/Transitions" ); // cached table of global transitions files
@@ -965,7 +991,7 @@ function load_theme(theme_path, theme_content, prev_def){
     if(Ini_settings["game text"]["animation"] != "none" && Ini_settings["game text"]["game_text_hide"]) surf_ginfos_animation.play();
     // hide overlay helper
     text_overlay.visible = false;
-    img_overlay.visible = false;
+    overlay_surf_anim.reverse(true).duration(500).play();
     wheel_surf.visible = true;
     set_custom_value(Ini_settings);
     local back_tr = 99; // 99=fade background only , array = random trough array , null=full transitions random
@@ -3686,7 +3712,9 @@ signals["default_sig"] <- function (str) {
             img_overlay.height = img_overlay.width  / ( img_overlay.texture_width.tofloat() / img_overlay.texture_height.tofloat() );
             img_overlay.x = flw * 0.5 - img_overlay.width * 0.5;
             img_overlay.y = flh * 0.5 - img_overlay.height * 0.5;
-            img_overlay.visible = true;
+            overlay_surf.visible = true;
+            overlay_surf_anim.reverse(false).duration(100).play();
+            foreach(v in [top_left_ico,top_right_ico,bottom_left_ico,bottom_right_ico]) v.visible = false; // Immediately hide the battery icons.
         break;
 
         case "next_game":
@@ -3724,6 +3752,22 @@ signals["default_sig"] <- function (str) {
             sel_menu.set_list( menus[0] );
             return true;
         break;
+
+        case my_config["help_screen_key"] : // Help Screen Key
+            globs.signal = "overlay_sig";
+            overlay_surf_anim.reverse( (overlay_surf.visible ? true : false) ).duration(500).play();
+            if(overlay_surf.visible) return false;
+            overlay_surf.visible = true;
+            img_overlay.file_name = "images/help_screen.png";
+            img_overlay.set_pos(0, 0, flw, flh);
+            foreach(v in [top_left_ico,top_right_ico,bottom_left_ico,bottom_right_ico]) v.visible = true;
+            if(overlay_surf.visible && OS == "Windows" && my_config["JoyType"]  == "Xinput"){ // only win for now
+                local aexec = globs.script_dir + "PCCA-XInput.exe";
+                fe.plugin_command( "cmd", "/c " + aexec, "battery_status");
+            }
+            return true;
+        break;
+
         case "random_game":
             surf_ginfos.visible = false;
         break;
@@ -3798,6 +3842,17 @@ signals["menu_sig"] <- function (str) {
         break;
     }
 
+    return true;
+}
+
+signals["overlay_sig"] <- function (str) {
+    switch ( str ) {
+        case my_config["help_screen_key"] :
+        case "back":
+            overlay_surf_anim.reverse( (overlay_surf.visible ? true : false) ).duration(500).play();
+            globs.signal = "default_sig";
+        break;
+    }
     return true;
 }
 

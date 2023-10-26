@@ -1217,6 +1217,47 @@ function rebuild_custom_romlists(){
     if(my_config["All_Games_Enabled"] == "Yes") create_all_games();
 }
 
+// get text between occurence
+function GetBetween(str, start, end) {
+    local start_idx = str.find(start);
+    local end_idx = str.find(end, start_idx + start.len());
+    if (start_idx >= 0 && end_idx > start_idx) {
+        return str.slice(start_idx + start.len(), end_idx);
+    } else {
+        return false;
+    }
+}
+
+function battery_status(data){
+    data = strip(data)
+    local start = "<!=";
+    local end = "=!>";
+    if (data.slice(0, start.len()) != start || data.slice(-end.len()) != end) return false; // check data validity
+    data = GetBetween(data, start, end);
+    local bat_state = {"EMPTY":",", "LOW":"-", "MEDIUM":".", "FULL":"/"};
+    local controllers = split(data, ";");
+    foreach(v in controllers){
+        local b = split(v, ":");
+        local c = split(b[1], ",");
+        local idx = b[0].tointeger();
+        local status = strip( replace(c[0], "\"","") );
+        local bat_level = strip( replace(c[1], "\"","") );
+        ctrl_icons[idx].msg = "";
+        if(status != "DISCONNECTED"){
+            ctrl_icons[idx].set_rgb(0,255,0);
+            if(status == "WIRED"){
+                ctrl_icons[idx].msg = "0";
+                continue;
+            }
+            if(bat_level == "EMPTY" || bat_level == "LOW"){
+                ctrl_icons[idx].set_rgb(255,20,10);
+            }
+            if(bat_level == "MEDIUM") ctrl_icons[idx].set_rgb(200,220,0);
+            ctrl_icons[idx].msg = bat_state[bat_level];
+        }
+    }
+}
+
 // named transitions
 debug_array <- [];
 debug_array.push("StartLayout")// 0
