@@ -1953,7 +1953,7 @@ function hs_tick( ttime )
 
     if( triggers.flv_transition.start && glob_time - rtime > globs.delay + triggers.flv_transition.delay ){
         flv_transitions.visible = true;
-        flv_transitions.video_flags = Vid.Default;
+        flv_transitions.video_flags = Vid.NoLoop;
         triggers.flv_transition.start = false;
     }
 
