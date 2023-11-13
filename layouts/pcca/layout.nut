@@ -1836,11 +1836,11 @@ function hs_tick( ttime )
 
     // screensaver
     if(my_config["screen_saver_timer"].tointeger() > 0){
-        if( (fe.layout.time-globs.Stimer) >= my_config["screen_saver_timer"].tointeger() * 1000 ){
+        if(surf_menu.visible) globs.Stimer = fe.layout.time;
+        if( (fe.layout.time-globs.Stimer) >= my_config["screen_saver_timer"].tointeger() * 1000 && pcca_wheel.stop ){
             fe.signal("screen_saver")
             globs.Stimer=fe.layout.time;
         }
-        if(surf_menu.visible) globs.Stimer = fe.layout.time;
     }
 
     // set all artwork and video visible after x ms next to triggerload except those who have width set to 0.1 (unhided later in animation preset)
@@ -2028,7 +2028,7 @@ rest_tab.sort(@(a,b) a.title <=> b.title)
 rest_tab.insert(0,{"title":"None", "target":"none"});
 
 local wheel_pos_tab = [{"title":"Left","target":"left"},{"title":"Right","target":"right"},{"title":"Top","target":"top"},{"title":"Bottom","target":"bottom"}];
-local wheel_media_tab = [{"title":"Wheel","target":"wheel"},{"title":"Cover","target":"artwork5"},{"title":"Support","target":"artwork6"}];
+local wheel_media_tab = [{"title":"Wheel","target":"wheel"},{"title":"Cover","target":"artwork5"},{"title":"Support","target":"artwork6"},{"title":"Snap","target":"video"}];
 local YesNo_menu = [{"title":LnG.Yes,"target":"yes"},{"title":LnG.No,"target":"no"}];
 
 local menus = [];
@@ -3564,7 +3564,7 @@ local surf_menu_anim = PresetAnimation(surf_menu)
 
 local signals = {};
 
-fe.add_signal_handler(this, "main_signal")
+fe.add_signal_handler("main_signal")
 
 function main_signal(str){
     globs.Stimer = fe.layout.time;

@@ -1155,7 +1155,7 @@ function load_customs(){ // load custom romlist in array
         while (!romlist_file.eos()){
             local tmpline = romlist_file.read_line();
             local splited = split( tmpline, ";" );
-            if( splited.len() ) lists.push( splited[0] + ";" + splited[2] );
+            if( splited.len() > 1 ) lists.push( splited[0] + ";" + splited[2] );
         }
         custom_lists[v] <- lists;
     }

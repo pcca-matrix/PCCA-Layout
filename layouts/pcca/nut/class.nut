@@ -353,6 +353,7 @@ class PCCA_Conveyor {
     last_selected = "";
     AM_all_systems = true;
     AM_system_loop = 3
+    next_tick = false
 
     // fade
     w_time = 0;
@@ -677,11 +678,12 @@ class PCCA_Conveyor {
 
         for ( local i=0; i<nbr_slot; i++ ){
             if(fe.game_info(Info.Emulator) == "@"){
-                m_path = medias_path + "Main Menu/Images/" + media + "/";
+                m_path = medias_path + "Main Menu/" + (media != "Video" ? "Images/" : "/") + media + "/";
             }else{
-                m_path = medias_path + fe.game_info(Info.Emulator, i - offset) + "/Images/" + media + "/";
+                m_path = medias_path + fe.game_info(Info.Emulator, i - offset) + (media != "Video" ? "/Images/" : "/") + media + "/";
             }
-            w_slots[i].art.file_name = m_path + fe.game_info(Info.Name, i - offset ) + ".png";
+            w_slots[i].art.video_flags = Vid.NoAudio
+            w_slots[i].art.file_name = m_path + fe.game_info(Info.Name, i - offset ) + (media != "Video" ? ".png" : ".mp4");
             w_slots[i].art.set_pos(w_slots[i].x, w_slots[i].y, w_slots[i].width, w_slots[i].height);
             w_slots[i].art.rotation = w_slots[i].r;
 
@@ -722,11 +724,10 @@ class PCCA_Conveyor {
         switch ( signal_str )
         {
             case "random_game" :
-                if(!stop) return false; // return if wheel is still spining
+                if(!stop) return true; // return if wheel is still spining
             break;
         }
-
-       return false;
+        return false;
     }
 
     function on_transition( ttype, var, ttime )
@@ -770,6 +771,10 @@ class PCCA_Conveyor {
     }
 
     function on_tick( ttime ){
+        if(next_tick){
+            next_tick()
+            next_tick = false
+        }
 
         if( buffer.len() ){
             timer = ttime
@@ -818,23 +823,23 @@ class PCCA_Conveyor {
                     for ( local i = 1; i < nbr_slot; i++ ) w_slots[i].art.swap( w_slots[i-1].art );
 
                     if(fe.game_info(Info.Emulator) == "@"){
-                        m_path = medias_path + "Main Menu/Images/" + media + "/";
+                        m_path = medias_path + "Main Menu" + (media != "Video" ? "/Images/" : "/") + media + "/";
                     }else{
-                        m_path = medias_path + fe.game_info(Info.Emulator, r_offset-offset) + "/Images/" + media + "/";
+                        m_path = medias_path + fe.game_info(Info.Emulator, r_offset-offset) + (media != "Video" ? "/Images/" : "/") + media + "/";
                     }
 
-                    w_slots[nbr_slot-1].art.file_name = m_path + fe.game_info(Info.Name, r_offset-offset  ) + ".png";
+                    w_slots[nbr_slot-1].art.file_name = m_path + fe.game_info(Info.Name, r_offset-offset  ) + (media != "Video" ? ".png" : ".mp4");
                 }else if(buffer[0] < 0){
                     offset+=step
                     for ( local i = nbr_slot - 1; i > 0; i-- ) w_slots[i].art.swap( w_slots[i-1].art );
 
                     if(fe.game_info(Info.Emulator) == "@"){
-                        m_path = medias_path + "Main Menu/Images/" + media + "/";
+                        m_path = medias_path + "Main Menu/" + (media != "Video" ? "Images/" : "/") + media + "/";
                     }else{
-                        m_path = medias_path + fe.game_info(Info.Emulator, -offset-r_offset) + "/Images/" + media + "/";
+                        m_path = medias_path + fe.game_info(Info.Emulator, -offset-r_offset) + (media != "Video" ? "/Images/" : "/") + media + "/";
                     }
 
-                    w_slots[0].art.file_name = m_path + fe.game_info(Info.Name, -offset-r_offset ) + ".png";
+                    w_slots[0].art.file_name = m_path + fe.game_info(Info.Name, -offset-r_offset ) + (media != "Video" ? ".png" : ".mp4");
                 }
 
                 for ( local i = 0; i < nbr_slot; i++ ){ // reset to prev pos
@@ -879,8 +884,6 @@ class PCCA_Conveyor {
                             w_slots[a].art.width = new_W
                             w_slots[a].art.height = new_H
                             w_slots[a].art.rotation = angle - el_rot;
-
-
                             set_rotation(angle - el_rot, w_slots[a].art);
                         }else{
                             w_slots[a].art.y = ( w_slots[a+1].y - w_slots[a].y ) * progress / 1.0 + w_slots[a].y
@@ -911,14 +914,12 @@ class PCCA_Conveyor {
                             w_slots[a].art.y = wheel_center_y + Rad * sin( mr ) - orig_H * 0.5 + off_Y
                             w_slots[a].art.width = new_W
                             w_slots[a].art.height = new_H
-
                             w_slots[a].art.rotation = angle - el_rot;
                             set_rotation(angle - el_rot, w_slots[a].art);
 
                         }else{
                             w_slots[a].art.width = ( w_slots[a-1].width - w_slots[a].width ) * progress / 1.0 + w_slots[a].width;
                             w_slots[a].art.height = ( w_slots[a-1].height - w_slots[a].height ) * progress / 1.0 + w_slots[a].height;
-
                             w_slots[a].art.y = ( w_slots[a-1].y - w_slots[a].y ) * progress / 1.0 + w_slots[a].y
                             w_slots[a].art.x = ( w_slots[a-1].x - w_slots[a].x) * progress / 1.0 + w_slots[a].x
                             w_slots[a].art.rotation = ( w_slots[a-1].r - w_slots[a].r) * progress / 1.0 + w_slots[a].r
@@ -945,28 +946,25 @@ class PCCA_Conveyor {
         }
     }
 
+    function CheckVideoWait(){
+        local snap = (::ArtObj.snap.video_duration !=0 && ::ArtObj.snap.video_playing)
+        local back = (::ArtObj.background1.video_duration !=0 && ::ArtObj.background1.video_playing) || (::ArtObj.background2.video_duration !=0 && ::ArtObj.background2.video_playing);
+        if( (snap && !back) || (back && !snap) ) return true
+        return false
+    }
+
     function attract_start(ttime){
+        local tmp = ::globs.Stimer
         if(::surf_menu.visible) timer = ttime; // disable on edit mode
         if(ttime - timer < 4000) return false; // wait minimum 4 secs
         local VideoWait = am_WaitVideo;
         local start = false;
 
         if(VideoWait){
-            if( (::ArtObj.snap.video_duration && ::ArtObj.snap.video_playing) || (
-                (::ArtObj.background1.video_duration && ::ArtObj.background1.video_playing) ||
-                (::ArtObj.background2.video_duration && ::ArtObj.background2.video_playing) ) )
-            {
-                start = false;
-            }else{
-                if(ttime - timer > attract_time)  start = true;
-            }
+            start = !CheckVideoWait() && (::fe.layout.time - tmp) > attract_time;
         }else{
-            if(ttime - timer > attract_time){
-                start = true;
-                timer = ttime;
-            }else{
-                start = false;
-            }
+            start = (ttime - timer > attract_time);
+            timer = start ? ttime : timer;
         }
 
         if(!start) return false;
@@ -974,17 +972,16 @@ class PCCA_Conveyor {
         if(fe.game_info(Info.Emulator) == "@"){
             if(am_counter > 1 ){
                 fe.signal("select");
-                am_counter = 0;
             }else{
                 fe.signal("random_game");
             }
         }else{
             if(am_counter < AM_system_loop ) fe.signal("random_game");
         }
-
+        next_tick = function(){::globs.Stimer = tmp}
         am_counter++;
 
-        if(am_counter > AM_system_loop && AM_all_systems){
+        if(AM_all_systems && am_counter > AM_system_loop){
             local rnd_disp = rnd_int(0, ::fe.displays.len() - 1);
             if(fe.displays.len() > 1 ){
                 while( rnd_disp  == ::fe.list.display_index) rnd_disp = rnd_int(0, ::fe.displays.len() - 1);
@@ -1037,5 +1034,4 @@ class PCCA_Conveyor {
         newNbr = (newNbr * 1.0) / f;
         return newNbr;
     }
-
 }
