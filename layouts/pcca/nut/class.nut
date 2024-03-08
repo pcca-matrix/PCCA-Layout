@@ -771,6 +771,7 @@ class PCCA_Conveyor {
     }
 
     function on_tick( ttime ){
+        if(::wheel_animation.progress < 1.0) return false
         if(next_tick){
             next_tick()
             next_tick = false
@@ -978,7 +979,7 @@ class PCCA_Conveyor {
         }else{
             if(am_counter < AM_system_loop ) fe.signal("random_game");
         }
-        next_tick = function(){::globs.Stimer = tmp}
+
         am_counter++;
 
         if(AM_all_systems && am_counter > AM_system_loop){
@@ -988,6 +989,7 @@ class PCCA_Conveyor {
             }
             fe.set_display( rnd_disp );
         }
+        next_tick = function(){::globs.Stimer = tmp}
     }
 
     function expo_speed (progress, from, to, bas) { if ( progress == 0) return from; return to * pow( 2, 10 * ( progress / bas - 1) ) + from; }

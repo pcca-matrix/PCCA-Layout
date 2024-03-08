@@ -49,8 +49,10 @@ class UserConfig {
 }
 
 my_config <- fe.get_config();
-globs <- {"delay" : 400, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time, "script_dir":fe.script_dir, "config_dir":FeConfigDirectory,
-"tofade":{}, "custom_romlists":["Recent","Favourites","Most Played","All Games"], "customs_romlist_tb":{}}; // super globals temp vars
+globs <- {"delay" : 500, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time, "script_dir":fe.script_dir, "config_dir":FeConfigDirectory,
+"custom_romlists":["Recent","Favourites","Most Played","All Games"], "customs_romlist_tb":{}, "next_tick_functions":[] }; // super globals temp vars
+
+local TOGame = false;  // temp fix bug in AM  https://github.com/mickelson/attract/issues/747
 
 triggers <- {
     "flv_transition":{
@@ -134,6 +136,10 @@ surf_ginfos <- fe.add_surface(flw, flh*0.25);
 surf_ginfos.visible = false;
 
 local start_background = fe.add_image("images/Backgrounds/Background.jpg",0,0,flw,flh);
+local fades = fe.add_image("images/Backgrounds/Black.png",0,0,flw,flh);
+fades.zorder = 90;
+fades.visible = false;
+fades.alpha = 0;
 
 test <- fe.add_text("",100,500,1000,25);// DEBUG
 test.set_rgb( 255, 255, 255 );
@@ -1425,7 +1431,6 @@ fe.add_transition_callback( "game_in_out" );
 function game_in_out( ttype, var, ttime ) {
     switch ( ttype ) {
         case Transition.ToGame:
-            globs.tofade = fade_objects(); // store elems alpha value
             Background_Music.playing = false;
             Sound_System_In_Out.playing = false;
             if(file_exist(medias_path + curr_emulator + "/Sound/Game Start/" + fe.game_info(Info.Name) + ".mp3") ){
@@ -1445,7 +1450,7 @@ local loader = 0;
 //
 // Global Transition
 //
-local prev_tr = 0;
+local prev_tr = 12;
 fe.add_transition_callback( "hs_transition" );
 function hs_transition( ttype, var, ttime )
 {
@@ -1455,41 +1460,37 @@ function hs_transition( ttype, var, ttime )
         case Transition.FromGame:
             overlay_hide.visible = false;
             globs.Stimer = fe.layout.time;
-            if ( ttime <= 500  ) {
-                global_fade( ttime, 500, true);
-                return true;
-            }else{
-                update_recent();
-                update_most_played();
-                set_last_played_txt(true);
-                ArtObj.background1.video_playing = true;
-                ArtObj.background2.video_playing = true;
-                ArtObj.snap.video_playing = true;
-                global_fade( 500, 500, true); // security to be sure that 100% alpha is passed to function
-                pcca_wheel.reset_fade();
-                // update stats for this system only if Track Usage is set to Yes in AM!
-                if( fe.game_info(Info.PlayedTime) != "" ){
-                    game_elapse = fe.game_info(Info.PlayedTime).tointeger() - game_elapse;
-                    if(main_infos.rawin(fe.list.name)){
-                        main_infos[fe.list.name].time += game_elapse;
-                        main_infos[fe.list.name].pl++;
-                        SaveStats(main_infos);
-                    }
+            if( global_fade( ttime, 700.0, true) ) return true;
+            update_recent();
+            update_most_played();
+            set_last_played_txt(true);
+            ArtObj.background1.video_playing = true;
+            ArtObj.background2.video_playing = true;
+            ArtObj.snap.video_playing = true;
+            pcca_wheel.reset_fade();
+            // update stats for this system only if Track Usage is set to Yes in AM!
+            if( fe.game_info(Info.PlayedTime) != "" ){
+                game_elapse = fe.game_info(Info.PlayedTime).tointeger() - game_elapse;
+                if(main_infos.rawin(fe.list.name)){
+                    main_infos[fe.list.name].time += game_elapse;
+                    main_infos[fe.list.name].pl++;
+                    SaveStats(main_infos);
                 }
             }
         break;
 
         case Transition.ToGame:
+            TOGame = true;
             switch(loader){
                 case 0 :
-                    if ( ttime <= 1500 ) {
-                        global_fade(ttime, 1500, false);
+                    if( global_fade( ttime, 1500.0, false) ) {
                         ArtObj.background1.video_playing = false;
                         ArtObj.background2.video_playing = false;
                         ArtObj.snap.video_playing = false;
                     }else{
                         overlay_hide.visible = true; // add black background to hide animation behind
                         loader = 1
+                        fades.alpha = 0
                     }
                 break;
 
@@ -1589,92 +1590,97 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.StartLayout: //0
+            if( fe.game_info (Info.Emulator) == "@" && global_fade(ttime, 255, true) ) return true; // fade when back to display menu or start layout
+            
+            if(var == FromTo.ScreenSaver) return false; //we are back from screensaver no need to continue
+            
+            //load custom romlists
+            globs.customs_romlist_tb <- load_customs();
+            //Sound -  cause we are back to main menu we use name to match the systeme we're leaving.
+            Sound_System_In_Out.file_name = get_random_file( medias_path + fe.game_info(Info.Name) + "/Sound/System Exit/" );
+            Sound_System_In_Out.playing = true;
+            stats_text_update( fe.game_info(Info.Title) );
+            local restart = false;
+            if(!check_display("Recent") && my_config["Recent_Enabled"] == "Yes"){
+                local filters = [];
+                filters.push({"name":"All","sort_by":"Extra", "reverse_order":"true"});
+                filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Title"});
+                add_display( "Recent", ["yes","yes","yes"], filters);
+                system ("mkdir " + (OS == "Windows" ? "" : "-p ") + "\"" + medias_path + "Main Menu/Images/Wheel/\"");
+                local cop = "\"" + globs.script_dir + "images/Wheel/Recent-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Recent.png" + "\"";
+                if(OS == "Windows"){
+                    system("copy " + replace(cop, "/","\\"));
+                }else{
+                   system("cp " + cop);
+                }
+                restart = true;
+            }
 
-            globs.tofade = fade_objects(); // store elems alpha value
-            if( !glob_time ){  // glob_time == 0 on first start layout
-                if( ttime <= 255  && fe.game_info (Info.Emulator) == "@" ){ // fade when back to display menu or start layout
-                    global_fade(ttime, 255, true);
-                    return true;
+            if(!check_display("Most Played") && my_config["Most_Played_Enabled"] == "Yes"){
+                create_most_played();
+                local filters = [];
+                filters.push({"name":"All"});
+                filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Title"});
+                add_display( "Most Played", ["yes","yes","yes"], filters);
+                system ("mkdir " + (OS == "Windows" ? "" : "-p ") + "\"" + medias_path + "Main Menu/Images/Wheel/\"");
+                local cop = "\"" + globs.script_dir + "images/Wheel/Most Played-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Most Played.png" + "\"";
+                if(OS == "Windows"){
+                    system("copy " + replace(cop, "/","\\"));
+                }else{
+                   system("cp " + cop);
                 }
-                global_fade(255, 255, true);
-                //load custom romlists
-                globs.customs_romlist_tb <- load_customs();
-                //Sound -  cause we are back to main menu we use name to match the systeme we're leaving.
-                Sound_System_In_Out.file_name = get_random_file( medias_path + fe.game_info(Info.Name) + "/Sound/System Exit/" );
-                Sound_System_In_Out.playing = true;
-                FE_Sound_Wheel_Out.playing = true;
-                stats_text_update( fe.game_info(Info.Title) );
-                local restart = false;
-                if(!check_display("Recent") && my_config["Recent_Enabled"] == "Yes"){
-                    local filters = [];
-                    filters.push({"name":"All","sort_by":"Extra", "reverse_order":"true"});
-                    filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Title"});
-                    add_display( "Recent", ["yes","yes","yes"], filters);
-                    system ("mkdir " + (OS == "Windows" ? "" : "-p ") + "\"" + medias_path + "Main Menu/Images/Wheel/\"");
-                    local cop = "\"" + globs.script_dir + "images/Wheel/Recent-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Recent.png" + "\"";
-                    if(OS == "Windows"){
-                        system("copy " + replace(cop, "/","\\"));
-                    }else{
-                       system("cp " + cop);
-                    }
-                    restart = true;
-                }
+                restart = true;
+            }
 
-                if(!check_display("Most Played") && my_config["Most_Played_Enabled"] == "Yes"){
-                    create_most_played();
-                    local filters = [];
-                    filters.push({"name":"All"});
-                    filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Title"});
-                    add_display( "Most Played", ["yes","yes","yes"], filters);
-                    system ("mkdir " + (OS == "Windows" ? "" : "-p ") + "\"" + medias_path + "Main Menu/Images/Wheel/\"");
-                    local cop = "\"" + globs.script_dir + "images/Wheel/Most Played-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Most Played.png" + "\"";
-                    if(OS == "Windows"){
-                        system("copy " + replace(cop, "/","\\"));
-                    }else{
-                       system("cp " + cop);
-                    }
-                    restart = true;
+            if(!check_display("Favourites") && my_config["Global_Favourites_Enabled"] == "Yes"){
+                create_favourites();
+                local filters = [];
+                //filters.push({"name":"All","sort_by":"Title"});
+                add_display( "Favourites", ["yes","yes","yes"], filters);
+                local cop = "\"" + globs.script_dir + "images/Wheel/Favourites-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Favourites.png" + "\"";
+                if(OS == "Windows"){
+                    system("copy " + replace(cop, "/","\\"));
+                }else{
+                   system("cp " + cop);
                 }
+                restart = true;
+            }
+            if(!check_display("All Games") && my_config["All_Games_Enabled"] == "Yes"){
+                create_all_games();
+                local filters = [];
+                //filters.push({"name":"All","sort_by":"Title"});
+                filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Title"});
+                add_display( "All Games", ["yes","yes","yes"], filters);
+                system ("mkdir " + (OS == "Windows" ? "" : "-p ") + medias_path + "\"Main Menu/Images/Wheel/\"");
+                system ( (OS == "Windows" ? "copy " : "cp ") + "\"" + globs.script_dir + "images/Wheel/All Games-"+my_config["user_lang"]+".png\"" +" \"" + medias_path + "Main Menu/Images/Wheel/All Games.png" + "\"" );
+                restart = true;
+            }
 
-                if(!check_display("Favourites") && my_config["Global_Favourites_Enabled"] == "Yes"){
-                    create_favourites();
-                    local filters = [];
-                    filters.push({"name":"All","sort_by":"Title"});
-                    add_display( "Favourites", ["yes","yes","yes"], filters);
-                    local cop = "\"" + globs.script_dir + "images/Wheel/Favourites-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Favourites.png" + "\"";
-                    if(OS == "Windows"){
-                        system("copy " + replace(cop, "/","\\"));
-                    }else{
-                       system("cp " + cop);
-                    }
-                    restart = true;
-                }
-                if(!check_display("All Games") && my_config["All_Games_Enabled"] == "Yes"){
-                    create_all_games();
-                    local filters = [];
-                    filters.push({"name":"All","sort_by":"Title"});
-                    filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Title"});
-                    add_display( "All Games", ["yes","yes","yes"], filters);
-                    system ("mkdir " + (OS == "Windows" ? "" : "-p ") + medias_path + "\"Main Menu/Images/Wheel/\"");
-                    system ( (OS == "Windows" ? "copy " : "cp ") + "\"" + globs.script_dir + "images/Wheel/All Games-"+my_config["user_lang"]+".png\"" +" \"" + medias_path + "Main Menu/Images/Wheel/All Games.png" + "\"" );
-                    restart = true;
-                }
+            if(check_display("Most Played") && my_config["Most_Played_Enabled"] == "No"){ delete_display("Most Played"); restart = true; }
+            if(check_display("Recent") && my_config["Recent_Enabled"] == "No") { delete_display("Recent"); restart = true; }
+            if(check_display("Favourites") && my_config["Global_Favourites_Enabled"] == "No") { delete_display("Favourites"); restart = true; }
+            if(check_display("All Games") && my_config["All_Games_Enabled"] == "No") { delete_display("All Games"); restart = true; }
 
-                if(check_display("Most Played") && my_config["Most_Played_Enabled"] == "No"){ delete_display("Most Played"); restart = true; }
-                if(check_display("Recent") && my_config["Recent_Enabled"] == "No") { delete_display("Recent"); restart = true; }
-                if(check_display("Favourites") && my_config["Global_Favourites_Enabled"] == "No") { delete_display("Favourites"); restart = true; }
-                if(check_display("All Games") && my_config["All_Games_Enabled"] == "No") { delete_display("All Games"); restart = true; }
-
-                if(restart){
-                    overlay_message(globs.script_dir + "images/warning.png");
-                    fe.overlay.list_dialog([], "The attract.cfg file has been modified AM needs to be restarted", 0, 0);
-                    fe.signal("exit_to_desktop")
-                }
+            if(restart){
+                overlay_message(globs.script_dir + "images/warning.png");
+                fe.overlay.list_dialog([], "The attract.cfg file has been modified AM needs to be restarted", 0, 0);
+                fe.signal("exit_to_desktop")
             }
         break;
 
         case Transition.ToNewList: //6
+            if (TOGame){
+                TOGame = false;
+                return false
+            }
             curr_sys = ( fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.list.name );
+            if(Ini_settings["wheel"]["animation"] != "none" && wheel_animation.progress == 1.0){
+                globs.next_tick_functions.push( function () { wheel_animation.reverse(true).duration(600).play() });
+                globs.next_tick_functions.push( function () { FE_Sound_Wheel_Out.playing = true; });
+            }else{
+                wheel_surf.visible = false;
+            }
+
             curr_emulator = (fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.game_info(Info.Emulator));
             if(curr_sys == "Recent" || curr_sys == "Most Played") fe.list.index = 0;
 
@@ -1713,16 +1719,12 @@ function hs_transition( ttype, var, ttime )
                 local es = get_random_file( medias_path + curr_sys + "/Sound/System Start/" );
                 if( es != "" ){ // if exit sound exist for this system
                     Sound_System_In_Out.file_name = es;
-                    Sound_System_In_Out.playing = true;
+                    globs.next_tick_functions.push( function () { Sound_System_In_Out.playing = true; });
                 }
             }
 
-            if(my_config["special_artworks"].tolower() == "yes") load_special(); // Load special artworks
-
             rtime = glob_time
-
             triggers.theme.start = true;
-            wheel_surf.visible = false;
             triggers.background_anim.start = false;
             surf_ginfos.visible = false;
             Background_Music.playing = false;
@@ -1803,8 +1805,7 @@ function hs_transition( ttype, var, ttime )
             ArtObj.snap.video_flags = Vid.Default; // enable snap sound on exit (AM cannot pause video ?)
         break;
     }
-
-    if( prev_tr != ttype ) prev_tr = ttype;
+    prev_tr = ttype
 }
 
 //
@@ -1822,6 +1823,12 @@ function hs_tick( ttime )
         }
     }
 
+    // temp fix bug in AM  https://github.com/mickelson/attract/issues/747
+    if (globs.next_tick_functions.len() > 0) {
+        local func = globs.next_tick_functions.pop();
+        func();
+    }
+    
     // Background Music
     if(triggers.background_music.start == true && (glob_time - rtime > triggers.background_music.delay) ){
         Background_Music.playing = true;
@@ -1845,7 +1852,7 @@ function hs_tick( ttime )
 
     // set all artwork and video visible after x ms next to triggerload except those who have width set to 0.1 (unhided later in animation preset)
     if( (glob_time - rtime > globs.delay + 150) && visi == false){
-        foreach(obj in ["artwork1", "artwork2", "artwork3", "artwork4", "artwork5", "artwork6", "video", "snap"] ) if(ArtObj[obj].width > 0.1) ArtObj[obj].visible = true;
+        foreach(obj in ["artwork1", "artwork2", "artwork3", "artwork4", "artwork5", "artwork6", "video", "snap"] ) if(ArtObj[obj].width > 0.1 && ArtObj[obj].height > 0.1) ArtObj[obj].visible = true;
         visi = true;
     }
     if(!snap_is_playing && anim_video.elapsed > anim_video.opts.delay ){ // start playing video snap after animation delay
@@ -3895,38 +3902,15 @@ function incdec(type, datas,  dir ){
 
 // Apply a global fade on objs and shaders
 function global_fade(ttime, target, direction){
-   target = target.tofloat();
-   ttime = ttime.tofloat();
-   local objlist = {"surf_ginfos":surf_ginfos, "syno_surf":syno_surf, "flv_transitions":flv_transitions, "bezel":ArtObj.bezel, "point":point, "wheel_surf":wheel_surf}; // objects list to fade
-    if(direction){ // show
-        foreach(a, obj in objlist) obj.alpha = ttime * (255.0 / target); //ttime * (globs.tofade[a] / target)
-        video_shader.set_param("alpha", (ttime / target) );
-        foreach(k, obj in artwork_list ){
-            artwork_shader[k].set_param("alpha", (ttime / target) );
-            for (local i=0; i < anims[k].ParticlesArray.len(); i++ ) anims[k].ParticlesArray[i].alpha = ttime * (255.0 / target);
-        }
-        Trans_shader.set_param("alpha", ttime / target);
-        ArtObj.SpecialA.shader.set_param("alpha", ttime / target);
-        ArtObj.SpecialB.shader.set_param("alpha", ttime / target);
-        ArtObj.SpecialC.shader.set_param("alpha", ttime / target);
-    }else{ // hide
-        flv_transitions.video_playing = false; // stop playing ovveride video during fade
-        foreach(a, obj in objlist) obj.alpha = globs.tofade[a].tofloat() - ttime * (globs.tofade[a] / target);
-        if( ("current" in anim_video_shader.states) && anim_video_shader.states["current"].param == "alpha"){ // if alpha is managed by shader , use the alpha value from shader
-            video_shader.set_param("alpha", ( anim_video_shader.states["current"].val[0] - (ttime / target) ) );
-        }else{
-            video_shader.set_param("alpha", ( (globs.tofade["snap"] / 255.0) - (ttime / target) ) );
-        }
-        foreach(k, obj in artwork_list ){
-            artwork_shader[k].set_param("alpha", (globs.tofade[obj] / 255.0) - (ttime / target) );
-            for (local i=0; i < anims[k].ParticlesArray.len(); i++ ) anims[k].ParticlesArray[i].alpha = 255.0 - ttime * (255.0 / target);
-        }
-        Trans_shader.set_param("alpha",(globs.tofade["Trans"].tofloat() / 255.0) - (ttime / target) );
-        ArtObj.SpecialA.shader.set_param("alpha",(globs.tofade["SpecialA"] / 255.0) - (ttime / target) );
-        ArtObj.SpecialB.shader.set_param("alpha",(globs.tofade["SpecialB"] / 255.0) - (ttime / target) );
-        ArtObj.SpecialC.shader.set_param("alpha",(globs.tofade["SpecialC"] / 255.0) - (ttime / target) );
+   local normalized = clamp(ttime / target, 0, 1);  
+    if(direction){ // show 
+       fades.alpha = 255 * (1 - normalized)
+    }else{
+       fades.alpha = 255 * normalized;
     }
-    return;
+    if(fades.alpha == 0) fades.visible = false; else fades.visible = true
+
+   return normalized < 1
 }
 
 function zorder_list(){
@@ -4178,7 +4162,6 @@ function set_custom_value(Ini_settings) {
     }
 
     if(prev_tr == Transition.ToNewList){
-        FE_Sound_Wheel_In.playing = true; // temp fix bug in AM  https://github.com/mickelson/attract/issues/747
         syno_surf.visible = Ini_settings.themes["synopsis"];
 
         system_stats_coord();
@@ -4211,15 +4194,20 @@ function set_custom_value(Ini_settings) {
 
         wheel_coord(); // set wheel surface coord
 
+        wheel_animation
+        .preset(Ini_settings["wheel"]["animation"])
+        .starting(Ini_settings["wheel"]["type"])
+        .duration(globs.delay)
+        .delay(triggers.wheel_anim.delay)
+        
         if(Ini_settings["wheel"]["animation"] != "none"){
-            wheel_animation
-            .preset(Ini_settings["wheel"]["animation"])
-            .starting(Ini_settings["wheel"]["type"])
-            .duration(globs.delay)
-            .delay(triggers.wheel_anim.delay)
             wheel_animation.start()
             wheel_animation.cancel("from")
             wheel_animation.start();
+            FE_Sound_Wheel_In.playing = true;
+        }else{
+            wheel_animation.start()
+            wheel_animation.cancel("to")
         }
 
         pointer_coord(); // set pointer pos
@@ -4239,6 +4227,7 @@ function set_custom_value(Ini_settings) {
             syno_surf.y = g_c[1] * flh;
             //syno_surf.rotation = g_c[4];
         }
+        if(my_config["special_artworks"].tolower() == "yes") load_special(); // Load special artworks
     }
 }
 
@@ -4302,14 +4291,6 @@ function game_surface(){
     }
 
     if(!flags.visible) Title.x(-flw * 0.004);
-}
-
-function fade_objects(){
-    local tofade = {"surf_ginfos":surf_ginfos.alpha, "syno_surf":syno_surf.alpha, "flv_transitions":flv_transitions.alpha, "bezel":ArtObj.bezel.alpha, "point":point.alpha,
-    "wheel_surf":wheel_surf.alpha,"snap":ArtObj.snap.alpha,"artwork1":ArtObj.artwork1.alpha,"artwork2":ArtObj.artwork2.alpha,"artwork3":ArtObj.artwork3.alpha,
-    "artwork4":ArtObj.artwork5.alpha,"artwork5":ArtObj.artwork5.alpha,"artwork6":ArtObj.artwork6.alpha,"SpecialA":ArtObj.SpecialA.alpha,"SpecialB":ArtObj.SpecialB.alpha,
-    "SpecialC":ArtObj.SpecialC.alpha,"Trans":ArtObj.background.alpha};
-    return tofade;
 }
 
 function set_last_played_txt(refresh = false){

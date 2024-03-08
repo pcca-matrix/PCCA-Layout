@@ -388,7 +388,7 @@ function PlayedTime( offset ){
 
 //clamp a value from min to max
 function clamp(value, min, max) {
-    if (value < min) value = min; if (value > max) value = max; return value
+    return value < min ? min : (value > max ? max : value);
 }
 
 function dec2rgb(c){
@@ -1272,3 +1272,4 @@ debug_array.push("ShowOverlay") //8
 debug_array.push("HideOverlay") //9
 debug_array.push("NewSelOverlay") //10
 debug_array.push("ChangedTag") //11
+debug_array.push("Nothing") //12
