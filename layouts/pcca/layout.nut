@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.91
+// PCCA v2.92
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -1866,7 +1866,7 @@ function hs_tick( ttime )
     if( (glob_time - rtime > globs.delay) && triggers.theme.start && (pcca_wheel.stop || pcca_wheel.spin_start)){
 
         if( my_config["stats_main"].tolower() == "yes" ) m_infos.visible = true;
-        if(prev_tr == Transition.ToNewList) pcca_wheel.Init(Ini_settings.wheel); // slots, transition_ms, type, fade_time, alpha, curve, first_pos
+        if(prev_tr == Transition.ToNewList) pcca_wheel.Init(Ini_settings.wheel); // slots, transition_ms, type, fade_delay, fade_time, alpha, curve, first_pos
         hd = false;
         if( Ini_settings.themes["bezels"] && Ini_settings.themes["aspect"] == "center" ){ // Systems bezels!  only if aspect center
             if( file_exist(globs.script_dir + "images/Bezels/" + curr_emulator + ".png") ){
@@ -2902,6 +2902,19 @@ menus.push({
         },
         "infos" : LnG.M_inf_wheel_speed
     },
+    {
+        "title":"Wheel fade delay", "type":"float",
+        "onselect":function(current_list, selected_row){
+            set_list( { "id":"fade_delay", "title":_selected_row.title, "target":"ini", "object":"wheel", "values" : [0.0,10.0,0.1],
+            "rows":[ {"title":format("%.1f", Ini_settings.wheel["fade_delay"]) }],
+            "onselect":function(current_list, selected_row){
+                pcca_wheel.fade_delay = Ini_settings.wheel["fade_delay"] * 1000;
+                pcca_wheel.reset_fade();
+            }});
+            return true;
+        },
+        "infos" : LnG.M_inf_wheel_fade_delay
+    },    
     {
         "title":"Wheel fade time", "type":"float",
         "onselect":function(current_list, selected_row){

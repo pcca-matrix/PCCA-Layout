@@ -358,7 +358,7 @@ class PCCA_Conveyor {
     // fade
     w_time = 0;
     fade_time = 4000;
-    fade_delay = 4000;
+    fade_delay = 3000;
     fade_alpha = 0;
     fade_on = false;
 
@@ -417,6 +417,7 @@ class PCCA_Conveyor {
             try{ nbr_slot = opts.slots } catch(err){}
             try{ fade_alpha = opts.alpha } catch(err){}
             try{ fade_time = opts.fade_time * 1000 } catch(err){}
+            try{ fade_delay = opts.fade_delay * 1000 } catch(err){}
             try{ Curve = opts.curve } catch(err){}
             try{ rounded = opts.rounded } catch(err){}
             try{ wheel_frame = opts.frame } catch(err){}

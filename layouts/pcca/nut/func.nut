@@ -17,6 +17,7 @@ function global_default_settings(){
     Ini_settings["wheel"]["transition_ms"] <- 170;
     Ini_settings["wheel"]["animation"] <- "ease";
     Ini_settings["wheel"]["fade_time"] <- 3.0;
+    Ini_settings["wheel"]["fade_delay"] <- 3.0;
     Ini_settings["wheel"]["alpha"] <- 0.0;
     Ini_settings["wheel"]["slots"] <- 7;
     Ini_settings["wheel"]["rounded"] <- true;
