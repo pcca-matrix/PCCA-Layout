@@ -30,3 +30,5 @@ use "from" in edit mode to set where the artwork start instead of using only hyp
 * XMR: `44ZD1s12j8M6upWXGUS1R2YzXKiKpVmTzYKbrLYSp6pDWvW7C4ALfQ2VNyg6pt2tvA94Tu5kbcDLcLbTvjJBYk6zLFYmWM3`
 * BTC: `1F2UpGsQETpyCCnMEBLFc5whDFAhgXJVU1`
 * DOGE:`D7CosCAHu4RaMj1An1tSACW4cTicsWP6Go`
+
+<a href='https://ko-fi.com/pcca-matrix' target='_blank'><img height='35' style='border:0px;height:46px;' src='https://pcca.be/buymeabeer.png' border='0' alt='Buy Me a Beer at ko-fi.com' />
