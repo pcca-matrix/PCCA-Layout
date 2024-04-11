@@ -477,6 +477,7 @@ class PCCA_Conveyor {
                 pad = ww / nbr_slot
                 ww-=pad
                 x = -ww * 0.5 - pad * 0.5
+                y = wh * center_zoom * 2
                 if(nbr_slot % 2 == 0 ){ // if slot is even
                     nbr_slot+=1
                     x = -ww - pad;
@@ -487,7 +488,7 @@ class PCCA_Conveyor {
                 if(rounded){
                     Rad = surface_w * 0.7
                     wheel_center_x = surface_w * 0.5
-                    wheel_center_y = -Rad + surface_h * 0.2 - (Curve - 1.0) * Rad
+                    wheel_center_y = -Rad + y - (Curve - 1.0) * Rad
                     Rad*=Curve
                     el_rot = 90
                     angle = curve_points(Rad, surface_w * 1.3,  270 )
@@ -509,8 +510,8 @@ class PCCA_Conveyor {
                     for ( local i=0; i<nbr_slot; i++ ){
                         w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
                         w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
-                        w_slots[i].x = x - ww * 0.5;
-                        w_slots[i].y = surface_h * 0.12 - wh * 0.5;
+                        w_slots[i].x = x - w_slots[i].width * 0.5;
+                        w_slots[i].y = y - w_slots[i].height * 0.5;
                         w_slots[i].r = 0;
                         x+=(ww/scale)+pad
                     }
@@ -523,6 +524,7 @@ class PCCA_Conveyor {
                 pad = ww / nbr_slot;
                 ww-=pad
                 x = -ww * 0.5 - pad * 0.5
+                y = surface_h - (wh * center_zoom * 2)
                 if(nbr_slot % 2 == 0 ){ // if slot is even
                     nbr_slot+=1;
                     x = -ww - pad;
@@ -533,7 +535,7 @@ class PCCA_Conveyor {
                 if(rounded){
                     Rad = surface_w * 0.7
                     wheel_center_x = surface_w * 0.5
-                    wheel_center_y = Rad + surface_h * 0.8 + (Curve - 1.0) * Rad
+                    wheel_center_y = Rad + y + (Curve - 1.0) * Rad
                     Rad*=Curve;
                     el_rot = -90.0
                     angle = curve_points(Rad, surface_w * 1.3,  90.0 )
@@ -556,8 +558,8 @@ class PCCA_Conveyor {
                     for ( local i=0; i<nbr_slot; i++ ){
                         w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
                         w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
-                        w_slots[i].x = x - ww * 0.5;
-                        w_slots[i].y = surface_h * 0.88 - wh * 0.5;
+                        w_slots[i].x = x - w_slots[i].width * 0.5;
+                        w_slots[i].y = y - w_slots[i].height * 0.5;
                         w_slots[i].r = 0;
                         x+=(ww/scale)+pad
                     }
@@ -570,6 +572,7 @@ class PCCA_Conveyor {
                 wh-=pad
                 ww = wh * 2.5
                 y = -wh * 0.5 - pad * 0.5
+                x = ww * center_zoom
                 if(nbr_slot % 2 == 0 ){ // if slot is even
                     nbr_slot+=1
                     y = -wh - pad
@@ -579,7 +582,7 @@ class PCCA_Conveyor {
                 r_offset = floor(nbr_slot * 0.5);
                 if(rounded){
                     Rad = surface_h * 0.7
-                    wheel_center_x = -Rad + surface_w * 0.2 - (Curve - 1.0) * Rad
+                    wheel_center_x = -Rad + x - (Curve - 1.0) * Rad
                     wheel_center_y = surface_h * 0.5
                     Rad*=Curve;
                     el_rot = 0
@@ -600,10 +603,11 @@ class PCCA_Conveyor {
                 wh*=scale
 
                 if(!rounded){
+                    y*=center_zoom
                     for ( local i=0; i<nbr_slot; i++ ){
                         w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
                         w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
-                        w_slots[i].x = surface_w * 0.12 - ww * 0.5;
+                        w_slots[i].x = x - (w_slots[i].width * 0.5);
                         w_slots[i].y = y - wh * 0.5;
                         w_slots[i].r = 0;
                         y+=(wh/scale)+pad
@@ -617,6 +621,7 @@ class PCCA_Conveyor {
                 wh-=pad
                 ww = wh * 2.5
                 y = -wh * 0.5 - pad * 0.5;
+                x = surface_w - ww * center_zoom;
                 if(nbr_slot % 2 == 0 ){ // if slot is even
                     nbr_slot+=1;
                     y = -wh - pad;
@@ -626,7 +631,7 @@ class PCCA_Conveyor {
                 r_offset = floor(nbr_slot * 0.5);
                 if(rounded){
                     Rad = surface_h * 0.7
-                    wheel_center_x = Rad + surface_w * 0.8 + (Curve - 1.0) * Rad
+                    wheel_center_x = x + Rad + (Curve - 1.0) * Rad
                     wheel_center_y = surface_h * 0.5;
                     Rad*=Curve
                     el_rot = 180.0
@@ -647,13 +652,14 @@ class PCCA_Conveyor {
                 wh*=scale
 
                 if(!rounded){
+                    y*=center_zoom
                     for ( local i=0; i<nbr_slot; i++ ){
                         w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
                         w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
-                        w_slots[i].x = surface_w * 0.88 - w_slots[i].width * 0.5
-                        w_slots[i].y = y - w_slots[i].height * 0.5
+                        w_slots[i].x = x - (w_slots[i].width * 0.5)
+                        w_slots[i].y = y - wh * 0.5
                         w_slots[i].r = 0.0
-                        y+=(w_slots[i].height/scale)+pad
+                        y+=(w_slots[i].height/scale) + pad
                     }
                 }
             break;
@@ -669,6 +675,12 @@ class PCCA_Conveyor {
                 set_rotation(angle[i] - el_rot, w_slots[i]);
                 w_slots[i].r = angle[i] - el_rot;
             }
+        }
+
+        // Set Zorder for center wheel and frame
+        for ( local i=0; i<nbr_slot; i++ ){
+            w_slots[i].art.zorder = (i == r_offset ? 3 : 1)
+            w_slots[i].frame.zorder = (i == r_offset ? 2 : 0)
         }
     }
 
