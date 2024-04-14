@@ -53,6 +53,7 @@ globs <- {"delay" : 500, "signal":"default_sig", "keyhold":-1, "hold":null, "Sti
 "custom_romlists":["Recent","Favourites","Most Played","All Games"], "customs_romlist_tb":{}, "next_tick_functions":[] }; // super globals temp vars
 
 local TOGame = false;  // temp fix bug in AM  https://github.com/mickelson/attract/issues/747
+local wheel_wait = false;
 
 triggers <- {
     "flv_transition":{
@@ -440,6 +441,7 @@ function load_special(){
         if(!S_Art["lst"].len() ) continue;
 
         ArtObj["Special" + n].file_name = medias_path + S_Art["syst"] + "/Images/Special/" + S_Art["lst"][0];
+        ArtObj["Special" + n].visible = false;
         S_Art.nbr = n;
 
         if(S_Art){
@@ -481,6 +483,9 @@ function load_special(){
             anim_special[i].yoyo(true)
             anim_special[i].play();
         }
+        ArtObj.SpecialA.shader.set_param("alpha", 1.0);
+        ArtObj.SpecialB.shader.set_param("alpha", 1.0);
+        ArtObj.SpecialC.shader.set_param("alpha", 1.0);
     }
 }
 
@@ -821,7 +826,6 @@ m_infos.charsize = flh*0.014;
 m_infos.set_rgb(205, 205, 195);
 
 if( my_config["stats_main"].tolower() == "yes" ){
-    m_infos.visible = true;
     if( !file_exist(globs.script_dir + "pcca.stats") ) main_infos <- refresh_stats();
     main_infos <- LoadStats();
 }
@@ -1567,7 +1571,6 @@ function hs_transition( ttype, var, ttime )
 
         case Transition.EndNavigation: //7
             if(prev_tr == Transition.ToNewList) return false; // fix back from screensaver reload theme twice.
-            if(point_animation.progress == 1.0 && Ini_settings.pointer.animated) point_animation.play();
             Langue();
             if(surf_inf.visible){
                 extraArtworks.getLists();
@@ -1591,9 +1594,9 @@ function hs_transition( ttype, var, ttime )
 
         case Transition.StartLayout: //0
             if( fe.game_info (Info.Emulator) == "@" && global_fade(ttime, 255, true) ) return true; // fade when back to display menu or start layout
-            
+
             if(var == FromTo.ScreenSaver) return false; //we are back from screensaver no need to continue
-            
+
             //load custom romlists
             globs.customs_romlist_tb <- load_customs();
             //Sound -  cause we are back to main menu we use name to match the systeme we're leaving.
@@ -1828,7 +1831,7 @@ function hs_tick( ttime )
         local func = globs.next_tick_functions.pop();
         func();
     }
-    
+
     // Background Music
     if(triggers.background_music.start == true && (glob_time - rtime > triggers.background_music.delay) ){
         Background_Music.playing = true;
@@ -1852,7 +1855,7 @@ function hs_tick( ttime )
 
     // set all artwork and video visible after x ms next to triggerload except those who have width set to 0.1 (unhided later in animation preset)
     if( (glob_time - rtime > globs.delay + 150) && visi == false){
-        foreach(obj in ["artwork1", "artwork2", "artwork3", "artwork4", "artwork5", "artwork6", "video", "snap"] ) if(ArtObj[obj].width > 0.1 && ArtObj[obj].height > 0.1) ArtObj[obj].visible = true;
+        foreach(obj in ["SpecialA", "SpecialB", "SpecialC", "artwork1", "artwork2", "artwork3", "artwork4", "artwork5", "artwork6", "video", "snap"] ) if(ArtObj[obj].width > 0.1 && ArtObj[obj].height > 0.1) ArtObj[obj].visible = true;
         visi = true;
     }
     if(!snap_is_playing && anim_video.elapsed > anim_video.opts.delay ){ // start playing video snap after animation delay
@@ -1865,8 +1868,10 @@ function hs_tick( ttime )
     // load medias after globs.delay
     if( (glob_time - rtime > globs.delay) && triggers.theme.start && (pcca_wheel.stop || pcca_wheel.spin_start)){
 
-        if( my_config["stats_main"].tolower() == "yes" ) m_infos.visible = true;
-        if(prev_tr == Transition.ToNewList) pcca_wheel.Init(Ini_settings.wheel); // slots, transition_ms, type, fade_delay, fade_time, alpha, curve, first_pos
+        if(prev_tr == Transition.ToNewList){
+            wheel_coord(); // set wheel surface coord
+            pcca_wheel.Init(Ini_settings.wheel); // slots, transition_ms, type, fade_delay, fade_time, alpha, curve, first_pos
+        }
         hd = false;
         if( Ini_settings.themes["bezels"] && Ini_settings.themes["aspect"] == "center" ){ // Systems bezels!  only if aspect center
             if( file_exist(globs.script_dir + "images/Bezels/" + curr_emulator + ".png") ){
@@ -2914,7 +2919,7 @@ menus.push({
             return true;
         },
         "infos" : LnG.M_inf_wheel_fade_delay
-    },    
+    },
     {
         "title":"Wheel fade time", "type":"float",
         "onselect":function(current_list, selected_row){
@@ -3029,6 +3034,8 @@ menus.push({
     {
         "title":"Position", "object":wheel_surf,
             "onselect":function(current_list, selected_row){
+                pcca_wheel.mark_w.visible = true
+                pcca_wheel.mark_h.visible = true
                 wheel_surf.alpha = 255;
                 pcca_wheel.fade_on = false;
                 _slot[_slot_pos].set_bg_rgb(30, 240, 40); // set cell color on the menu
@@ -3041,6 +3048,8 @@ menus.push({
             },
             "onback":function(selected_row, current_list){
                 Ini_settings["wheel"]["coord"] = round(wheel_surf.x / flw, 4) + "," + round(wheel_surf.y / flh, 4) + "," + round(wheel_surf.width / flw, 4) + "," + round(wheel_surf.height / flh, 4) + "," + round(wheel_surf.rotation, 4);
+                pcca_wheel.mark_w.visible = false
+                pcca_wheel.mark_h.visible = false
             },
             "infos":LnG.M_inf_wheel_pos
     }]
@@ -3741,7 +3750,6 @@ signals["default_sig"] <- function (str) {
         case "prev_game":
             if(triggers.theme.start && prev_tr == Transition.ToNewList) return true; // disable wheel navigation until the theme is fully loaded
             letters.visible = false;
-            if(globs.keyhold < 1 && Ini_settings.pointer.animated) point_animation.play();
             if( globs.keyhold < 1 &&  Ini_settings.sounds["wheel_click"] ) Sound_Click.playing = true;
         break;
 
@@ -3915,8 +3923,8 @@ function incdec(type, datas,  dir ){
 
 // Apply a global fade on objs and shaders
 function global_fade(ttime, target, direction){
-   local normalized = clamp(ttime / target, 0, 1);  
-    if(direction){ // show 
+   local normalized = clamp(ttime / target, 0, 1);
+    if(direction){ // show
        fades.alpha = 255 * (1 - normalized)
     }else{
        fades.alpha = 255 * normalized;
@@ -4205,14 +4213,12 @@ function set_custom_value(Ini_settings) {
         local rgbC = dec2rgb(Ini_settings["game text"]["text_stroke_color"]);
         Title.thick_rgb([rgbC[0], rgbC[1], rgbC[2]]);
 
-        wheel_coord(); // set wheel surface coord
-
         wheel_animation
         .preset(Ini_settings["wheel"]["animation"])
         .starting(Ini_settings["wheel"]["type"])
         .duration(globs.delay)
         .delay(triggers.wheel_anim.delay)
-        
+
         if(Ini_settings["wheel"]["animation"] != "none"){
             wheel_animation.start()
             wheel_animation.cancel("from")

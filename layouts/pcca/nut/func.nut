@@ -22,13 +22,13 @@ function global_default_settings(){
     Ini_settings["wheel"]["slots"] <- 7;
     Ini_settings["wheel"]["rounded"] <- true;
     Ini_settings["wheel"]["type"] <- "right";
-    Ini_settings["wheel"]["coord"] <- "0,0,1,1,0"; // in %
-    Ini_settings["wheel"]["system stats"] <- "0.7126,0.5517,0"; // in %
+    Ini_settings["wheel"]["coord"] <- "0.3,0,1,1,0"; // in %
+    Ini_settings["wheel"]["system stats"] <- "0.3868,0.5481,0"; // in %
     Ini_settings["wheel"]["curve"] <- 1.2;
     Ini_settings["wheel"]["frame"] <- false;
     Ini_settings["wheel"]["spin_start"] <- true;
     Ini_settings["wheel"]["scale"] <- 1.0;
-    Ini_settings["wheel"]["center_zoom"] <- 1.0;
+    Ini_settings["wheel"]["center_zoom"] <- 1.3;
     Ini_settings["wheel"]["media"] <- "Wheel";
 
     Ini_settings["game text"] <- {}
@@ -752,7 +752,25 @@ function pointer_coord(set=false){
 
 function wheel_coord(set=false){
     local wheel_coord = Ini_settings["wheel"]["coord"];
-    if(set) wheel_coord = "0,0,1,1,0";
+    if(set){ // default position value
+        switch(set){
+            case "left":
+                wheel_coord = "-0.3,0,1,1,0";
+            break;
+
+            case "right":
+                wheel_coord = "0.3,0,1,1,0";
+            break;
+
+            case "bottom":
+                wheel_coord = "0,0.300,1,1,0";
+            break;
+
+            case "top":
+                wheel_coord = "0,-0.300,1,1,0";
+            break;
+        }
+    }
     local g_c = split( wheel_coord, ",").map(function(v){return v.tofloat()}); // %
     if( g_c.len() == 5 ) {
         if(set) Ini_settings["wheel"]["coord"] = g_c[0]+","+g_c[1]+","+g_c[2]+","+g_c[3]+","+g_c[4];
@@ -770,21 +788,21 @@ function wheel_coord(set=false){
 
 function system_stats_coord(set=false){
     local sys_stats_coord = Ini_settings["wheel"]["system stats"];
-    switch(set){
+    switch(set){ // default position value
         case "left":
-            sys_stats_coord = "0.1979,0.5587,0";
+            sys_stats_coord = "0.5241,0.5395,0";
         break;
 
         case "right":
-            sys_stats_coord = "0.7126,0.5517,0";
+            sys_stats_coord = "0.3868,0.5481,0";
         break;
 
         case "bottom":
-            sys_stats_coord = "0.445,0.8535,0";
+            sys_stats_coord = "0.4586,0.4154,0";
         break;
 
         case "top":
-            sys_stats_coord = "0.445,0.105,0";
+            sys_stats_coord = "0.4555,0.5407,0";
         break;
     }
 

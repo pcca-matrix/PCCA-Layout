@@ -344,6 +344,8 @@ class PCCA_Conveyor {
     w_slots = [];
     new_val = 0.0;
     center_zoom = 1.5;
+    mark_h = null;
+    mark_w = null;
     // attract
     AttractEnabled = true
     attract_time = 80000;
@@ -371,6 +373,10 @@ class PCCA_Conveyor {
         fe.add_signal_handler(this, "main_signal")
         frame_img = surface.add_image("")
         frame_img.visible = false
+        mark_w = surface.add_image("images/line.png", surface.width * 0.5, 0, 1, surface.height) // center ver
+        mark_h = surface.add_image("images/line.png", 0, surface.height * 0.5, surface.width, 1) // center hor
+        mark_w.visible=false
+        mark_h.visible=false
     }
 
     function set_slots(nbr_slot){
@@ -472,218 +478,110 @@ class PCCA_Conveyor {
 
         switch (pos) {
             case "top":
+            case "bottom":
                 ww = surface_w / nbr_slot
-                wh = ww / 2.5
+                wh = ww / 2.5 // standard ratio for a hs wheel
                 pad = ww / nbr_slot
-                ww-=pad
+                ww -= pad
                 x = -ww * 0.5 - pad * 0.5
-                y = wh * center_zoom * 2
+                y = surface_h * 0.5;
                 if(nbr_slot % 2 == 0 ){ // if slot is even
                     nbr_slot+=1
                     x = -ww - pad;
                 }
 
                 nbr_slot+=2 // add the 2 offscreen wheel
-                r_offset = floor(nbr_slot * 0.5);
                 if(rounded){
                     Rad = surface_w * 0.7
                     wheel_center_x = surface_w * 0.5
-                    wheel_center_y = -Rad + y - (Curve - 1.0) * Rad
+                    if(pos == "top"){
+                        wheel_center_y = -Rad + y - (Curve - 1.0) * Rad
+                    }else{
+                        wheel_center_y = Rad + y + (Curve - 1.0) * Rad
+                    }
                     Rad*=Curve
-                    el_rot = 90
-                    angle = curve_points(Rad, surface_w * 1.3,  270 )
-                    local len = (angle[0] - angle[angle.len()-1])
-                    if (len > 180) {
-                        len -= 360
-                    } else if (len < -180) {
-                        len += 360
-                    }
-
-                    len =  (2 * PI * (Rad - wh ) ) * (len / 360.0);
+                    el_rot = (pos == "top" ? 90.0 : -90.0)
+                    angle = curve_points(Rad, surface_w * 1.3,  el_rot + 180.0 )
+                    local len = ((angle[0] - angle[angle.len() - 1]) + 180) % 360 - 180;
+                    len = (2 * PI * (Rad - wh ) ) * (len / 360.0);
                     ww = (len / nbr_slot);
-                    wh = ww / 2.5;
-                }
-
-                ww*=scale
-                wh*=scale
-                if(!rounded){
-                    for ( local i=0; i<nbr_slot; i++ ){
-                        w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
-                        w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
-                        w_slots[i].x = x - w_slots[i].width * 0.5;
-                        w_slots[i].y = y - w_slots[i].height * 0.5;
-                        w_slots[i].r = 0;
-                        x+=(ww/scale)+pad
-                    }
                 }
             break;
 
-            case "bottom":
-                ww = surface_w / nbr_slot;
-                wh = ww / 2.5;
-                pad = ww / nbr_slot;
-                ww-=pad
-                x = -ww * 0.5 - pad * 0.5
-                y = surface_h - (wh * center_zoom * 2)
-                if(nbr_slot % 2 == 0 ){ // if slot is even
-                    nbr_slot+=1;
-                    x = -ww - pad;
-                }
-
-                nbr_slot+=2; // add the 2 offscreen wheel
-                r_offset = floor(nbr_slot * 0.5);
-                if(rounded){
-                    Rad = surface_w * 0.7
-                    wheel_center_x = surface_w * 0.5
-                    wheel_center_y = Rad + y + (Curve - 1.0) * Rad
-                    Rad*=Curve;
-                    el_rot = -90.0
-                    angle = curve_points(Rad, surface_w * 1.3,  90.0 )
-                    local len = (angle[0] - angle[angle.len()-1])
-                    if (len > 180) {
-                        len -= 360
-                    } else if (len < -180) {
-                        len += 360
-                    }
-
-                    len =  (2 * PI * (Rad - ww ) ) * (len / 360.0)
-                    ww = (len / nbr_slot)
-                    wh = ww / 2.5  // standard ratio for a hs wheel
-                }
-
-                ww*=scale
-                wh*=scale
-
-                if(!rounded){
-                    for ( local i=0; i<nbr_slot; i++ ){
-                        w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
-                        w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
-                        w_slots[i].x = x - w_slots[i].width * 0.5;
-                        w_slots[i].y = y - w_slots[i].height * 0.5;
-                        w_slots[i].r = 0;
-                        x+=(ww/scale)+pad
-                    }
-                }
-            break;
-
-            case "left":
+            default:
                 wh = surface_h / nbr_slot
                 pad = wh / nbr_slot
-                wh-=pad
-                ww = wh * 2.5
+                wh -= pad
+                ww = wh * 2.5 // standard ratio for a hs wheel
+                x = surface_w * 0.5;
                 y = -wh * 0.5 - pad * 0.5
-                x = ww * center_zoom
                 if(nbr_slot % 2 == 0 ){ // if slot is even
                     nbr_slot+=1
                     y = -wh - pad
                 }
 
                 nbr_slot+=2; // add the 2 offscreen wheel
-                r_offset = floor(nbr_slot * 0.5);
                 if(rounded){
                     Rad = surface_h * 0.7
-                    wheel_center_x = -Rad + x - (Curve - 1.0) * Rad
+                    if(pos == "left"){
+                        wheel_center_x = -Rad + x - (Curve - 1.0) * Rad
+                    }else{
+                        wheel_center_x = Rad + x + (Curve - 1.0) * Rad
+                    }
                     wheel_center_y = surface_h * 0.5
                     Rad*=Curve;
-                    el_rot = 0
-                    angle = curve_points(Rad, surface_h * 1.3, 0);
-                    local len = (angle[0] - angle[angle.len()-1]);
-                    if (len > 180) {
-                        len -= 360;
-                    } else if (len < -180) {
-                        len += 360;
-                    }
-
-                    len =  (2 * PI * (Rad - wh ) ) * (len / 360.0);
+                    el_rot = (pos == "left" ? 0 : 180)
+                    angle = curve_points(Rad, surface_h * 1.3, el_rot);
+                    local len = ((angle[0] - angle[angle.len() - 1]) + 180) % 360 - 180;
+                    len = (2 * PI * (Rad - wh ) ) * (len / 360.0);
                     wh = (len / nbr_slot);
-                    ww = wh * 2.5  // standard ratio for a hs wheel
-                }
-
-                ww*=scale
-                wh*=scale
-
-                if(!rounded){
-                    y*=center_zoom
-                    for ( local i=0; i<nbr_slot; i++ ){
-                        w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
-                        w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
-                        w_slots[i].x = x - (w_slots[i].width * 0.5);
-                        w_slots[i].y = y - wh * 0.5;
-                        w_slots[i].r = 0;
-                        y+=(wh/scale)+pad
-                    }
-                }
-            break;
-
-            default: // right
-                wh = surface_h / nbr_slot;
-                pad = wh / nbr_slot;
-                wh-=pad
-                ww = wh * 2.5
-                y = -wh * 0.5 - pad * 0.5;
-                x = surface_w - ww * center_zoom;
-                if(nbr_slot % 2 == 0 ){ // if slot is even
-                    nbr_slot+=1;
-                    y = -wh - pad;
-                }
-
-                nbr_slot+=2; // add the 2 offscreen whee
-                r_offset = floor(nbr_slot * 0.5);
-                if(rounded){
-                    Rad = surface_h * 0.7
-                    wheel_center_x = x + Rad + (Curve - 1.0) * Rad
-                    wheel_center_y = surface_h * 0.5;
-                    Rad*=Curve
-                    el_rot = 180.0
-                    angle = curve_points(Rad, surface_h * 1.3, 180.0)
-                    local len = (angle[0] - angle[angle.len()-1])
-                    if (len > 180) {
-                        len -= 360
-                    } else if (len < -180) {
-                        len += 360
-                    }
-
-                    len =  (2 * PI * (Rad - wh ) ) * (len / 360.0)
-                    wh = (len / nbr_slot)
-                    ww = wh * 2.5  // standard ratio for a hs wheel
-                }
-
-                ww*=scale
-                wh*=scale
-
-                if(!rounded){
-                    y*=center_zoom
-                    for ( local i=0; i<nbr_slot; i++ ){
-                        w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
-                        w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
-                        w_slots[i].x = x - (w_slots[i].width * 0.5)
-                        w_slots[i].y = y - wh * 0.5
-                        w_slots[i].r = 0.0
-                        y+=(w_slots[i].height/scale) + pad
-                    }
                 }
             break;
         }
 
-        if(rounded){
+            r_offset = floor(nbr_slot * 0.5);
+            ww*=scale
+            wh*=scale
+            local delta = 0;
+
+            if(pos == "top" || pos =="bottom"){
+                delta = (ww * center_zoom - ww) * 0.5
+                x-=delta
+            }else{
+                delta = (wh * center_zoom - wh) * 0.5
+                y-=delta
+            }
+
             for ( local i=0; i<nbr_slot; i++ ){
                 w_slots[i].width = (i == r_offset ? ww * center_zoom : ww)
                 w_slots[i].height = (i == r_offset ? wh * center_zoom : wh)
-                local mr = PI * angle[i] / 180;
-                w_slots[i].x = wheel_center_x  + (Rad * cos(mr)) - w_slots[i].width * 0.5
-                w_slots[i].y = wheel_center_y  + (Rad * sin(mr)) - w_slots[i].height * 0.5
-                set_rotation(angle[i] - el_rot, w_slots[i]);
-                w_slots[i].r = angle[i] - el_rot;
+                if(rounded){
+                    local mr = PI * angle[i] / 180;
+                    w_slots[i].x = wheel_center_x  + (Rad * cos(mr)) - w_slots[i].width * 0.5
+                    w_slots[i].y = wheel_center_y  + (Rad * sin(mr)) - w_slots[i].height * 0.5
+                    set_rotation(angle[i] - el_rot, w_slots[i]);
+                    w_slots[i].r = angle[i] - el_rot;
+                }else{
+                    w_slots[i].x = x - (w_slots[i].width * 0.5);
+                    w_slots[i].y = y - (w_slots[i].height * 0.5);
+                    w_slots[i].r = 0;
+
+                    if(pos == "top" || pos =="bottom"){
+                        x+=(w_slots[i].width / scale) + pad
+                        if(i == r_offset-1) x+=delta
+                        if(i == r_offset) x-=delta
+                    }else{
+                        y+=(w_slots[i].height / scale) + pad
+                        if(i == r_offset-1) y+=delta
+                        if(i == r_offset) y-=delta //
+                    }
+                }
+
+                // Set Zorder for center wheel and frame
+                w_slots[i].art.zorder = (i == r_offset ? 3 : 1)
+                w_slots[i].frame.zorder = (i == r_offset ? 2 : 0)
             }
-        }
-
-        // Set Zorder for center wheel and frame
-        for ( local i=0; i<nbr_slot; i++ ){
-            w_slots[i].art.zorder = (i == r_offset ? 3 : 1)
-            w_slots[i].frame.zorder = (i == r_offset ? 2 : 0)
-        }
     }
-
 
     function draw_wheel(offset){
 
@@ -747,7 +645,6 @@ class PCCA_Conveyor {
     {
         switch ( ttype )
         {
-
             case Transition.StartLayout:
             case Transition.FromGame:
             case Transition.ToGame:
