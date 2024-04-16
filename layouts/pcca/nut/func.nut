@@ -23,7 +23,8 @@ function global_default_settings(){
     Ini_settings["wheel"]["rounded"] <- true;
     Ini_settings["wheel"]["type"] <- "right";
     Ini_settings["wheel"]["coord"] <- "0.3,0,1,1,0"; // in %
-    Ini_settings["wheel"]["system stats"] <- "0.3868,0.5481,0"; // in %
+    Ini_settings["wheel"]["system stats"] <- "0.6832,0.5784,0"; // in %
+    Ini_settings["wheel"]["fade_sys_stats"] <- true;
     Ini_settings["wheel"]["curve"] <- 1.2;
     Ini_settings["wheel"]["frame"] <- false;
     Ini_settings["wheel"]["spin_start"] <- true;
@@ -790,19 +791,19 @@ function system_stats_coord(set=false){
     local sys_stats_coord = Ini_settings["wheel"]["system stats"];
     switch(set){ // default position value
         case "left":
-            sys_stats_coord = "0.5241,0.5395,0";
+            sys_stats_coord = "0.2026,0.5652,0";
         break;
 
         case "right":
-            sys_stats_coord = "0.3868,0.5481,0";
+            sys_stats_coord = "0.6832,0.5784,0";
         break;
 
         case "bottom":
-            sys_stats_coord = "0.4586,0.4154,0";
+            sys_stats_coord = "0.4551,0.8476,0";
         break;
 
         case "top":
-            sys_stats_coord = "0.4555,0.5407,0";
+            sys_stats_coord = "0.4551,0.0819,0";
         break;
     }
 

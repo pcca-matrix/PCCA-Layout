@@ -655,6 +655,7 @@ class PCCA_Conveyor {
             case Transition.ToNewSelection:
                 var = circular_idx_diff( fe.layout.index + var, fe.layout.index );
                 surface.alpha = 255;
+                if(::Ini_settings.wheel["fade_sys_stats"]) ::m_infos.alpha = surface.alpha;
                 fast_nav = false
                 if(last_selected == "random_game"){
                     local rd = rnd_int( 4000 / config_speed, MaxSpinTime / config_speed);
@@ -904,7 +905,11 @@ class PCCA_Conveyor {
 
     function expo_speed (progress, from, to, bas) { if ( progress == 0) return from; return to * pow( 2, 10 * ( progress / bas - 1) ) + from; }
 
-    function reset_fade() {surface.alpha = 255; w_time = ::fe.layout.time;}
+    function reset_fade() {
+        surface.alpha = 255;
+        if(::Ini_settings.wheel["fade_sys_stats"]) ::m_infos.alpha = surface.alpha;        
+        w_time = ::fe.layout.time;
+    }
 
     function fade(){
         local alpha;
@@ -915,6 +920,7 @@ class PCCA_Conveyor {
             alpha = (alpha < 0 ? 0 : alpha);
             if(alpha <= to || alpha == 0) return false;
             surface.alpha = alpha;
+            if(::Ini_settings.wheel["fade_sys_stats"]) ::m_infos.alpha = surface.alpha;
         }
     }
 

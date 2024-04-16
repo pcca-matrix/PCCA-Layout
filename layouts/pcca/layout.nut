@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.92
+// PCCA v2.93
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -406,7 +406,7 @@ anim_special.push( PresetAnimation(ArtObj.SpecialA) );
 anim_special.push( PresetAnimation(ArtObj.SpecialB) );
 anim_special.push( PresetAnimation(ArtObj.SpecialC) );
 
-function load_special(){
+function load_special(hide=true){
     local list = ["A","B","C"];
     foreach( i,n in list ){
         anim_special[i].reset();
@@ -441,7 +441,9 @@ function load_special(){
         if(!S_Art["lst"].len() ) continue;
 
         ArtObj["Special" + n].file_name = medias_path + S_Art["syst"] + "/Images/Special/" + S_Art["lst"][0];
-        ArtObj["Special" + n].visible = false;
+
+        if(hide) ArtObj["Special" + n].visible = false;
+
         S_Art.nbr = n;
 
         if(S_Art){
@@ -817,7 +819,7 @@ extraArtworks.init()
 main_infos <- {};
 local game_elapse = 0;
 
-m_infos <- wheel_surf.add_text("",0,0,0,0);
+m_infos <- fe.add_text("",0,0,0,0);
 m_infos.set_pos(flw*0.878, flh*0.537, flw*0.12, flh*0.046);
 m_infos.visible = false;
 m_infos.align = Align.Left;
@@ -867,7 +869,7 @@ function overview( offset ) {
 
     syno_surf_bg.set_rgb(20,0,0);
     syno_surf_bg.alpha = 75;
-    syno.msg = (Ini_settings.themes["main_stats"] ? main_stats + " " + input : input);
+    syno.msg = (Ini_settings.themes["main_stats"] ? main_stats + " - " + input : input);
     syno.width = (syno.msg.len() * syno.charsize.tofloat());
     if(  input.len() ) syno.x = syno_surf.width;
    if(replace(syno.msg," ", "") == "") syno_surf_bg.alpha = 0;
@@ -1817,6 +1819,12 @@ function hs_transition( ttype, var, ttime )
 fe.add_ticks_callback( "hs_tick" );
 function hs_tick( ttime )
 {
+    if(pcca_wheel.progress) wheel_wait = true
+    if(pcca_wheel.stop && wheel_wait){ // when wheel stop
+        if(Ini_settings.pointer.animated) point_animation.play();
+        if( my_config["stats_main"].tolower() == "yes" ) m_infos.visible = true;
+        wheel_wait = false
+    }
     glob_time=ttime;
     if(globs.signal == "default_sig"){
         if( fe.get_input_state("down") != false || fe.get_input_state("up") != false){
@@ -2786,7 +2794,6 @@ menus.push({
                 "rows":YesNo_menu,
                     "onselect":function(current_list, selected_row){
                         Ini_settings.themes["main_stats"] = (selected_row.target == "yes" ? true : false);
-                        syno_surf.visible = (selected_row.target == "yes" ? true : false)
                         syno.x = syno_surf.width; // reset scrolling test position
                     }
             });
@@ -3030,6 +3037,21 @@ menus.push({
             "onback":function(selected_row, current_list){
                 Ini_settings["wheel"]["system stats"] = round(m_infos.x / flw, 4) + "," + round(m_infos.y / flh, 4) + "," + round(m_infos.rotation, 4);
             },"infos":LnG.M_inf_wheel_stats
+    },
+    {
+        "title":"Fade stats with wheel", "object":m_infos, "hide":"!Main Menu",
+            "onselect":function(current_list, selected_row){
+                wheel_surf.alpha = 255;
+                m_infos.alpha = 255;
+                set_list( { "title":selected_row.title, "slot_pos":(Ini_settings.wheel["fade_sys_stats"] == true ? 0 : 1),
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            Ini_settings.wheel["fade_sys_stats"] = (selected_row.target == "yes" ? true : false);
+                            pcca_wheel.Init(Ini_settings.wheel);
+                            triggers.theme.start = true;
+                        }
+                });
+            },"infos":"Fade stats with wheel surface"
     },
     {
         "title":"Position", "object":wheel_surf,
@@ -3442,7 +3464,7 @@ menus.push({
                 Ini_settings["special art "+spec.tolower()].w = (ArtObj["Special"+spec].width / flw)
                 Ini_settings["special art "+spec.tolower()].h = (ArtObj["Special"+spec].height / flh)
                 Ini_settings["special art "+spec.tolower()].r = ArtObj["Special"+spec].rotation
-                load_special();
+                load_special(false);
             }
         },
         {"title":"Active",
@@ -3452,7 +3474,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["special art "+spec].active = (selected_row.target == "yes" ? true : false)
-                            load_special();
+                            load_special(false);
                         }
                 });
             }
@@ -3465,7 +3487,7 @@ menus.push({
                 set_list( { "title":_selected_row.title, "slot_pos":sel,
                     "rows":start_tab, "target":"", "onselect":function(current_list, selected_row){
                         Ini_settings["special art "+spec].start = selected_row.target;
-                        load_special();
+                        load_special(false);
                     }
                 })
                 return true;
@@ -3475,11 +3497,11 @@ menus.push({
             "onselect":function(current_list, selected_row){
                 local spec = current_list.title.slice(8).tolower();
                 local sel = 0;
-                foreach(a,b in video_anim_tab){ if(b.target == Ini_settings["special art "+spec].type) sel = a; }
+                foreach(a,b in artwork_anim_tab){ if(b.target == Ini_settings["special art "+spec].type) sel = a; }
                 set_list( {"title":"Animation", "id":"video_anim", "rows":artwork_anim_tab,"slot_pos":sel,
                     "onselect":function(current_list, selected_row){
                         Ini_settings["special art "+spec].type = selected_row.target;
-                        load_special();
+                        load_special(false);
                     }
                 })
                 return true;
@@ -3492,7 +3514,7 @@ menus.push({
                     "rows":YesNo_menu,
                         "onselect":function(current_list, selected_row){
                             Ini_settings["special art "+spec]["default"] = (selected_row.target == "yes" ? true : false);
-                            load_special();
+                            load_special(false);
                         }
                 });
             }
