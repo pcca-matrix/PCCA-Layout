@@ -463,27 +463,28 @@ function load_special(hide=true){
             }
 
             ArtObj["Special" + n].rotation = S_Art.r;
-
-            anim_special[i].name("Special" + n)
-            anim_special[i].preset(S_Art.type)
-            anim_special[i].starting(S_Art.start)
-            anim_special[i].duration(S_Art["in"])
-            anim_special[i].delay(S_Art.delay)
-            anim_special[i].loops_delay(S_Art.length)
-            anim_special[i].on("yoyo",function(anim){
-                if(S_Art.type == "bounce" ) anim.opts.interpolator = PennerInterpolator("linear");
-                anim.opts.duration = S_Art["out"]; // out
-            })
-            anim_special[i].on("stop",function(anim){
-                if(S_Art.cnt >= S_Art["lst"].len()) S_Art.cnt = 0;
-                ArtObj["Special" + S_Art.nbr].file_name = medias_path + S_Art["syst"] + "/Images/Special/" + S_Art["lst"][S_Art.cnt];
-                S_Art.cnt++;
-                anim.opts.duration = S_Art["in"]; // in
-                if(S_Art.type == "bounce" ) anim.opts.interpolator = PennerInterpolator("ease-out-bounce");
-                anim.play();
-            })
-            anim_special[i].yoyo(true)
-            anim_special[i].play();
+            if(S_Art.type != "none"){
+                anim_special[i].name("Special" + n)
+                anim_special[i].preset(S_Art.type)
+                anim_special[i].starting(S_Art.start)
+                anim_special[i].duration(S_Art["in"])
+                anim_special[i].delay(S_Art.delay)
+                anim_special[i].loops_delay(S_Art.length)
+                anim_special[i].on("yoyo",function(anim){
+                    if(S_Art.type == "bounce" ) anim.opts.interpolator = PennerInterpolator("linear");
+                    anim.opts.duration = S_Art["out"]; // out
+                })
+                anim_special[i].on("stop",function(anim){
+                    if(S_Art.cnt >= S_Art["lst"].len()) S_Art.cnt = 0;
+                    ArtObj["Special" + S_Art.nbr].file_name = medias_path + S_Art["syst"] + "/Images/Special/" + S_Art["lst"][S_Art.cnt];
+                    S_Art.cnt++;
+                    anim.opts.duration = S_Art["in"]; // in
+                    if(S_Art.type == "bounce" ) anim.opts.interpolator = PennerInterpolator("ease-out-bounce");
+                    anim.play();
+                })
+                anim_special[i].yoyo(true)
+                anim_special[i].play();
+            }
         }
         ArtObj.SpecialA.shader.set_param("alpha", 1.0);
         ArtObj.SpecialB.shader.set_param("alpha", 1.0);
