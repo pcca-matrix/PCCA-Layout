@@ -1,12 +1,12 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.93
+// PCCA v2.94
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
 // the terms of the GNU General Public License, version 3 or later.
 //
-// PCCA-Matrix 2023
+// PCCA-Matrix 2024
 //
 ////////////////////////////////////////////////////////////////////
 local start = clock();
@@ -51,6 +51,11 @@ class UserConfig {
 my_config <- fe.get_config();
 globs <- {"delay" : 500, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time, "script_dir":fe.script_dir, "config_dir":FeConfigDirectory,
 "custom_romlists":["Recent","Favourites","Most Played","All Games"], "customs_romlist_tb":{}, "next_tick_functions":[] }; // super globals temp vars
+
+kiosk <- {"enabled":false, "add_fav":true, "add_tags":true, "menu":true, "exit":true};
+try{kiosk.add_fav = fe.nv["kiosk_add_fav"] }catch(e){}
+try{kiosk.add_tags = fe.nv["kiosk_add_tags"] }catch(e){}
+try{kiosk.exit = fe.nv["kiosk_exit"] }catch(e){}
 
 local TOGame = false;  // temp fix bug in AM  https://github.com/mickelson/attract/issues/747
 local wheel_wait = false;
@@ -209,6 +214,7 @@ function XMLNode::nodeToString( node )
     }
     return str;
 };
+if(file_exist(globs.script_dir + "kiosk")) kiosk.enabled = true; // set kiosk mode
 
 LnG <- _LL[ my_config["user_lang"] ];
 prev_back <- { ox = 0, oy = 0, bw = flw, bh = flh }; // previous background table infos ( transitions )
@@ -2151,7 +2157,50 @@ menus.push ({
             rebuild_custom_romlists()
             return false;
         }
-    }
+    },
+    {"title":"Kiosk", "target":"kiosk"}
+    ]
+})
+
+//-- Kiosk Menu
+menus.push ({
+    "title":"Theme Settings", "id":"kiosk",
+    "rows":[{"title":"Add/Remove Favourites",
+            "onselect":function(current_list, selected_row){
+                set_list( { "title":"Favourites", "object":kiosk.add_fav, "slot_pos":(kiosk.add_fav ? 0 : 1),
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            kiosk.add_fav = (selected_row.target == "yes" ? true : false)
+                            fe.nv["kiosk_add_fav"] <- kiosk.add_fav
+                        }
+                });
+                return true;
+            }
+        },
+        {"title":"Add/Remove Tags",
+            "onselect":function(current_list, selected_row){
+                set_list( { "title":"Tags", "object":"", "slot_pos":(kiosk.add_tags ? 0 : 1),
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            kiosk.add_tags = (selected_row.target == "yes" ? true : false)
+                            fe.nv["kiosk_add_tags"] <- kiosk.add_tags
+                        }
+                });
+                return true;
+            }
+        },
+        {"title":"Exit AM",
+            "onselect":function(current_list, selected_row){
+                set_list( { "title":"Exit", "object":"", "slot_pos":(kiosk.exit ? 0 : 1),
+                    "rows":YesNo_menu,
+                        "onselect":function(current_list, selected_row){
+                            kiosk.exit = (selected_row.target == "yes" ? true : false)
+                            fe.nv["kiosk_exit"] <- kiosk.exit
+                        }
+                });
+                return true;
+            }
+        }
     ]
 })
 
@@ -3711,6 +3760,9 @@ signals["edit_sig"] <- function (str) {
 }
 
 signals["default_sig"] <- function (str) {
+    if(str == "configure" && kiosk.enabled) return true;
+    if(str == "exit" && kiosk.enabled && !kiosk.exit) return true;
+
     if(curr_sys == "Main Menu"){ //disable some buttons on main-menu
         switch ( str )
         {
@@ -3797,6 +3849,7 @@ signals["default_sig"] <- function (str) {
         break;
 
         case my_config["main_menu_key"] : // Main menu Key
+            if(kiosk.enabled) return true;
             surf_menu.visible = true;
             surf_menu_anim.reverse(false).play();
             globs.signal = "menu_sig";
@@ -3824,6 +3877,7 @@ signals["default_sig"] <- function (str) {
         break;
 
         case "add_favourite":
+            if(kiosk.enabled && !kiosk.add_fav) return true;
             if(globs.custom_romlists.find(curr_sys) != null){
                 local add = false;
                 overlay_hide.visible = false;
@@ -3855,6 +3909,55 @@ signals["default_sig"] <- function (str) {
                 }
                 return true; // showoverlay launched
             }
+        break;
+
+        case "add_tags":
+            if(!kiosk.enabled){
+                return false;
+            }else{
+                if(!kiosk.add_tags) return true;
+            }
+            overlay_title.set_pos( 0, flh*0.324, flw, flh*0.046);
+            overlay_title.set_rgb(192, 192, 192);
+            overlay_title.charsize = flw * 0.015;
+            overlay_background.file_name = "images/tags_overlay.png";
+            overlay_background.set_pos(flw*0.312, flh*0.092, flw*0.385, flh*0.740);
+            overlay_background.alpha = 250;
+            SetListBox(overlay_list, {visible = true, rows = 7, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
+            wheel_art.visible = true;
+            overlay_icon.visible = false;
+            FE_Sound_Screen_In.playing = true;
+
+            local tags_file = TagFileLister(); // file list of .tag for the system we are on
+            local tags = []
+            local tag0 = fe.game_info(Info.Tags);
+            local tagarr = split(tag0, ";")
+            foreach (tag in tagarr) tags.push(tag);
+            local tag_filters = []
+            foreach(a,b in fe.filters){ tag_filters.push(b.name) }
+            local taglist = []
+            local tag_idx = []
+            foreach(a,b in tags_file){
+                if(tag_filters.find(b) == null){
+                    if(tags.find(b) != null){
+                        taglist.push(LnG.rem_tag + " '" + b + "'")
+                        tag_idx.push({"name" : b, "add": false})
+                    }else{
+                        taglist.push(LnG.add_tag + " '" + b + "'")
+                        tag_idx.push({"name" : b, "add": true})
+                    }
+                }
+            }
+
+            taglist.push(LnG.Close)
+
+            local select_tags = fe.overlay.list_dialog(taglist, overlay_title.msg, 0, -1);
+            if( select_tags < taglist.len()-1 && select_tags >-1){
+                print("la selection est " + select_tags + "sur " + taglist.len() + "donc:"+taglist[select_tags]+"\n");
+                update_tags(globs.config_dir + "romlists/" + curr_sys, tag_idx[select_tags].name ,tag_idx[select_tags].add) // update system tag file
+                fe.set_display(fe.list.display_index);
+            }
+            return true;
         break;
 
     }

@@ -246,8 +246,6 @@ function get_dir_lists(path)
 function file_exist(path)
 {
     return fe.path_test(path, PathTest.IsFile);
-    //try { local a = file(path, "r" ); a.close(); return true; }
-    //catch( e ){ return false; }
 }
 
 //Round Number as decimal
@@ -1276,6 +1274,14 @@ function battery_status(data){
             ctrl_icons[idx].msg = bat_state[bat_level];
         }
     }
+}
+
+function TagFileLister() {
+    local dir = globs.config_dir + "romlists/" + curr_sys
+    local tmp = Zip_get_dir( dir );
+    local taglist = []
+    local taglist = tmp.map(function(tag) { if(ext(tag) == "tag") return strip_ext(tag) } )
+    return taglist
 }
 
 // named transitions
