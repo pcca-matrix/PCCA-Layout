@@ -1278,7 +1278,7 @@ function battery_status(data){
 
 function TagFileLister() {
     local dir = globs.config_dir + "romlists/" + curr_sys
-    local tmp = Zip_get_dir( dir );
+    local tmp = zip_get_dir( dir );
     local taglist = []
     local taglist = tmp.map(function(tag) { if(ext(tag) == "tag") return strip_ext(tag) } )
     return taglist
