@@ -21,7 +21,15 @@ class KeyboardSearch {
     sys = ""
     //map of supported values and their filename equivalent
     key_names = { "a": "a", "b": "b", "c": "c", "d": "d", "e": "e", "f": "f", "g": "g", "h": "h", "i": "i", "j": "j", "k": "k", "l": "l", "m": "m", "n": "n", "o": "o", "p": "p", "q": "q", "r": "r", "s": "s", "t": "t", "u": "u", "v": "v", "w": "w", "x": "x", "y": "y", "z": "z", "1": "Num1", "2": "Num2", "3": "Num3", "4": "Num4", "5": "Num5", "6": "Num6", "7": "Num7", "8": "Num8", "9": "Num9", "0": "Num0", "<": "Backspace", " ": "Space", "-": "Clear", "~": "Done" }
-    
+
+    result_text = null
+    // title object, input object, title text , options array, options idx
+    sub_index = -1
+    sub_rows = [
+        [null, null, "Condition:", ["contains", "not_contains", "equals", "not_equals"], 0],
+        [null, null, "Filter By:", ["Name", "CloneOf", "Title", "Year", "Category", "Players", "Status", "PlayedCount"], 0]
+    ];
+
     config = {
         search_key = "custom1",
         mode = "show_results",
@@ -49,7 +57,7 @@ class KeyboardSearch {
             selected = [ 0, 0 ]
         }
     }
-    
+
     constructor(surface) {
         this.surface = surface
         this.keys = {}
@@ -97,9 +105,10 @@ class KeyboardSearch {
         ::fe.add_ticks_callback(this, "on_tick")
         return this
     }
-    
-    
+
+
     function draw_osd(){
+
         //draw the search surface bg
         local bg = surface.add_image(config.bg, 0, 0, surface.width, surface.height)
         bg.set_rgb(config.bg_red, config.bg_green, config.bg_blue)
@@ -112,12 +121,7 @@ class KeyboardSearch {
             width = ( surface.width * config.search_text.pos[2] ) * 1.0,
             height = ( surface.height * config.search_text.pos[3] ) * 1.0
         }
-        
-        local title = surface.add_text("s", (surface.width * 0.5) - flw*0.024, osd_search.y - flh*0.1, flw*0.041, flw*0.041) 
-        title.font = "fontello.ttf"
-        title.charsize = flw*0.048;
-        title.set_rgb( config.search_text.rgba[0], config.search_text.rgba[1], config.search_text.rgba[2] )
-        
+
         search_text = surface.add_text(text, osd_search.x, osd_search.y, osd_search.width, osd_search.height)
         search_text.align = Align.MiddleLeft
         search_text.set_bg_rgb(60,60,60)
@@ -125,6 +129,31 @@ class KeyboardSearch {
         search_text.font = config.search_text.font
         search_text.set_rgb( config.search_text.rgba[0], config.search_text.rgba[1], config.search_text.rgba[2] )
         search_text.alpha = config.search_text.rgba[3]
+
+
+        //draw rules input
+        result_text = surface.add_text("", osd_search.x, surface.height * 0.95, osd_search.width, surface.height * 0.04)
+        result_text.align = Align.MiddleLeft
+        result_text.charsize = surface.height * 0.03
+        result_text.font = config.search_text.font
+        result_text.set_bg_rgb(60,60,60)
+        search_text.bg_alpha = 150
+
+        foreach( key, val in sub_rows ) {
+            local y = osd_search.y - osd_search.height - (key * (osd_search.height * 0.50) )
+            sub_rows[key][0] = surface.add_text(sub_rows[key][2], osd_search.x, y, osd_search.width * 0.35, osd_search.height);
+            sub_rows[key][0].font = config.search_text.font
+            sub_rows[key][0].align = Align.Left
+            sub_rows[key][0].charsize = config.keys.charsize * 0.4
+            sub_rows[key][0].set_rgb( config.search_text.rgba[0], config.search_text.rgba[1], config.search_text.rgba[2] )
+
+            sub_rows[key][1] = surface.add_text(sub_rows[key][3][sub_rows[key][4]], osd_search.x + sub_rows[key][0].width, y , osd_search.width, osd_search.height);
+            sub_rows[key][1].font = config.search_text.font
+            sub_rows[key][1].align = Align.Left
+            sub_rows[key][1].charsize = config.keys.charsize * 0.4
+            sub_rows[key][1].set_rgb( config.search_text.rgba[0], config.search_text.rgba[1], config.search_text.rgba[2] )
+            sub_rows[key][1].alpha = 255
+        }
 
         //draw the search key objects
         foreach( key, val in key_names ) {
@@ -144,6 +173,7 @@ class KeyboardSearch {
 
         //set search key positions
         local row_count = 0
+
         foreach ( row in config.keys.rows )
         {
             local col_count = 0
@@ -170,14 +200,14 @@ class KeyboardSearch {
             row_count++
         }
     }
-    
+
     //select the col/row relative to the current selection
     // select_relative( 0, 1 ) would select the row below the current one
     function select_relative( rel_col, rel_row )
     {
         select( config.keys.selected[0] + rel_col, config.keys.selected[1] + rel_row )
     }
-    
+
     //select the col/row specified
     function select( col, row )
     {
@@ -192,7 +222,7 @@ class KeyboardSearch {
         keys[selected].alpha = config.keys.rgba_selected[3]
         config.keys.selected = [ col, row ]
     }
-    
+
     //type the character specified
     //special characters are "<" (backspace), "-" (clear) and "~" (done)
     function type( c )
@@ -209,14 +239,15 @@ class KeyboardSearch {
         search_text.msg = ( text == "" ) ? "" : "\"" + text + "\""
         update_rule()
     }
-    
+
     //update the current search rule
     function update_rule()
     {
         try
         {
-            local rule = "Name contains " + _massage(text)
-            //local rule = "Title contains " + _massage(text)
+            //local rule = "Name contains " + _massage(text)
+            local rule = sub_rows[1][3][sub_rows[1][4]]  + " " + sub_rows[0][3][sub_rows[0][4]] + " "  + _massage(text)
+
             switch ( config.mode )
             {
                 case "next_match":
@@ -231,15 +262,17 @@ class KeyboardSearch {
                         }
                     }
                     break
+
                 case "show_results":
                 default:
-                    if(text.len() < 2) return; 
-                    fe.list.search_rule = ( text.len() > 1 ) ? rule : ""
+                    //if(text.len() < 1) return;
+                    fe.list.search_rule = ( text.len() > 0 ) ? rule : ""
+                    result_text.msg = ( text.len() > 0 ) ? "Result: " + fe.list.size : ""
                     break
             }
         } catch ( err ) { print( "Unable to apply filter: " + err ); }
     }
-    
+
     function _massage( str )
     {
         if ( str.len() == 0 ) return ""
@@ -261,7 +294,7 @@ class KeyboardSearch {
 
         return temp
     }
-    
+
     //clear the current search
     function clear()
     {
@@ -270,7 +303,7 @@ class KeyboardSearch {
         fe.list.search_rule = "";
         //update_rule()
     }
-    
+
     //toggle the search surface
     function toggle() {
         surface.alpha = ( surface.alpha == 0 ) ? 255: 0
@@ -278,15 +311,32 @@ class KeyboardSearch {
         if ( visible() && config.retain == "false" ) clear()
         print("toggle keyboard " + visible() )
     }
-    
+
     //get current visibility
     function visible() {
         return (surface.alpha == 255)
     }
-    
+
     //debug print
     function print(msg) {
         if ( debug ) ::print("KeyboardSearch plugin: " + msg + "\n")
+    }
+
+
+
+    function subMenu(str) {
+        foreach (row in sub_rows) {
+           row[1].set_rgb( config.search_text.rgba[0], config.search_text.rgba[1], config.search_text.rgba[2] )
+        }
+        if (str == "down" && sub_index == 0){
+            sub_index = -1
+            local prev = config.keys.rows[config.keys.selected[1]][config.keys.selected[0]].tochar();
+            keys[prev].set_rgb( config.keys.rgba_selected[0], config.keys.rgba_selected[1], config.keys.rgba_selected[2] )
+            return false;
+        }
+        if (str == "up" && sub_index < sub_rows.len() - 1) sub_index++
+        if (str == "down" && sub_index > 0) sub_index--
+        sub_rows[sub_index][1].set_rgb( config.keys.rgba_selected[0], config.keys.rgba_selected[1], config.keys.rgba_selected[2] )
     }
 
     //process keys
@@ -297,19 +347,58 @@ class KeyboardSearch {
         }
         if ( visible() )
         {
-            print("key press: " + str)
-            if ( str == "up" ) select_relative( 0, -1 )
-            else if ( str == "down" ) select_relative( 0, 1 )
-            else if ( str == "left" ) select_relative( -1, 0 )
-            else if ( str == "right" ) select_relative( 1, 0 )
-            else if ( str == "select" ) type( config.keys.rows[config.keys.selected[1]][config.keys.selected[0]].tochar() )
-            else if ( str == "back" ) if ( text.len() == 0 ) toggle() else type("<")
-            else if ( str == "exit" ) toggle()
+            print("key press: " + str + "\n")
+            if (str == "up") {
+                if(config.keys.selected[1] == 0){
+                       local prev = config.keys.rows[config.keys.selected[1]][config.keys.selected[0]].tochar();
+                       keys[prev].set_rgb( config.search_text.rgba[0], config.search_text.rgba[1], config.search_text.rgba[2] )
+                       subMenu(str);
+                }else{
+                    select_relative(0, -1);
+                }
+            }else if ( str == "down" ){
+                if (sub_index > -1){
+                    subMenu(str);
+                    return true;
+                }
+                select_relative( 0, 1 )
+            }else if ( str == "left" ){
+                if(sub_index > -1){
+                    update_selected_option(-1)
+                }else{
+                    select_relative( -1, 0 )
+                }
+            }else if ( str == "right" ){
+                if(sub_index > -1){
+                    update_selected_option(1)
+                }else{
+                    select_relative( 1, 0 )
+                }
+            }else if ( str == "select" ){
+                type( config.keys.rows[config.keys.selected[1]][config.keys.selected[0]].tochar() )
+            }else if ( str == "back" ) {
+                if ( text.len() == 0 ) toggle() else type("<")
+            }else if ( str == "exit" ){
+                toggle()
+            }
             return true
         }
         return false;
     }
-    
+
+    function update_selected_option(direction) {
+        local filter_options = sub_rows[sub_index][3];
+
+        sub_rows[sub_index][4] += direction;
+        if (sub_rows[sub_index][4] < 0) {
+            sub_rows[sub_index][4] = filter_options.len() - 1;
+        } else if (sub_rows[sub_index][4] >= filter_options.len()) {
+            sub_rows[sub_index][4] = 0;
+        }
+        sub_rows[sub_index][1].msg = filter_options[sub_rows[sub_index][4]];
+        update_rule();
+    }
+
     function on_tick( ttime )
     {
         if(trigger == true){
@@ -330,5 +419,4 @@ class KeyboardSearch {
             }
         }
     }
-    
 }
