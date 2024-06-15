@@ -26,6 +26,7 @@ class UserConfig {
     </ label="Help Key", help="Choose the key to initiate the help screen", options="custom1,custom2,custom3,custom4,custom5,custom6,none", order=M_order++ />help_screen_key="custom3";
     </ label="Search Results", help="Choose the search method", options="show_results,next_match", order=M_order++ />keyboard_search_method="show_results";
     </ label="Keyboard Layout", help="Choose the keyboard layout", options="qwerty,azerty,alpha", order=M_order++ />keyboard_layout="alpha";
+    </ label="Reset Filters", help="Filters will be reset each time you leave a list", options="Yes, No", order=M_order++ />reset_filters="Yes";
     </ label="--- Custom Romlists ---", help="", options="", order=M_order++ />mt1=""
     </ label="Recently Played", help="Enable recently played romlist", options="Yes, No", order=M_order++ />Recent_Enabled="Yes";
     </ label="Numbers of recent games", help="How many recently played game should be displayed", options="25, 50, 100", order=M_order++ />Recent_Entry="25";
@@ -1698,6 +1699,7 @@ function hs_transition( ttype, var, ttime )
 
             Ini_settings = get_ini_values(curr_sys); // get settings ini value
             if(curr_sys != "Main Menu"){
+                if( my_config["reset_filters"] == "Yes" ) fe.list.filter_index = 0;
                 if( fe.game_info(Info.PlayedTime) == "" ) PCount.set("visible", false); else PCount.set("visible", true); //show game stats surface only if Track Usage is set to Yes in AM!
                 if(glob_time - rtime > 550) hide_art(); // 500ms between re-pooling hide_art when navigating fast in system
                 syno_surf.visible = false; // hide overview
