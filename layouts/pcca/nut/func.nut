@@ -1055,17 +1055,20 @@ function update_recent()
     local tempf = ReadTextFile(Recentpath);
     local ln = "";
     ln+=implode(g_inf, ";") + "\n";
+    local cnt = 1;
     for (local i = 0; !tempf.eos(); i++) {
         local templ = tempf.read_line();
         local spl = RealSplit( templ, ";" );
         if(spl[0] == g_inf[0] && spl[2] == g_inf[2]) continue;
         if( i > my_config["Recent_Entry"].tointeger() ) break;
         ln+=templ + "\n";
+        cnt++
     }
 
     local f2 = file(  Recentpath, "w" );
     f2.writeblob(writeB(ln));
     f2.close()
+    main_infos["Recent"].cnt = cnt;
 }
 
 function update_favourites(add){
