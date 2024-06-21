@@ -78,11 +78,9 @@ class OutlinedText
         _title_d.visible = bool;
     }
 
-
     thickness = null;
     x_offset = null;
     y_offset = null;
-
     _title = null;
     _title_u = null;
     _title_d = null;
@@ -96,7 +94,8 @@ class SelMenu
     constructor(menu, surface , row_space)
     {
         _slot = [];
-        for ( local i = 0; i < 38; i++){
+        _max_slots = 38
+        for ( local i = 0; i <= _max_slots; i++){
           _slot.push(surface.add_text("",0,0,0,0));
           _slot[i].set_pos( flw * 0.006, flh * 0.041 + (row_space * i), flw * 0.17, flh * 0.022);
           _slot[i].align = Align.Left;
@@ -137,7 +136,7 @@ class SelMenu
             }
         }
 
-        for ( local i = 0; i < 38; i++){
+        for ( local i = 0; i <= _max_slots; i++){
             if(i < _current_list.rows.len() ){
                 _slot[i].msg = _current_list.rows[i].title;
             }else{
@@ -300,7 +299,7 @@ class SelMenu
     _current_list = {};
     _lists = [];
     _slot_pos = 0;
-
+    _max_slots = 0;
     _slot = null;
     _menus = null;
     _list_title = null;
@@ -356,6 +355,8 @@ class PCCA_Conveyor {
     AM_all_systems = true;
     AM_system_loop = 3
     next_tick = false
+    video_status = null;
+    attract_elapse = 0;
 
     // fade
     w_time = 0;
@@ -645,9 +646,17 @@ class PCCA_Conveyor {
     {
         switch ( ttype )
         {
+            case Transition.ToGame:
+                am_counter = 0; // reset attract counter
+                timer = ::fe.layout.time;
+                offset = 0
+                draw_wheel(offset)
+                buffer.clear()
+                progress = 0.0
+            break;
+
             case Transition.StartLayout:
             case Transition.FromGame:
-            case Transition.ToGame:
                 am_counter = 0; // reset attract counter
                 timer = ::fe.layout.time;
             break;
@@ -854,26 +863,35 @@ class PCCA_Conveyor {
                 stop = true
                 buff = 0;
                 if(AttractEnabled) attract_start(ttime);
+            }else{
+                video_status = null;
             }
         }
     }
 
-    function CheckVideoWait(){
-        local snap = (::ArtObj.snap.video_duration !=0 && ::ArtObj.snap.video_playing)
-        local back = (::ArtObj.background1.video_duration !=0 && ::ArtObj.background1.video_playing) || (::ArtObj.background2.video_duration !=0 && ::ArtObj.background2.video_playing);
-        if( (snap && !back) || (back && !snap) ) return true
-        return false
+    function CheckVideoStatus(){
+        if(::ArtObj.snap.video_duration) return "snap";
+        if(::ArtObj.background1.video_duration) return "bck1";
+        if(::ArtObj.background2.video_duration) return "bck2";
+        return "none";
     }
 
     function attract_start(ttime){
         local tmp = ::globs.Stimer
         if(::surf_menu.visible) timer = ttime; // disable on edit mode
         if(ttime - timer < 4000) return false; // wait minimum 4 secs
-        local VideoWait = am_WaitVideo;
+        if(!video_status) video_status = CheckVideoStatus();
         local start = false;
 
-        if(VideoWait){
-            start = !CheckVideoWait() && (::fe.layout.time - tmp) > attract_time;
+        if(am_WaitVideo){
+            if( (ttime - tmp) < attract_time) return false // wait attract_time on the first start of am mode
+            if(video_status == "none") { // no videos exist , go to next entry
+                start = true;
+            }else{
+                if(video_status == "snap" && !::ArtObj.snap.video_playing) start = true
+                if(video_status == "bck1" && !::ArtObj.background1.video_playing) start = true
+                if(video_status == "bck2" && !::ArtObj.background2.video_playing) start = true
+            }
         }else{
             start = (ttime - timer > attract_time);
             timer = start ? ttime : timer;
@@ -901,13 +919,14 @@ class PCCA_Conveyor {
             fe.set_display( rnd_disp );
         }
         next_tick = function(){::globs.Stimer = tmp}
+        if(start) attract_elapse += (ttime - attract_elapse)
     }
 
     function expo_speed (progress, from, to, bas) { if ( progress == 0) return from; return to * pow( 2, 10 * ( progress / bas - 1) ) + from; }
 
     function reset_fade() {
         surface.alpha = 255;
-        if(::Ini_settings.wheel["fade_sys_stats"]) ::m_infos.alpha = surface.alpha;        
+        if(::Ini_settings.wheel["fade_sys_stats"]) ::m_infos.alpha = surface.alpha;
         w_time = ::fe.layout.time;
     }
 

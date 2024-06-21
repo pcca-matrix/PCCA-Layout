@@ -49,6 +49,7 @@ class UserConfig {
     </ label="Scraper Language", help="PCCA Scraper prefered language", options="", order=M_order++ />scraper_region="Fr";
 }
 
+local load_cfg = false
 my_config <- fe.get_config();
 globs <- {"delay" : 500, "signal":"default_sig", "keyhold":-1, "hold":null, "Stimer":fe.layout.time, "script_dir":fe.script_dir, "config_dir":FeConfigDirectory,
 "custom_romlists":["Recent","Favourites","Most Played","All Games"], "customs_romlist_tb":{}, "next_tick_functions":[] }; // super globals temp vars
@@ -1363,7 +1364,7 @@ overlay_list <- custom_overlay.add_listbox(flw*0.369, flh*0.361 , flw*0.260, flh
 overlay_list.zorder = 3;
 overlay_list.font = "SF Slapstick Comic Bold Oblique.ttf";
 overlay_list.align = Align.Centre;
-SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017 })
+SetListBox(overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 0, selbg_alpha = 0, charsize = flw * 0.017, selbg_rgb = [0,0,0] })
 
 overlay_title <- custom_overlay.add_text("",0,0,0,0);
 overlay_title.set_pos(0, flh*0.324, flw, flh*0.046);
@@ -1402,7 +1403,7 @@ overlay_icon.visible = false;
 class Keyboard extends KeyboardSearch
 {
     function toggle() {
-        if(curr_sys != sys){ // reload letters artwork only if sys is changed
+        if(curr_sys != sys){ // reload artwork letters only if sys is changed
             local keysf = get_dir_lists(medias_path + curr_sys + "/Images/Letters/");
             foreach( key, val in key_names ) {
                 if(val.tolower() in keysf){
@@ -1603,7 +1604,7 @@ function hs_transition( ttype, var, ttime )
         break;
 
         case Transition.StartLayout: //0
-            if( fe.game_info (Info.Emulator) == "@" && global_fade(ttime, 255, true) ) return true; // fade when back to display menu or start layout
+            if( fe.game_info (Info.Emulator) == "@" && global_fade(ttime, 255.0, true) ) return true; // fade when back to display menu or start layout
 
             if(var == FromTo.ScreenSaver) return false; //we are back from screensaver no need to continue
 
@@ -1686,6 +1687,7 @@ function hs_transition( ttype, var, ttime )
                 TOGame = false;
                 return false
             }
+            load_cfg = true
             curr_sys = ( fe.game_info(Info.Emulator) == "@" ? "Main Menu" : fe.list.name );
             if(Ini_settings["wheel"]["animation"] != "none" && wheel_animation.progress == 1.0){
                 globs.next_tick_functions.push( function () { wheel_animation.reverse(true).duration(600).play() });
@@ -4310,7 +4312,10 @@ function set_custom_value(Ini_settings) {
         offset_y = 0;
     }
 
-    if(prev_tr == Transition.ToNewList){
+    if(load_cfg){
+        load_cfg = false
+        wheel_coord(); // set wheel surface coord
+        pcca_wheel.Init(Ini_settings.wheel); // slots, transition_ms, type, fade_delay, fade_time, alpha, curve, first_pos
         syno_surf.visible = Ini_settings.themes["synopsis"];
 
         system_stats_coord();

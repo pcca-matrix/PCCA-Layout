@@ -695,9 +695,9 @@ function SetListBox(obj, p) {
             } else if ( key == "sel_rgba" ) {
                 obj.set_sel_rgb(p[key][0], p[key][1], p[key][2]);
                 obj.sel_alpha = p[key][3];
-            } else if ( key == "selbg_rgba" ) {
+            } else if ( key == "selbg_rgb" ) {
                 obj.set_selbg_rgb(p[key][0], p[key][1], p[key][2]);
-                obj.selbg_alpha = p[key][3];
+                //obj.selbg_alpha = p[key][3];
             } else {
                 obj[key] = val;
             }
@@ -1119,6 +1119,7 @@ function update_favourites(add){
             f2.close()
     }
     update_tags(globs.config_dir + "romlists", g_inf[2], add) // update system tag file
+    main_infos <- refresh_stats();
     return true;
 }
 
