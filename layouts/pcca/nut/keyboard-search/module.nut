@@ -185,7 +185,7 @@ class KeyboardSearch {
     sub_index = -1
     sub_rows = [
         [null, null, "Condition:", ["contains", "not_contains", "equals", "not_equals"], 0],
-        [null, null, "Filter By:", ["Title", "CloneOf", "Title", "Year", "Players", "Status", "PlayedCount", "Tags", "Category"], 0]
+        [null, null, "Filter By:", ["Title", "CloneOf", "Year", "Players", "Status", "PlayedCount", "Tags", "Category", "Manufacturer"], 0]
     ];
 
     config = {
@@ -574,16 +574,19 @@ class KeyboardSearch {
             }else if ( str == "select" ){
                 if(sub_index > -1){
                     local filter_options = sub_rows[sub_index][3];
-                    if(filter_options[sub_rows[sub_index][4]] == "Category"){
-                        clear()
-                        if(pcca_list){
-                            category_list_pcca();
-                        }else{
-                            category_list();
-                        }
-                    }else if(filter_options[sub_rows[sub_index][4]] == "Tags"){
-                        clear()
-                        tags_list();
+                    switch (filter_options[sub_rows[sub_index][4]]){
+                        case "Category":
+                            clear()
+                            if(pcca_list){
+                                category_list_pcca();
+                            }else{
+                                category_list();
+                            }
+                        break;
+                        case "Tags":
+                        case "Manufacturer":
+                            clear()
+                            group_list(filter_options[sub_rows[sub_index][4]]);
                     }
                     return true; // discard select on condition field
                 }
@@ -598,28 +601,33 @@ class KeyboardSearch {
         return false;
     }
 
-    function tags_list() {
+    function group_list(group) {
         // set var to "equal" by default
         sub_rows[0][4] = 0
         sub_rows[0][1].msg = sub_rows[0][3][2]
-        local taglist = []
-        for (local i = 0 ; i < fe.list.size ; i++) {
-            local tag0 = fe.game_info (Info.Tags,i, (fe.filters.len() != 0 ? -fe.list.filter_index : 0))
-            local tagarr = split(tag0, ";")
-            foreach (tag in tagarr) taglist.push(tag);
+        local list_attr = Info.Tags;
+        switch (group){
+            case "Manufacturer":
+                list_attr = Info.Manufacturer
         }
-        taglist = array_unique(taglist)
-        taglist.sort()
-        if(!taglist.len()) return false
+        local grouplist = []
+        for (local i = 0 ; i < fe.list.size ; i++) {
+            local tag0 = fe.game_info (list_attr, i, (fe.filters.len() != 0 ? -fe.list.filter_index : 0))
+            local tagarr = split(tag0, ";")
+            foreach (tag in tagarr) grouplist.push(tag);
+        }
+        grouplist = array_unique(grouplist)
+        grouplist.sort()
+        if(!grouplist.len()) return false
         ::SetListBox(::overlay_list, {visible = true, rows = 5, sel_rgba = [255,0,0,255], bg_alpha = 125, selbg_alpha = 190, charsize = auto_size(42) })
-        local selected = ::fe.overlay.list_dialog(taglist, "Tags list");
+        local selected = ::fe.overlay.list_dialog(grouplist, group + " list");
         if(selected > -1){
-            search_text.msg = taglist[selected]
-            text = taglist[selected]
+            search_text.msg = grouplist[selected]
+            text = grouplist[selected]
         }
         update_rule();
 
-        return taglist
+        return grouplist
     }
 
     function category_list_pcca(){
@@ -652,7 +660,7 @@ class KeyboardSearch {
         if(selected > -1){
             local pcca_id = 0;
             foreach (genre in pcca_genres) {
-                if(newcat[selected] == genre["fr"]){
+                if(newcat[selected] == genre[user_lang]){
                     pcca_id = genre["id"];
                     break;
                 }
@@ -662,7 +670,6 @@ class KeyboardSearch {
             text = pcca_id
         }
         update_rule();
-
     }
 
     function category_list(){
@@ -701,7 +708,7 @@ class KeyboardSearch {
         }
         sub_rows[sub_index][1].msg = filter_options[sub_rows[sub_index][4]];
 
-        if(filter_options[sub_rows[sub_index][4]] == "Category" || filter_options[sub_rows[sub_index][4]] == "Tags"){
+        if(filter_options[sub_rows[sub_index][4]] == "Category" || filter_options[sub_rows[sub_index][4]] == "Tags" || filter_options[sub_rows[sub_index][4]] == "Manufacturer"){
             clear()
             sub_rows[1][1].style = Style.Bold;
             sub_rows[1][1].charsize = auto_size(40)
