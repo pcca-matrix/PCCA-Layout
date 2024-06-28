@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 //
-// PCCA v2.94
+// PCCA v2.95
 // Use with Attract-Mode Front-End  http://attractmode.org/
 //
 // This program comes with NO WARRANTY.  It is licensed under
@@ -42,6 +42,7 @@ class UserConfig {
     </ label="All Systems", help="Random in all systems", options="Yes, No", order=M_order++ />AM_all_systems="Yes";
     </ label="Loop by system", help="How many random loop by system", options="", order=M_order++ />AM_system_loop="3";
     </ label="--- Scraper ---", help="", options="", order=M_order++ />mt2=""
+    </ label="PCCA Category Numbered", help="PCCA Category list enabled", options="Yes, No", order=M_order++ />category_mode="No";
     </ label="Scraper User name", help="PCCA Scraper user name", options="", order=M_order++ />scraper_username="test";
     </ label="Scraper password", help="PCCA Scraper password", options="", order=M_order++ />scraper_password="test";
     </ label="Scraper Region", help="PCCA Scraper prefered region", options="", order=M_order++ />scraper_region="Europe";
@@ -1400,36 +1401,13 @@ overlay_icon.set_pos( 0, 0, flw * 0.104, flh * 0.185);
 overlay_icon.visible = false;
 
 //-- KeyboardSearch
-class Keyboard extends KeyboardSearch
-{
-    function toggle() {
-        if(curr_sys != sys){ // reload artwork letters only if sys is changed
-            local keysf = get_dir_lists(medias_path + curr_sys + "/Images/Letters/");
-            foreach( key, val in key_names ) {
-                if(val.tolower() in keysf){
-                    keys[ key.tolower() ].file_name = keysf[key.tolower()];
-                }else{
-                    keys[ key.tolower() ].file_name = globs.script_dir + "nut/keyboard-search/images" + "/" + val.tolower() + ".png";
-                }
-            }
-            sys = curr_sys
-        }
-        trigger = true;
-        if(state == 0 || state == 3){
-            state = 2;
-            surface.alpha = 255
-            if ( !config.retain || config.retain == "false") clear()
-        }else if(state == 1 || state == 2){
-            state = 3;
-        }
-    }
-}
-
 local search_surface = fe.add_surface(flw*0.370, flh);
 search_surface.zorder = 10;
-local search = Keyboard( search_surface )
+local search = KeyboardSearch( search_surface )
     .set_pos(-flw*0.370,0,flw*0.370,flh)
     .retain(true)
+    .user_lang(my_config["user_lang"])
+    .cat_mode(my_config["category_mode"])
     .search_key( my_config["keyboard_search_key"] )
     .mode( my_config["keyboard_search_method"] )
     .preset( my_config["keyboard_layout"] )
@@ -1886,11 +1864,6 @@ function hs_tick( ttime )
 
     // load medias after globs.delay
     if( (glob_time - rtime > globs.delay) && triggers.theme.start && (pcca_wheel.stop || pcca_wheel.spin_start)){
-
-        if(prev_tr == Transition.ToNewList){
-            wheel_coord(); // set wheel surface coord
-            pcca_wheel.Init(Ini_settings.wheel); // slots, transition_ms, type, fade_delay, fade_time, alpha, curve, first_pos
-        }
         hd = false;
         if( Ini_settings.themes["bezels"] && Ini_settings.themes["aspect"] == "center" ){ // Systems bezels!  only if aspect center
             if( file_exist(globs.script_dir + "images/Bezels/" + curr_emulator + ".png") ){
