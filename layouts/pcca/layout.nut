@@ -1627,7 +1627,7 @@ function hs_transition( ttype, var, ttime )
             if(!check_display("Favourites") && my_config["Global_Favourites_Enabled"] == "Yes"){
                 create_favourites();
                 local filters = [];
-                //filters.push({"name":"All","sort_by":"Title"});
+                filters.push({"name":"All","sort_by":"Title"});
                 add_display( "Favourites", ["yes","yes","yes"], filters);
                 local cop = "\"" + globs.script_dir + "images/Wheel/Favourites-"+my_config["user_lang"]+".png" + "\"" + " " + "\"" + medias_path + "Main Menu/Images/Wheel/Favourites.png" + "\"";
                 if(OS == "Windows"){
@@ -1640,7 +1640,7 @@ function hs_transition( ttype, var, ttime )
             if(!check_display("All Games") && my_config["All_Games_Enabled"] == "Yes"){
                 create_all_games();
                 local filters = [];
-                //filters.push({"name":"All","sort_by":"Title"});
+                filters.push({"name":"All","sort_by":"Title"});
                 filters.push({"name":"Favourites","rule":"Favourite equals 1", "sort_by":"Title"});
                 add_display( "All Games", ["yes","yes","yes"], filters);
                 system ("mkdir " + (OS == "Windows" ? "" : "-p ") + medias_path + "\"Main Menu/Images/Wheel/\"");
