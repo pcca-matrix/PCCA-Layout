@@ -1679,7 +1679,7 @@ function hs_transition( ttype, var, ttime )
 
             Ini_settings = get_ini_values(curr_sys); // get settings ini value
             if(curr_sys != "Main Menu"){
-                if( my_config["reset_filters"] == "Yes" ) fe.list.filter_index = 0;
+                if( my_config["reset_filters"] == "Yes" && prev_tr != 9) fe.list.filter_index = 0;
                 if( fe.game_info(Info.PlayedTime) == "" ) PCount.set("visible", false); else PCount.set("visible", true); //show game stats surface only if Track Usage is set to Yes in AM!
                 if(glob_time - rtime > 550) hide_art(); // 500ms between re-pooling hide_art when navigating fast in system
                 syno_surf.visible = false; // hide overview
