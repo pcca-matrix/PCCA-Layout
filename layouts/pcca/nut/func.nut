@@ -223,9 +223,8 @@ function secondsToDhms(seconds) {
 
 // get media tags
 function get_media_tag(offset){
-    local tags = fe.game_info(Info.Tags, offset).tolower();
-    local taglist = split (tags,";")
-    if ( (taglist.len() == 1) ) return "images/tags/" + taglist[0] + ".png";
+    local taglist = split (fe.game_info(Info.Tags, offset).tolower(), ";")
+    foreach( v in taglist) if(v in "fail", "completed") return "images/tags/" + v + ".png";
     return;
 }
 
