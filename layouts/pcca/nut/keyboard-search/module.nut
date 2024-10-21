@@ -414,9 +414,7 @@ class KeyboardSearch {
     {
         try
         {
-            //local rule = "Name contains " + _massage(text)
             local rule = sub_rows[1][3][sub_rows[1][4]]  + " " + sub_rows[0][3][sub_rows[0][4]] + " "  + _massage(text)
-
             switch ( config.mode )
             {
                 case "next_match":
@@ -441,7 +439,9 @@ class KeyboardSearch {
                     result_text.msg = ( text.len() > 0 ) ? "Result: " + r : ""
                     break
             }
-        } catch ( err ) { print( "Unable to apply filter: " + err ); }
+        } catch ( err ) {
+            print( "Unable to apply filter: " + err );
+        }
     }
 
     function replace_char(str, ch) {
@@ -454,14 +454,17 @@ class KeyboardSearch {
         }
         return result;
     }
+
     function _massage( str )
     {
-        if(pcca_list){
+        if(pcca_list && sub_rows[1][3][sub_rows[1][4]] == "Category"){
             local regx = "^"+str+"$|,"+str+"$|^"+str+",|,"+str+",";
             return regx
         }
+
         str = replace_char(str, "-")
         if ( str.len() == 0 ) return ""
+
         str = str.tolower()
         local words = split( str, " " )
         local temp = ""
@@ -470,11 +473,14 @@ class KeyboardSearch {
             print("searching: " + w +"\n")
             if ( temp.len() > 0 )
                 temp += " "
-            local f = w.slice( 0, 1 )
-            temp += ( "1234567890".find(f) != null ) ? "[" + f + "]" + w.slice(1) : "[" + f.toupper() + f.tolower() + "]" + w.slice(1)
+            foreach ( id, l in w )
+            {
+                local ltr = l.tochar()
+                temp += ( "1234567890".find(ltr) != null ) ?  ltr  : "[" + ltr.toupper() + ltr.tolower() + "]";
+            }
         }
         temp = replace(temp, " [--] ", "-")
-        return temp
+        return  temp
     }
 
     //clear the current search
@@ -518,8 +524,6 @@ class KeyboardSearch {
     function print(msg) {
         if ( debug ) ::print("KeyboardSearch plugin: " + msg + "\n")
     }
-
-
 
     function subMenu(str) {
         foreach (row in sub_rows) {
@@ -587,6 +591,7 @@ class KeyboardSearch {
                         case "Manufacturer":
                             clear()
                             group_list(filter_options[sub_rows[sub_index][4]]);
+                        break;
                     }
                     return true; // discard select on condition field
                 }
@@ -609,6 +614,7 @@ class KeyboardSearch {
         switch (group){
             case "Manufacturer":
                 list_attr = Info.Manufacturer
+            break;
         }
         local grouplist = []
         for (local i = 0 ; i < fe.list.size ; i++) {
@@ -711,9 +717,11 @@ class KeyboardSearch {
         if(filter_options[sub_rows[sub_index][4]] == "Category" || filter_options[sub_rows[sub_index][4]] == "Tags" || filter_options[sub_rows[sub_index][4]] == "Manufacturer"){
             clear()
             sub_rows[1][1].style = Style.Bold;
+            sub_rows[1][1].set_rgb(0, 220, 82)
             sub_rows[1][1].charsize = auto_size(40)
         }else{
             sub_rows[1][1].style = Style.Regular;
+            sub_rows[1][1].set_rgb( config.keys.rgba[0], config.keys.rgba[1], config.keys.rgba[2] )
             sub_rows[1][1].charsize = auto_size(35)
         }
 
